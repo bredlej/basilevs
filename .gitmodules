@@ -1,0 +1,3 @@
+[submodule "extern/raylib-cpp"]
+	path = extern/raylib-cpp
+	url = https://github.com/RobLoach/raylib-cpp.git
