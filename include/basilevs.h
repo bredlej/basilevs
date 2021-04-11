@@ -134,6 +134,7 @@ namespace basilevs {
         bool active{false};
         Vector2 position{0.0f, 0.0f};
         Vector2 direction{0.0f, 0.0f};
+        float speed{5.0f};
         float timer{0.0f};
         BulletUpdateFunction update_function{[&](float time, BulletBase &bullet, World& world) -> bool { return false; }};
         NormalBullet() : active{false}, position{0.0f, 0.0f}, direction{0.0, 0.0f}, timer{0.0f}, update_function{[&](float time, BulletBase &bullet, World& world) -> bool { return false; }} {};

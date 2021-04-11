@@ -46,26 +46,39 @@ int main() {
     auto enemy_sprite = basilevs::Sprite(enemy_texture, raylib::Vector2(70, 30), 1);
     auto bullet_sprite = basilevs::Sprite(bullet8_texture, raylib::Vector2(50, 50), 1);
 
-    auto bullet_fly_down = [&](float time, basilevs::NormalBullet &bullet, const basilevs::World &world) -> bool {
-        bullet.position.x += bullet.direction.x * time * 10.0f;
-        bullet.position.y += bullet.direction.y * time * 10.0f;
-        if (bullet.position.y > static_cast<float>(world.bounds.y)) {
-            return false;
-        }
+    auto bullet_fly_forward = [&](float time, basilevs::NormalBullet &bullet, const basilevs::World &world) -> bool {
+        bullet.position = Vector2Add(bullet.position, bullet.direction);
+
         return true;
     };
+
     auto shoot_every_second = [&](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
         if (emitter.is_active) {
             if (emitter.last_shot > emitter.delay_between_shots) {
 
-                world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, Vector2{0.0, 1.0f}, bullet_fly_down});
+                world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, Vector2{0.0, 1.0f}, bullet_fly_forward});
                 emitter.last_shot = 0.0f;
             }
             emitter.last_shot += time;
         }
     };
 
-    auto bullet_emitter = basilevs::Emitter{enemy_sprite.position, 1.0f, shoot_every_second};
+    auto shoot_circular = [&](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
+      if (emitter.is_active) {
+          if (emitter.last_shot > sin(emitter.delay_between_shots) * 2) {
+              auto direction = Vector2{0.0f, 1.0f};
+              for (int i=1; i < 60; i++) {
+
+                  world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, direction, bullet_fly_forward});
+                  direction = Vector2Rotate(direction, 360/i);
+              }
+              emitter.last_shot = 0.0f;
+          }
+          emitter.last_shot += time;
+      }
+    };
+
+    auto bullet_emitter = basilevs::Emitter{enemy_sprite.position, 0.5f, shoot_circular};
     auto background = basilevs::Background("assets/basilevs_bg_001.png", 6);
 
     SetTextureFilter(background.texture, FILTER_ANISOTROPIC_16X);
@@ -125,7 +138,7 @@ int main() {
 
         auto player_collision_rect = Rectangle{world.player.position.x + 14, world.player.position.y + 15, 5, 5};
         if (move_right) player_collision_rect.x -= 1;
-        DrawRectangleRec(player_collision_rect, BLUE);
+        //DrawRectangleRec(player_collision_rect, BLUE);
         for (int i = 0; i < world.enemy_bullets.first_available_index; i++) {
 
             auto &bullet = world.enemy_bullets.pool[i];
@@ -141,7 +154,7 @@ int main() {
                 if (!CheckCollisionRecs(bullet_collision_rect, world.bounds)) {
                     world.enemy_bullets.removeAt(i);
                 }
-                raylib::DrawText(std::to_string(i), bullet.position.x-5, bullet.position.y-5, 8, ORANGE);
+               // raylib::DrawText(std::to_string(i), bullet.position.x-5, bullet.position.y-5, 8, ORANGE);
             }
         }
         EndTextureMode();
