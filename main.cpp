@@ -36,59 +36,62 @@ int main() {
     auto enemy_texture = LoadTextureFromImage(raylib::LoadImage("assets/enemy.png"));
     auto bullet8_texture = LoadTextureFromImage(raylib::LoadImage("assets/bullet8.png"));
 
-    auto world = basilevs::World{basilevs::Sprite(player_texture, raylib::Vector2{64, 90}, 7)};
+    auto world = basilevs::World{
+            basilevs::Sprite(player_texture,
+                             raylib::Vector2{64, 90}, 7),
+            Rectangle{-10.0f, -10.0f, frameWidth + 10.0f, frameHeight + 10.0f},
+            basilevs::BulletPool<basilevs::NormalBullet>(1000L)};
+
 
     auto enemy_sprite = basilevs::Sprite(enemy_texture, raylib::Vector2(70, 30), 1);
     auto bullet_sprite = basilevs::Sprite(bullet8_texture, raylib::Vector2(50, 50), 1);
 
+    auto bullet_fly_down = [&](float time, basilevs::NormalBullet &bullet, const basilevs::World &world) -> bool {
+        bullet.position.x += bullet.direction.x * time * 10.0f;
+        bullet.position.y += bullet.direction.y * time * 10.0f;
+        if (bullet.position.y > static_cast<float>(world.bounds.y)) {
+            return false;
+        }
+        return true;
+    };
+    auto shoot_every_second = [&](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
+        if (emitter.is_active) {
+            if (emitter.last_shot > emitter.delay_between_shots) {
+
+                world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, Vector2{0.0, 1.0f}, bullet_fly_down});
+                emitter.last_shot = 0.0f;
+            }
+            emitter.last_shot += time;
+        }
+    };
+
+    auto bullet_emitter = basilevs::Emitter{enemy_sprite.position, 1.0f, shoot_every_second};
     auto background = basilevs::Background("assets/basilevs_bg_001.png", 6);
 
     SetTextureFilter(background.texture, FILTER_ANISOTROPIC_16X);
     SetTargetFPS(60);
 
     bool move_right = true;
-
     int movement_speed = 60;
-
-    auto clock = std::chrono::steady_clock{};
-
-    struct Spawn {
-        float start_time;
-        Vector2 position;
-        basilevs::Sprite enemy;
-        std::function<void(basilevs::Enemy &, float)> behavior;
-    };
 
     auto behavior_sinusoidal = [&](basilevs::Enemy &enemy, double time) -> void {
         enemy.position.x += sin(time) * 0.7;
     };
 
-    auto enemy_spawns = std::list<Spawn>({{5.0f, Vector2{60.0, 10.0}, enemy_sprite, behavior_sinusoidal},
-                                          {8.0f, Vector2{60.0, 60.0}, bullet_sprite, behavior_sinusoidal}});
+    auto enemy_spawns = std::list<basilevs::Spawn>({{5.0f, Vector2{60.0, 10.0}, enemy_sprite, behavior_sinusoidal}});
 
     auto enemies_on_screen = std::list<basilevs::Enemy>{};
+    auto active_emitters = std::list<basilevs::SpriteEmitter>{};
 
-    auto enemy_bullets = basilevs::BulletPool<basilevs::NormalBullet>(1000L);
+    //world.enemy_bullets.add(basilevs::NormalBullet{Vector2{80.0f, 5.0f}, Vector2{0.0, 1.0f}, bullet_fly_down});
 
-    auto bullet_fly_down = [&](float time, basilevs::NormalBullet &bullet, basilevs::Sprite &sprite, Rectangle &world_bounds) -> bool
-    {
-        bullet.position.x += bullet.direction.x * time * 0.02f;
-        bullet.position.y += bullet.direction.y * time * 0.2f;
-        if (bullet.position.y > static_cast<float>(world_bounds.y)) {
-            return false;
-        }
-        bullet.direction.x = cos(time);
-        return true;
-    };
-    enemy_bullets.add(basilevs::NormalBullet{Vector2{80.0f, 5.0f}, Vector2{0.0, 1.0f}, bullet_fly_down});
-
-    auto frame_bounds = Rectangle{-10.0f, -10.0f, static_cast<float>(frameWidth)+10.0f, static_cast<float>(frameHeight)+10.0f};
+    std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - std::chrono::steady_clock::now();
     while (!window.ShouldClose()) {
         auto now = std::chrono::steady_clock::now();
         if (!enemy_spawns.empty()) {
             auto next_spawn = enemy_spawns.front();
             if (timer >= next_spawn.start_time) {
-                enemies_on_screen.emplace_back(basilevs::Enemy{next_spawn.enemy, behavior_sinusoidal, next_spawn.position});
+                enemies_on_screen.emplace_back(basilevs::Enemy{next_spawn.enemy, behavior_sinusoidal, next_spawn.position, bullet_emitter});
                 enemy_spawns.pop_front();
             }
         }
@@ -116,30 +119,40 @@ int main() {
         for (auto &enemy : enemies_on_screen) {
             DrawTextureRec(enemy.animation.texture, enemy.animation.frame_rect, enemy.position, WHITE);
             enemy.behavior(enemy, timer);
+            enemy.emitter.position = Vector2Add(enemy.position, enemy.emitter_offset);
+            enemy.emitter.emitter_function(elapsed.count(), enemy.emitter, world);
         }
 
-        auto player_collision_rect = Rectangle{world.player.position.x+11, world.player.position.y+13, world.player.position.x+32-11, world.player.position.y+32-12};
-        for (int i=0; i < enemy_bullets.first_available_index; i++) {
-            auto &bullet = enemy_bullets.pool[i];
+        auto player_collision_rect = Rectangle{world.player.position.x + 14, world.player.position.y + 15, 5, 5};
+        if (move_right) player_collision_rect.x -= 1;
+        DrawRectangleRec(player_collision_rect, BLUE);
+        for (int i = 0; i < world.enemy_bullets.first_available_index; i++) {
+
+            auto &bullet = world.enemy_bullets.pool[i];
             if (bullet.active) {
-                if (CheckCollisionPointRec(bullet.position, player_collision_rect)) {
+                auto bullet_collision_rect = Rectangle {bullet.position.x, bullet.position.y, 8, 8};
+                if (CheckCollisionRecs(bullet_collision_rect, player_collision_rect)) {
                     DrawTextureRec(bullet_sprite.texture, bullet_sprite.frame_rect, bullet.position, RED);
-                    enemy_bullets.removeAt(i);
-                }
-                else{
+                    world.enemy_bullets.removeAt(i);
+                } else {
                     DrawTextureRec(bullet_sprite.texture, bullet_sprite.frame_rect, bullet.position, WHITE);
                 }
-                bullet.update_function(timer, bullet, world.player, frame_bounds);
+                bullet.update_function(elapsed.count(), bullet, world);
+                if (!CheckCollisionRecs(bullet_collision_rect, world.bounds)) {
+                    world.enemy_bullets.removeAt(i);
+                }
+                raylib::DrawText(std::to_string(i), bullet.position.x-5, bullet.position.y-5, 8, ORANGE);
             }
-            i++;
         }
         EndTextureMode();
         DrawTexturePro(render_target.texture, (Rectangle){0.0f, 0.0f, (float) render_target.texture.width, (float) -render_target.texture.height},
                        (Rectangle){0.0f, 0.0f, static_cast<float>(screenWidth), static_cast<float>(screenHeight)}, (Vector2){0, 0}, 0.0f, WHITE);
         raylib::DrawText(std::to_string(static_cast<int>(timer)), screenWidth - 60, 20, 30, GREEN);
-        DrawFPS(5,5);
+        raylib::DrawText( std::to_string(world.enemy_bullets.first_available_index), screenWidth - 60, 60, 30, ORANGE);
+        DrawFPS(5, 5);
         EndDrawing();
-        std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - now;
+
+        elapsed = std::chrono::steady_clock::now() - now;
 
         timer += elapsed.count();
     }

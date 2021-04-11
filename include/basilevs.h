@@ -6,34 +6,50 @@
 #define BASILEVS_CORE_H
 #include <concepts>
 #include <functional>
+#include <iostream>
 #include <raylib-cpp.hpp>
 #include <utility>
 namespace basilevs {
     struct Sprite;
     struct Background;
     struct Enemy;
+    struct Spawn;
     struct BulletBase;
     struct NormalBullet;
     template<typename T>
     concept is_a_bullet = std::is_base_of_v<BulletBase, T>;
     template<is_a_bullet T>
     struct BulletPool;
-    template<is_a_bullet T>
+
     struct Emitter;
     enum class EmitterType { Down,
                              Radial };
-
     struct World;
+
+    using BulletEmitterFunction = std::function<void(const float time, Emitter& emitter,  World& world)>;
+
+    struct Emitter {
+    public:
+        explicit Emitter(Vector2 position, float delay, BulletEmitterFunction emitterFunction) : position{position}, delay_between_shots{delay}, emitter_function{std::move(emitterFunction)} {};
+        Vector2 position;
+        float delay_between_shots;
+        float last_shot{0};
+        bool is_active{true};
+        int emission_count{0};
+        BulletEmitterFunction emitter_function;
+    private:
+        double last_emission_time_{0};
+    };
 
     struct Sprite {
     public:
-        Sprite(const std::string &animation_file, Vector2 &&position, uint8_t amount_frames)
+        Sprite(const std::string &animation_file, Vector2 &&position, const uint8_t amount_frames)
             : texture{LoadTextureFromImage(raylib::LoadImage(animation_file))},
               position{position},
               current_frame_{0},
               frame_rect{0.0f, 0.0f, static_cast<float>(texture.width) / amount_frames, static_cast<float>(texture.height)},
               amount_frames_{amount_frames} {};
-        Sprite(const Texture2D &texture, Vector2 &&position, uint8_t amount_frames)
+        Sprite(const Texture2D &texture, Vector2 &&position, const uint8_t amount_frames)
             : texture{texture},
               position{position},
               current_frame_{0},
@@ -43,6 +59,7 @@ namespace basilevs {
         Vector2 position;
         Texture2D texture;
         Rectangle frame_rect;
+
         float inner_timer{0.0f};
 
         void update_animation(int frame_speed) {
@@ -64,6 +81,13 @@ namespace basilevs {
         uint8_t frame_counter_{0};
     };
 
+    struct Spawn {
+        float start_time;
+        Vector2 position;
+        Sprite enemy;
+        std::function<void(basilevs::Enemy &, float)> behavior;
+    };
+
     struct Background {
     public:
         Background(const std::string &file_name, const int vertical_segments)
@@ -83,7 +107,6 @@ namespace basilevs {
                 }
             }
         }
-
     private:
         int amount_frames;
         int frame_counter_;
@@ -93,8 +116,10 @@ namespace basilevs {
         using BehaviorFunction = std::function<void(Enemy &, double)>;
 
     public:
-        Enemy(Sprite animation, BehaviorFunction behavior, Vector2 position) : animation{animation}, behavior{std::move(behavior)}, position{position} {};
+        Enemy(Sprite animation, BehaviorFunction behavior, Vector2 position, Emitter emitter) : animation{animation}, behavior{std::move(behavior)}, position{position}, emitter{std::move(emitter)} {};
         Sprite animation;
+        Emitter emitter;
+        Vector2 emitter_offset{11,13};
         BehaviorFunction behavior;
         Vector2 position;
     };
@@ -103,15 +128,15 @@ namespace basilevs {
     };
 
     struct NormalBullet : BulletBase {
-        using BulletUpdateFunction = std::function<bool(float time, NormalBullet &bullet, Sprite &sprite, Rectangle &world_bounds)>;
+        using BulletUpdateFunction = std::function<bool(float time, NormalBullet &bullet, World &world)>;
 
     public:
         bool active{false};
         Vector2 position{0.0f, 0.0f};
         Vector2 direction{0.0f, 0.0f};
         float timer{0.0f};
-        BulletUpdateFunction update_function{[&](float time, BulletBase &bullet, Sprite &sprite, Rectangle &world_bounds) -> bool { return false; }};
-        NormalBullet() : active{false}, position{0.0f, 0.0f}, direction{0.0, 0.0f}, timer{0.0f}, update_function{[&](float time, BulletBase &bullet, Sprite &sprite, Rectangle &world_bounds) -> bool { return false; }} {};
+        BulletUpdateFunction update_function{[&](float time, BulletBase &bullet, World& world) -> bool { return false; }};
+        NormalBullet() : active{false}, position{0.0f, 0.0f}, direction{0.0, 0.0f}, timer{0.0f}, update_function{[&](float time, BulletBase &bullet, World& world) -> bool { return false; }} {};
         explicit NormalBullet(Vector2 position, Vector2 direction, BulletUpdateFunction update_function)
             : position{position}, direction{direction}, update_function{std::move(update_function)} {};
     };
@@ -119,8 +144,6 @@ namespace basilevs {
 
     template<is_a_bullet T>
     struct BulletPool {
-        using BulletUpdateFunction = std::function<bool(float time, T &bullet, Sprite &sprite, Rectangle &world_bounds)>;
-
     public:
         explicit BulletPool(const uint64_t amount) : pool(amount){};
         int first_available_index{0};
@@ -135,13 +158,6 @@ namespace basilevs {
             }
         }
     };
-    template<is_a_bullet T>
-    void BulletPool<T>::add(T &&bullet) {
-        if (first_available_index < pool.size()) {
-            pool[first_available_index] = bullet;
-            first_available_index++;
-        }
-    }
 
     template<>
     void BulletPool<NormalBullet>::add(NormalBullet &&bullet) {
@@ -152,30 +168,22 @@ namespace basilevs {
             bullet_at_index.position = bullet.position;
             bullet_at_index.direction = bullet.direction;
             bullet_at_index.update_function = bullet.update_function;
-            first_available_index++;
+            first_available_index+=1;
         }
     }
 
     struct World {
+        explicit World(const Sprite&& player, const Rectangle bounds, const BulletPool<NormalBullet>&& enemy_bullets) : player{player}, bounds{bounds}, enemy_bullets{enemy_bullets} {};
         Sprite player;
+        raylib::Rectangle bounds;
+        BulletPool<NormalBullet> enemy_bullets;
     };
 
-    template<is_a_bullet T>
-    struct Emitter {
-        using BulletUpdateFunction = std::function<bool(float time, T &bullet, Sprite &sprite, Rectangle &world_bounds)>;
-        Vector2 position;
-        double delay_between_shots;
-        EmitterType type;
-        void emit(const int amount, const World& world);
+    struct SpriteEmitter {
+        SpriteEmitter(Sprite&& sprite, Emitter&& emitter) : sprite{sprite}, emitter{emitter} {};
+        Sprite sprite;
+        Emitter emitter;
     };
-
-    template<>
-    void Emitter<NormalBullet>::emit(const int amount, const World& world) {
-        for (int i = 0; i < amount; i++) {
-
-        }
-    }
-
 
 }// namespace basilevs
 
