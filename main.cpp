@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "include/basilevs.h"
+#include "include/behaviours.h"
 #include <algorithm>
 #include <chrono>
 #include <functional>
@@ -18,23 +19,28 @@ int main() {
 
     double timer = 0;
 
-    int frameWidth = 160;
-    int frameHeight = 144;
-    int screenWidth = 800;
-    int screenHeight = 760;
+    constexpr auto frameWidth = 160;
+    constexpr auto frameHeight = 144;
+    constexpr auto screenWidth = 800;
+    constexpr auto screenHeight = 760;
 
     raylib::Window window(screenWidth, screenHeight, "Basilevs");
+    auto audio = raylib::AudioDevice();
+    //audio.Init();
 
-    auto fgColor = raylib::Color(240, 246, 240);
-    auto bgColor = raylib::Color(34, 35, 35);
+    const auto bullet_sound = LoadSound("assets/bullet.wav");
+    const auto music = LoadMusicStream("assets/music.mp3");
+    SetMusicVolume(music, 0.5f);
+    const auto fgColor = raylib::Color(240, 246, 240);
+    const auto bgColor = raylib::Color(34, 35, 35);
 
     //auto basilevs_logo = LoadTextureFromImage(raylib::LoadImage("assets/basilevs.png"));
 
-    auto render_target = raylib::RenderTexture2D(160, 144);
+    auto render_target = raylib::RenderTexture2D(frameWidth, frameHeight);
 
     auto player_texture = LoadTextureFromImage(raylib::LoadImage("assets/player.png"));
     auto enemy_texture = LoadTextureFromImage(raylib::LoadImage("assets/enemy.png"));
-    auto bullet8_texture = LoadTextureFromImage(raylib::LoadImage("assets/bullet8.png"));
+    auto bullet_round_texture = LoadTextureFromImage(raylib::LoadImage("assets/bullet8.png"));
 
     auto world = basilevs::World{
             basilevs::Sprite(player_texture,
@@ -44,41 +50,10 @@ int main() {
 
 
     auto enemy_sprite = basilevs::Sprite(enemy_texture, raylib::Vector2(70, 30), 1);
-    auto bullet_sprite = basilevs::Sprite(bullet8_texture, raylib::Vector2(50, 50), 1);
+    auto bullet_sprite = basilevs::Sprite(bullet_round_texture, raylib::Vector2(50, 50), 1);
 
-    auto bullet_fly_forward = [&](float time, basilevs::NormalBullet &bullet, const basilevs::World &world) -> bool {
-        bullet.position = Vector2Add(bullet.position, bullet.direction);
-
-        return true;
-    };
-
-    auto shoot_every_second = [&](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
-        if (emitter.is_active) {
-            if (emitter.last_shot > emitter.delay_between_shots) {
-
-                world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, Vector2{0.0, 1.0f}, bullet_fly_forward});
-                emitter.last_shot = 0.0f;
-            }
-            emitter.last_shot += time;
-        }
-    };
-
-    auto shoot_circular = [&](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
-      if (emitter.is_active) {
-          if (emitter.last_shot > sin(emitter.delay_between_shots) * 2) {
-              auto direction = Vector2{0.0f, 1.0f};
-              for (int i=1; i < 60; i++) {
-
-                  world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, direction, bullet_fly_forward});
-                  direction = Vector2Rotate(direction, 360/i);
-              }
-              emitter.last_shot = 0.0f;
-          }
-          emitter.last_shot += time;
-      }
-    };
-
-    auto bullet_emitter = basilevs::Emitter{enemy_sprite.position, 0.5f, shoot_circular};
+    auto radial_emitter = basilevs::Emitter{enemy_sprite.position, 1.5f, basilevs::emitter::shoot_circular, bullet_sound};
+    auto spiral_emitter = basilevs::Emitter{enemy_sprite.position, 0.1f, basilevs::emitter::shoot_spiral, bullet_sound};
     auto background = basilevs::Background("assets/basilevs_bg_001.png", 6);
 
     SetTextureFilter(background.texture, FILTER_ANISOTROPIC_16X);
@@ -87,11 +62,10 @@ int main() {
     bool move_right = true;
     int movement_speed = 60;
 
-    auto behavior_sinusoidal = [&](basilevs::Enemy &enemy, double time) -> void {
-        enemy.position.x += sin(time) * 0.7;
-    };
-
-    auto enemy_spawns = std::list<basilevs::Spawn>({{5.0f, Vector2{60.0, 10.0}, enemy_sprite, behavior_sinusoidal}});
+    auto enemy_spawns = std::list<basilevs::Spawn>({
+            {1.0f, Vector2{60.0, 10.0}, enemy_sprite, basilevs::enemy::behavior_sinusoidal, radial_emitter},
+            {3.0f, Vector2{60.0, 30.0}, enemy_sprite, basilevs::enemy::behavior_sinusoidal, spiral_emitter},
+    });
 
     auto enemies_on_screen = std::list<basilevs::Enemy>{};
     auto active_emitters = std::list<basilevs::SpriteEmitter>{};
@@ -99,12 +73,15 @@ int main() {
     //world.enemy_bullets.add(basilevs::NormalBullet{Vector2{80.0f, 5.0f}, Vector2{0.0, 1.0f}, bullet_fly_down});
 
     std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - std::chrono::steady_clock::now();
+    PlayMusicStream(music);
     while (!window.ShouldClose()) {
+        UpdateMusicStream(music);
+        //PlaySound(bullet_sound);
         auto now = std::chrono::steady_clock::now();
         if (!enemy_spawns.empty()) {
             auto next_spawn = enemy_spawns.front();
             if (timer >= next_spawn.start_time) {
-                enemies_on_screen.emplace_back(basilevs::Enemy{next_spawn.enemy, behavior_sinusoidal, next_spawn.position, bullet_emitter});
+                enemies_on_screen.emplace_back(basilevs::Enemy{next_spawn.enemy, next_spawn.behavior, next_spawn.position, next_spawn.emitter});
                 enemy_spawns.pop_front();
             }
         }
@@ -134,6 +111,7 @@ int main() {
             enemy.behavior(enemy, timer);
             enemy.emitter.position = Vector2Add(enemy.position, enemy.emitter_offset);
             enemy.emitter.emitter_function(elapsed.count(), enemy.emitter, world);
+            //PlaySound(bullet_sound);
         }
 
         auto player_collision_rect = Rectangle{world.player.position.x + 14, world.player.position.y + 15, 5, 5};

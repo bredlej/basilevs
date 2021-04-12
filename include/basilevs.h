@@ -17,7 +17,7 @@ namespace basilevs {
     struct BulletBase;
     struct NormalBullet;
     template<typename T>
-    concept is_a_bullet = std::is_base_of_v<BulletBase, T>;
+    concept is_a_bullet = std::is_base_of_v<BulletBase, T> && requires { T::update_function; };
     template<is_a_bullet T>
     struct BulletPool;
 
@@ -26,17 +26,20 @@ namespace basilevs {
                              Radial };
     struct World;
 
-    using BulletEmitterFunction = std::function<void(const float time, Emitter& emitter,  World& world)>;
+    using BulletEmitterFunction = std::function<void(const float time, Emitter &emitter, World &world)>;
 
     struct Emitter {
     public:
-        explicit Emitter(Vector2 position, float delay, BulletEmitterFunction emitterFunction) : position{position}, delay_between_shots{delay}, emitter_function{std::move(emitterFunction)} {};
+        explicit Emitter(Vector2 position, float delay, BulletEmitterFunction emitterFunction, const Sound &sound) : position{position}, delay_between_shots{delay}, emitter_function{std::move(emitterFunction)}, sound{sound} {};
         Vector2 position;
         float delay_between_shots;
         float last_shot{0};
         bool is_active{true};
         int emission_count{0};
+        float angle;
+        const Sound sound;
         BulletEmitterFunction emitter_function;
+
     private:
         double last_emission_time_{0};
     };
@@ -84,8 +87,9 @@ namespace basilevs {
     struct Spawn {
         float start_time;
         Vector2 position;
-        Sprite enemy;
+        Sprite &enemy;
         std::function<void(basilevs::Enemy &, float)> behavior;
+        Emitter &emitter;
     };
 
     struct Background {
@@ -107,6 +111,7 @@ namespace basilevs {
                 }
             }
         }
+
     private:
         int amount_frames;
         int frame_counter_;
@@ -119,7 +124,7 @@ namespace basilevs {
         Enemy(Sprite animation, BehaviorFunction behavior, Vector2 position, Emitter emitter) : animation{animation}, behavior{std::move(behavior)}, position{position}, emitter{std::move(emitter)} {};
         Sprite animation;
         Emitter emitter;
-        Vector2 emitter_offset{11,13};
+        Vector2 emitter_offset{11, 13};
         BehaviorFunction behavior;
         Vector2 position;
     };
@@ -136,8 +141,9 @@ namespace basilevs {
         Vector2 direction{0.0f, 0.0f};
         float speed{5.0f};
         float timer{0.0f};
-        BulletUpdateFunction update_function{[&](float time, BulletBase &bullet, World& world) -> bool { return false; }};
-        NormalBullet() : active{false}, position{0.0f, 0.0f}, direction{0.0, 0.0f}, timer{0.0f}, update_function{[&](float time, BulletBase &bullet, World& world) -> bool { return false; }} {};
+        float rotation{0.0f};
+        BulletUpdateFunction update_function{[&](float time, BulletBase &bullet, World &world) -> bool { return false; }};
+        NormalBullet() : active{false}, position{0.0f, 0.0f}, direction{0.0, 0.0f}, timer{0.0f}, update_function{[&](float time, BulletBase &bullet, World &world) -> bool { return false; }} {};
         explicit NormalBullet(Vector2 position, Vector2 direction, BulletUpdateFunction update_function)
             : position{position}, direction{direction}, update_function{std::move(update_function)} {};
     };
@@ -169,19 +175,19 @@ namespace basilevs {
             bullet_at_index.position = bullet.position;
             bullet_at_index.direction = bullet.direction;
             bullet_at_index.update_function = bullet.update_function;
-            first_available_index+=1;
+            first_available_index += 1;
         }
     }
 
     struct World {
-        explicit World(const Sprite&& player, const Rectangle bounds, const BulletPool<NormalBullet>&& enemy_bullets) : player{player}, bounds{bounds}, enemy_bullets{enemy_bullets} {};
+        explicit World(const Sprite &&player, const Rectangle bounds, const BulletPool<NormalBullet> &&enemy_bullets) : player{player}, bounds{bounds}, enemy_bullets{enemy_bullets} {};
         Sprite player;
         raylib::Rectangle bounds;
         BulletPool<NormalBullet> enemy_bullets;
     };
 
     struct SpriteEmitter {
-        SpriteEmitter(Sprite&& sprite, Emitter&& emitter) : sprite{sprite}, emitter{emitter} {};
+        SpriteEmitter(Sprite &&sprite, Emitter &&emitter) : sprite{sprite}, emitter{emitter} {};
         Sprite sprite;
         Emitter emitter;
     };
