@@ -4,13 +4,31 @@
 
 #ifndef BASILEVS_CORE_H
 #define BASILEVS_CORE_H
+#include <chrono>
 #include <concepts>
 #include <functional>
 #include <iostream>
 #include <raylib-cpp.hpp>
 #include <utility>
+namespace config {
+    constexpr auto frameWidth = 160;
+    constexpr auto frameHeight = 144;
+    constexpr auto screenWidth = 800;
+    constexpr auto screenHeight = 760;
+    namespace colors {
+        auto const Foreground = raylib::Color{240, 246, 240};
+        auto const Background = raylib::Color{34, 35, 35};
+    };
+}// namespace config
 namespace basilevs {
+    enum class EntityType { Player,
+                            Enemy,
+                            BulletRound,
+                            BulletPlayer };
+
     struct Sprite;
+    using TextureMap = std::unordered_map<EntityType, Texture2D>;
+    using SpriteTemplateMap = std::unordered_map<EntityType, basilevs::Sprite>;
     struct Background;
     struct Enemy;
     struct Spawn;
@@ -46,17 +64,11 @@ namespace basilevs {
 
     struct Sprite {
     public:
-        Sprite(const std::string &animation_file, Vector2 &&position, const uint8_t amount_frames)
-            : texture{LoadTextureFromImage(raylib::LoadImage(animation_file))},
-              position{position},
-              current_frame_{0},
-              frame_rect{0.0f, 0.0f, static_cast<float>(texture.width) / amount_frames, static_cast<float>(texture.height)},
-              amount_frames_{amount_frames} {};
         Sprite(const Texture2D &texture, Vector2 &&position, const uint8_t amount_frames)
             : texture{texture},
               position{position},
               current_frame_{0},
-              frame_rect{0.0f, 0.0f, static_cast<float>(texture.width) / amount_frames, static_cast<float>(texture.height)},
+              frame_rect{0.0f, 0.0f, static_cast<float>(texture.width) / static_cast<float>(amount_frames), static_cast<float>(texture.height)},
               amount_frames_{amount_frames} {};
 
         Vector2 position;
@@ -90,7 +102,6 @@ namespace basilevs {
         Sprite enemy;
         std::function<void(basilevs::Enemy &, float)> behavior;
         Emitter emitter;
-
     };
 
     struct Background {
@@ -184,24 +195,67 @@ namespace basilevs {
         Sprite sprite;
         Emitter emitter;
         Vector2 emitter_offset{11, 0};
+        bool move_right{true};
+        float movement_speed{60};
+
+    public:
+        void update() {
+            sprite.update_animation(12);
+            if (move_right) {
+                sprite.position.x += 1 * GetFrameTime() * movement_speed;
+                if (sprite.position.x >= config::frameWidth - sprite.frame_rect.width) {
+                    move_right = false;
+                }
+            } else {
+                sprite.position.x -= 1 * GetFrameTime() * movement_speed;
+                if (sprite.position.x <= 0) {
+                    move_right = true;
+                }
+            }
+        }
     };
 
     struct World {
-        explicit World(const Player &&player, const Rectangle bounds, const BulletPool<NormalBullet> &&enemy_bullets, const BulletPool<NormalBullet> &&player_bullets) : player{player}, bounds{bounds}, enemy_bullets{enemy_bullets}, player_bullets{player_bullets} {};
+        explicit World(const Player &&player, const Background &&background, const Rectangle bounds, const BulletPool<NormalBullet> &&enemy_bullets, const BulletPool<NormalBullet> &&player_bullets) : player{player}, background{background}, bounds{bounds}, enemy_bullets{enemy_bullets}, player_bullets{player_bullets} {};
+
+    public:
+        void update(std::chrono::duration<double> duration);
+        void render();
+        Background background;
         Player player;
         raylib::Rectangle bounds;
         BulletPool<NormalBullet> enemy_bullets;
         BulletPool<NormalBullet> player_bullets;
         std::list<Spawn> enemy_spawns;
         std::vector<basilevs::Enemy> enemies_on_screen;
-
+        double timer;
     };
+
+    void World::update(std::chrono::duration<double> duration) {
+        background.update_background(6, GetFrameTime());
+        player.update();
+        if (!enemy_spawns.empty()) {
+            auto next_spawn = enemy_spawns.front();
+            if (timer >= next_spawn.start_time) {
+                enemies_on_screen.emplace_back(basilevs::Enemy{next_spawn.enemy, next_spawn.behavior, next_spawn.position, next_spawn.emitter});
+                enemy_spawns.pop_front();
+            }
+        }
+    }
+    void World::render() {
+        DrawTextureRec(background.texture, background.texture_rect, Vector2{0.0f, 0.0f}, WHITE);
+        DrawTextureRec(player.sprite.texture, player.sprite.frame_rect, player.sprite.position, WHITE);
+        for (auto &enemy : enemies_on_screen) {
+            DrawTextureRec(enemy.animation.texture, enemy.animation.frame_rect, enemy.position, WHITE);
+        }
+    }
 
     struct SpriteEmitter {
         SpriteEmitter(Sprite &&sprite, Emitter &&emitter) : sprite{sprite}, emitter{emitter} {};
         Sprite sprite;
         Emitter emitter;
     };
+
 
 }// namespace basilevs
 
