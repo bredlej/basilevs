@@ -87,9 +87,10 @@ namespace basilevs {
     struct Spawn {
         float start_time;
         Vector2 position;
-        Sprite &enemy;
+        Sprite enemy;
         std::function<void(basilevs::Enemy &, float)> behavior;
-        Emitter &emitter;
+        Emitter emitter;
+
     };
 
     struct Background {
@@ -179,11 +180,21 @@ namespace basilevs {
         }
     }
 
+    struct Player {
+        Sprite sprite;
+        Emitter emitter;
+        Vector2 emitter_offset{11, 0};
+    };
+
     struct World {
-        explicit World(const Sprite &&player, const Rectangle bounds, const BulletPool<NormalBullet> &&enemy_bullets) : player{player}, bounds{bounds}, enemy_bullets{enemy_bullets} {};
-        Sprite player;
+        explicit World(const Player &&player, const Rectangle bounds, const BulletPool<NormalBullet> &&enemy_bullets, const BulletPool<NormalBullet> &&player_bullets) : player{player}, bounds{bounds}, enemy_bullets{enemy_bullets}, player_bullets{player_bullets} {};
+        Player player;
         raylib::Rectangle bounds;
         BulletPool<NormalBullet> enemy_bullets;
+        BulletPool<NormalBullet> player_bullets;
+        std::list<Spawn> enemy_spawns;
+        std::vector<basilevs::Enemy> enemies_on_screen;
+
     };
 
     struct SpriteEmitter {

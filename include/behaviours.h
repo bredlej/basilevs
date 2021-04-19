@@ -6,8 +6,19 @@
 #define BASILEVS_BEHAVIOURS_H
 namespace basilevs {
     namespace bullet {
+        enum class Type {FlyForward, FlyForwardFast, FlySpiral};
         static constexpr auto bullet_fly_forward = [](float time, basilevs::NormalBullet &bullet, const basilevs::World &world) -> bool {
             bullet.position = Vector2Add(bullet.position, bullet.direction);
+
+            bullet.timer += time;
+
+            Vector2Normalize(bullet.direction);
+            return true;
+        };
+        static constexpr auto bullet_fly_forward_fast = [](float time, basilevs::NormalBullet &bullet, const basilevs::World &world) -> bool {
+            //bullet.position = Vector2Add(bullet.position, bullet.direction);
+            bullet.position.y += bullet.direction.y * time*200;
+            bullet.position.x += bullet.direction.x * time*200;
             bullet.timer += time;
 
             Vector2Normalize(bullet.direction);
@@ -32,6 +43,8 @@ namespace basilevs {
         };
     }// namespace bullet
     namespace emitter {
+        enum class Type {ShootEverySecond, ShootSpiral, ShootNormal, ShootCircular};
+
         static constexpr auto shoot_every_second = [](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
             if (emitter.is_active) {
                 if (emitter.last_shot > emitter.delay_between_shots) {
@@ -65,6 +78,21 @@ namespace basilevs {
                 }
                 emitter.last_shot += time;
             }
+        };
+
+        static constexpr auto player_normal_shoot = [](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
+            if (emitter.is_active) {
+                if (emitter.last_shot > emitter.delay_between_shots) {
+
+                    world.player_bullets.add(basilevs::NormalBullet{Vector2Add(emitter.position, Vector2{-5.0f, -1.0f}), Vector2{0.0f, -1.0f}, basilevs::bullet::bullet_fly_forward_fast});
+                    world.player_bullets.add(basilevs::NormalBullet{Vector2Add(emitter.position, Vector2{5.0f, -1.0f}), Vector2{0.0f, -1.0f}, basilevs::bullet::bullet_fly_forward_fast});
+                    world.player_bullets.add(basilevs::NormalBullet{emitter.position, Vector2{-1.0f, -1.0f}, basilevs::bullet::bullet_fly_forward_fast});
+                    world.player_bullets.add(basilevs::NormalBullet{emitter.position, Vector2{1.0f, -1.0f}, basilevs::bullet::bullet_fly_forward_fast});
+                    PlaySound(emitter.sound);
+                    emitter.last_shot = 0.0f;
+                }
+            }
+            emitter.last_shot += time;
         };
 
         static constexpr auto shoot_circular = [](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
