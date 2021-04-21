@@ -30,6 +30,7 @@ namespace basilevs {
     struct Sprite;
     using TextureMap = std::unordered_map<EntityType, Texture2D>;
     using SpriteTemplateMap = std::unordered_map<EntityType, basilevs::Sprite>;
+    using SoundMap = std::unordered_map<EntityType, Sound>;
     struct Background;
     struct Enemy;
     struct Spawn;
@@ -49,14 +50,15 @@ namespace basilevs {
 
     struct Emitter {
     public:
-        explicit Emitter(Vector2 position, float delay, BulletEmitterFunction emitterFunction, const Sound &sound) : position{position}, delay_between_shots{delay}, emitter_function{std::move(emitterFunction)}, sound{sound} {};
-        Vector2 position;
-        float delay_between_shots;
+        Emitter() = default;
+        explicit Emitter(Vector2 position, float delay, BulletEmitterFunction emitterFunction) : position{position}, delay_between_shots{delay}, emitter_function{std::move(emitterFunction)} {};
+        Vector2 position {0.0f, 0.0f};
+        float delay_between_shots{0.0f};
         float last_shot{0};
         bool is_active{true};
         int emission_count{0};
-        float angle;
-        const Sound sound;
+        float angle{0.0f};
+
         BulletEmitterFunction emitter_function;
 
     private:
@@ -65,6 +67,7 @@ namespace basilevs {
 
     struct Sprite {
     public:
+        Sprite() = default;
         Sprite(const Texture2D &texture, Vector2 &&position, const uint8_t amount_frames)
             : texture{texture},
               position{position},
@@ -72,9 +75,9 @@ namespace basilevs {
               frame_rect{0.0f, 0.0f, static_cast<float>(texture.width) / static_cast<float>(amount_frames), static_cast<float>(texture.height)},
               amount_frames_{amount_frames} {};
 
-        Vector2 position;
-        Texture2D texture;
-        Rectangle frame_rect;
+        Vector2 position{0.0f, 0.0f};
+        Texture2D texture{Texture2D{}};
+        Rectangle frame_rect {0.0f, 0.0f, 0.0f, 0.0f};
 
         float inner_timer{0.0f};
 
@@ -93,7 +96,7 @@ namespace basilevs {
 
     private:
         int amount_frames_{1};
-        uint8_t current_frame_;
+        uint8_t current_frame_{0};
         uint8_t frame_counter_{0};
     };
 
@@ -107,6 +110,7 @@ namespace basilevs {
 
     struct Background {
     public:
+        Background() = default;
         Background(const std::string &file_name, const int vertical_segments)
             : texture{LoadTextureFromImage(raylib::LoadImage(file_name))},
               amount_frames{vertical_segments},
@@ -165,6 +169,7 @@ namespace basilevs {
     template<is_a_bullet T>
     struct BulletPool {
     public:
+        BulletPool() = default;
         explicit BulletPool(const uint64_t amount) : pool(amount){};
         int first_available_index{0};
         std::vector<T> pool{1000};
@@ -179,20 +184,8 @@ namespace basilevs {
         }
     };
 
-    template<>
-    void BulletPool<NormalBullet>::add(NormalBullet &&bullet) {
-        if (first_available_index < pool.size()) {
-            auto &bullet_at_index = pool[first_available_index];
-            bullet_at_index.active = true;
-            bullet_at_index.timer = 0.0f;
-            bullet_at_index.position = bullet.position;
-            bullet_at_index.direction = bullet.direction;
-            bullet_at_index.update_function = bullet.update_function;
-            first_available_index += 1;
-        }
-    }
-
     struct Player {
+        Player() = default;
         Sprite sprite;
         Emitter emitter;
         Vector2 emitter_offset{11, 0};
@@ -217,39 +210,25 @@ namespace basilevs {
     };
 
     struct World {
-        explicit World(const Player &&player, const Background &&background, const Rectangle bounds, const BulletPool<NormalBullet> &&enemy_bullets, const BulletPool<NormalBullet> &&player_bullets) : player{player}, background{background}, bounds{bounds}, enemy_bullets{enemy_bullets}, player_bullets{player_bullets} {};
+        World() = default;
+        explicit World(Player player, const Background &&background, const Rectangle bounds, const BulletPool<NormalBullet> &&enemy_bullets, const BulletPool<NormalBullet> &&player_bullets) : player{std::move(player)}, background{background}, bounds{bounds}, enemy_bullets{enemy_bullets}, player_bullets{player_bullets} {};
 
     public:
         void update(std::chrono::duration<double> duration);
-        void render();
-        Background background;
-        Player player;
+        void render(const basilevs::Sprite &bullet_sprite);
+
+        Background background {Background{}};
+        Player player {Player{}};
         raylib::Rectangle bounds;
         BulletPool<NormalBullet> enemy_bullets;
         BulletPool<NormalBullet> player_bullets;
         std::list<Spawn> enemy_spawns;
         std::vector<basilevs::Enemy> enemies_on_screen;
-        double timer;
+        double timer{0.0f};
+        void spawn_enemies_();
+        void update_bullets_(const std::chrono::duration<double> &elapsed);
+        void render_bullets_(const basilevs::Sprite &bullet_sprite);
     };
-
-    void World::update(std::chrono::duration<double> duration) {
-        background.update_background(6, GetFrameTime());
-        player.update();
-        if (!enemy_spawns.empty()) {
-            auto next_spawn = enemy_spawns.front();
-            if (timer >= next_spawn.start_time) {
-                enemies_on_screen.emplace_back(basilevs::Enemy{next_spawn.enemy, next_spawn.behavior, next_spawn.position, next_spawn.emitter});
-                enemy_spawns.pop_front();
-            }
-        }
-    }
-    void World::render() {
-        DrawTextureRec(background.texture, background.texture_rect, Vector2{0.0f, 0.0f}, WHITE);
-        DrawTextureRec(player.sprite.texture, player.sprite.frame_rect, player.sprite.position, WHITE);
-        for (auto &enemy : enemies_on_screen) {
-            DrawTextureRec(enemy.animation.texture, enemy.animation.frame_rect, enemy.position, WHITE);
-        }
-    }
 
     struct SpriteEmitter {
         SpriteEmitter(Sprite &&sprite, Emitter &&emitter) : sprite{sprite}, emitter{emitter} {};

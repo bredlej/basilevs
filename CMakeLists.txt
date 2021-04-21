@@ -5,8 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(extern)
 add_subdirectory(lib)
 add_executable(basilevs main.cpp)
-include_directories(extern/boost)
-target_link_libraries(basilevs raylib-cpp raylib basilevs-lib)
+
+target_link_libraries(basilevs basilevs-lib)
 add_custom_command(
         TARGET basilevs POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory

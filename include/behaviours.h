@@ -42,74 +42,7 @@ namespace basilevs {
             return true;
         };
     }// namespace bullet
-    namespace emitter {
-        enum class Type {ShootEverySecond, ShootSpiral, ShootNormal, ShootCircular};
 
-        static constexpr auto shoot_every_second = [](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
-            if (emitter.is_active) {
-                if (emitter.last_shot > emitter.delay_between_shots) {
-
-                    world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, Vector2{0.0, 1.0f}, basilevs::bullet::bullet_fly_forward});
-                    emitter.last_shot = 0.0f;
-                }
-                emitter.last_shot += time;
-            }
-        };
-
-        static constexpr auto shoot_spiral = [](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
-            if (emitter.is_active) {
-                if (emitter.last_shot > emitter.delay_between_shots) {
-                    //   for (int i = 0 ; i < 4; i++) {
-                    emitter.angle += 15.0f;
-                    if (emitter.angle > 360.0f) {
-                        emitter.angle = 0.0f;
-                    }
-                    world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, Vector2Rotate({0.0, 1.0f}, emitter.angle), basilevs::bullet::bullet_fly_spiral});
-                    PlaySound(emitter.sound);
-                    world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, Vector2Rotate({0.0, 1.0f}, emitter.angle + 90), basilevs::bullet::bullet_fly_spiral});
-                    PlaySound(emitter.sound);
-
-                    world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, Vector2Rotate({0.0, 1.0f}, emitter.angle + 180), basilevs::bullet::bullet_fly_spiral});
-                    PlaySound(emitter.sound);
-                    world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, Vector2Rotate({0.0, 1.0f}, emitter.angle + 270), basilevs::bullet::bullet_fly_spiral});
-                    PlaySound(emitter.sound);
-                    // }
-                    emitter.last_shot = 0.0f;
-                }
-                emitter.last_shot += time;
-            }
-        };
-
-        static constexpr auto player_normal_shoot = [](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
-            if (emitter.is_active) {
-                if (emitter.last_shot > emitter.delay_between_shots) {
-
-                    world.player_bullets.add(basilevs::NormalBullet{Vector2Add(emitter.position, Vector2{-5.0f, -1.0f}), Vector2{0.0f, -1.0f}, basilevs::bullet::bullet_fly_forward_fast});
-                    world.player_bullets.add(basilevs::NormalBullet{Vector2Add(emitter.position, Vector2{5.0f, -1.0f}), Vector2{0.0f, -1.0f}, basilevs::bullet::bullet_fly_forward_fast});
-                    world.player_bullets.add(basilevs::NormalBullet{emitter.position, Vector2{-1.0f, -1.0f}, basilevs::bullet::bullet_fly_forward_fast});
-                    world.player_bullets.add(basilevs::NormalBullet{emitter.position, Vector2{1.0f, -1.0f}, basilevs::bullet::bullet_fly_forward_fast});
-                    PlaySound(emitter.sound);
-                    emitter.last_shot = 0.0f;
-                }
-            }
-            emitter.last_shot += time;
-        };
-
-        static constexpr auto shoot_circular = [](const float time, basilevs::Emitter &emitter, basilevs::World &world) {
-            if (emitter.is_active) {
-                if (emitter.last_shot > emitter.delay_between_shots) {
-                    auto direction = Vector2{0.0f, 1.0f};
-                    for (int i = 1; i < 60; i++) {
-                        PlaySound(emitter.sound);
-                        world.enemy_bullets.add(basilevs::NormalBullet{emitter.position, direction, basilevs::bullet::bullet_fly_forward});
-                        direction = Vector2Rotate(direction, 360 / i);
-                    }
-                    emitter.last_shot = 0.0f;
-                }
-                emitter.last_shot += sin(time);
-            }
-        };
-    }// namespace emitter
     namespace enemy {
         constexpr auto behavior_sinusoidal = [](basilevs::Enemy &enemy, double time) -> void {
             enemy.position.x += sin(time) * 0.7;
