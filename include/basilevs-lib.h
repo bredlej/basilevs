@@ -14,33 +14,30 @@ struct GameDefinition {
     bool is_initialized{false};
 };
 
-struct Init {
-    bool is_initialized{};
-};
-struct Run {
-    bool is_initialized{};
-    bool is_running{false};
-};
-struct Stop {};
+namespace events {
+    struct Init {};
+    struct Run {};
+    struct Stop {};
+}// namespace events
 
-constexpr auto is_initialized = [](const auto &event) { return event.is_initialized; };
+constexpr auto is_initialized = [](const auto &event, const GameDefinition &game) { return game.is_initialized; };
 
 namespace actions {
     constexpr auto initialize = [](const auto &event, GameDefinition &game) {
-      std::cout << "Init action" << std::endl;
-      game.is_initialized = true;
+        std::cout << "Init action" << std::endl;
+        game.is_initialized = true;
     };
 
-    constexpr auto run = [](const auto &event, GameDefinition &game) {
-      std::cout << "Run action" << std::endl;
-      game.is_running = true;
+    constexpr auto run_action = [](const auto &event, GameDefinition &game) {
+        std::cout << "Run action" << std::endl;
+        game.is_running = true;
     };
 
-    constexpr auto stop = [](const auto &event, GameDefinition &game) {
+    constexpr auto stop_action = [](const auto &event, GameDefinition &game) {
         std::cout << "Stop action" << std::endl;
         game.is_running = false;
     };
-}
+}// namespace actions
 
 struct GameState {
     auto operator()() const {
@@ -50,9 +47,9 @@ struct GameState {
          * Transition DSL: src_state + event [ guard ] / action = dst_state
          */
         return make_transition_table(
-                *"entry"_s + event<Init>[!is_initialized] / actions::initialize = "init"_s,
-                "init"_s + event<Run>[is_initialized] / actions::run = "running"_s,
-                "running"_s + event<Stop> / actions::stop = X);
+                *"entry"_s + event<events::Init> / actions::initialize = "init"_s,
+                "init"_s + event<events::Run>[is_initialized] / actions::run_action = "running"_s,
+                "running"_s + event<events::Stop> / actions::stop_action = X);
     }
 };
 

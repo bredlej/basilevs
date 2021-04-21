@@ -8,10 +8,10 @@ namespace basilevs {
         using namespace sml;
         GameDefinition game;
         sm<GameState> sm{game};
-        sm.process_event(Init{false});
-        sm.process_event(Run{true});
+        sm.process_event(events::Init{});
+        sm.process_event(events::Run{});
         if (sm.is("running"_s)) {
-            sm.process_event(Stop{});
+            sm.process_event(events::Stop{});
         }
     }
 }
