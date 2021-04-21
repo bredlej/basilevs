@@ -227,6 +227,7 @@ namespace basilevs {
         double timer{0.0f};
         void spawn_enemies_();
         void update_bullets_(const std::chrono::duration<double> &elapsed);
+        void update_emitters_(const std::chrono::duration<double> &elapsed);
         void render_bullets_(const basilevs::Sprite &bullet_sprite);
     };
 
