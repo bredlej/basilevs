@@ -10,6 +10,7 @@
 #include <iostream>
 #include <raylib-cpp.hpp>
 #include <utility>
+
 namespace config {
     constexpr auto frameWidth = 160;
     constexpr auto frameHeight = 144;

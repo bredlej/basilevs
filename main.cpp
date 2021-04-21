@@ -14,7 +14,7 @@ extern "C" {
 #include <chrono>
 #include <iostream>
 #include <list>
-
+#include "include/basilevs-lib.h"
 void update_enemies(basilevs::World &world, const std::chrono::duration<double> &elapsed);
 void handle_enemy_bullet_collisions(basilevs::World &world, basilevs::Sprite &bullet_sprite, const std::chrono::duration<double> &elapsed);
 void render_to_screen(int screenWidth, int screenHeight, raylib::RenderTexture &render_target);
@@ -47,6 +47,9 @@ basilevs::World initialize_world(const basilevs::SpriteTemplateMap &sprite_templ
 
 int main() {
     using namespace basilevs;
+    auto game = Game{};
+    game.run();
+    return 0;
     /*
      * The following line must be called before any textures are loaded
      */
