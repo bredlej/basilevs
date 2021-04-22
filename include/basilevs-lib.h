@@ -5,19 +5,19 @@
 #ifndef BASILEVS_BASILEVS_LIB_H
 #define BASILEVS_BASILEVS_LIB_H
 
-#include <basilevs.h>
 #include <behaviours.h>
 #include <boost/sml/sml.hpp>
 #include <iostream>
 #include <raylib-cpp/include/Functions.hpp>
 #include <raylib-cpp/include/Vector2.hpp>
 #include <raylib.h>
+#include <world.h>
 
 namespace sml = boost::sml;
 
 struct GameDefinition {
 public:
-    basilevs::World world;
+    World world;
     bool is_running{false};
     bool is_initialized{false};
 

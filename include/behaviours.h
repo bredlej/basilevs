@@ -4,10 +4,13 @@
 
 #ifndef BASILEVS_BEHAVIOURS_H
 #define BASILEVS_BEHAVIOURS_H
+
+#include "bullets.h"
+#include "enemy.h"
 namespace basilevs {
     namespace bullet {
         enum class Type {FlyForward, FlyForwardFast, FlySpiral};
-        static constexpr auto bullet_fly_forward = [](float time, basilevs::NormalBullet &bullet, const basilevs::World &world) -> bool {
+        static constexpr auto bullet_fly_forward = [](float time, NormalBullet &bullet, const World &world) -> bool {
             bullet.position = Vector2Add(bullet.position, bullet.direction);
 
             bullet.timer += time;
@@ -15,7 +18,7 @@ namespace basilevs {
             Vector2Normalize(bullet.direction);
             return true;
         };
-        static constexpr auto bullet_fly_forward_fast = [](float time, basilevs::NormalBullet &bullet, const basilevs::World &world) -> bool {
+        static constexpr auto bullet_fly_forward_fast = [](float time, NormalBullet &bullet, const World &world) -> bool {
             //bullet.position = Vector2Add(bullet.position, bullet.direction);
             bullet.position.y += bullet.direction.y * time*200;
             bullet.position.x += bullet.direction.x * time*200;
@@ -25,7 +28,7 @@ namespace basilevs {
             return true;
         };
 
-        static constexpr auto bullet_fly_spiral = [](const float time, basilevs::NormalBullet &bullet, const basilevs::World &world) -> bool {
+        static constexpr auto bullet_fly_spiral = [](const float time, NormalBullet &bullet, const World &world) -> bool {
             bullet.timer += time;
             //if (bullet.timer > 0.1f) {
             bullet.rotation += 0.01f;
@@ -44,7 +47,7 @@ namespace basilevs {
     }// namespace bullet
 
     namespace enemy {
-        constexpr auto behavior_sinusoidal = [](basilevs::Enemy &enemy, double time) -> void {
+        constexpr auto behavior_sinusoidal = [](Enemy &enemy, double time) -> void {
             enemy.position.x += sin(time) * 0.7;
         };
     }

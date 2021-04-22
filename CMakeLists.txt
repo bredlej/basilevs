@@ -4,7 +4,7 @@ project(basilevs)
 set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(extern)
 add_subdirectory(lib)
-add_executable(basilevs main.cpp)
+add_executable(basilevs main.cpp include/spawn.h include/Emitter.cpp include/Emitter.h)
 
 target_link_libraries(basilevs basilevs-lib)
 add_custom_command(
