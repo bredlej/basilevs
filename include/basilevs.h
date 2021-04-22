@@ -13,13 +13,13 @@
 #include <utility>
 
 namespace config {
-    constexpr auto frameWidth = 160;
-    constexpr auto frameHeight = 144;
-    constexpr auto screenWidth = 800;
-    constexpr auto screenHeight = 760;
+    constexpr auto kFrameWidth = 160;
+    constexpr auto kFrameHeight = 144;
+    constexpr auto kScreenWidth = 800;
+    constexpr auto kScreenHeight = 760;
     namespace colors {
-        auto const Foreground = raylib::Color{240, 246, 240};
-        auto const Background = raylib::Color{34, 35, 35};
+        auto const kForeground = raylib::Color{240, 246, 240};
+        auto const kBackground = raylib::Color{34, 35, 35};
     };
 }// namespace config
 namespace basilevs {
@@ -27,7 +27,6 @@ namespace basilevs {
                             Enemy,
                             BulletRound,
                             BulletPlayer };
-
 
     using TextureMap = std::unordered_map<EntityType, Texture2D>;
     using SpriteTemplateMap = std::unordered_map<EntityType, Sprite>;

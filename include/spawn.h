@@ -14,7 +14,7 @@ public:
     float start_time;
     Vector2 position;
     Sprite enemy;
-    std::function<void(Enemy &, float)> behavior;
+    Enemy::EnemyBehaviorFunction behavior;
     Emitter emitter;
 };
 #endif//BASILEVS_SPAWN_H

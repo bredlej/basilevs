@@ -6,6 +6,7 @@
 namespace basilevs {
     void Game::run(raylib::Window &window, raylib::AudioDevice &audio) {
         using namespace sml;
+        using namespace state;
         GameDefinition game;
         sm<GameState> sm{game};
         sm.process_event(events::Init{});
@@ -114,7 +115,7 @@ void GameDefinition::initialize_world_() {
     world = World{
             player,
             Background("assets/basilevs_bg_001.png", 6),
-            Rectangle{-10.0f, -10.0f, config::frameWidth + 10.0f, config::frameHeight + 10.0f},
+            Rectangle{-10.0f, -10.0f, config::kFrameWidth + 10.0f, config::kFrameHeight + 10.0f},
             BulletPool<NormalBullet>(1000L), BulletPool<NormalBullet>(500L)};
 
     auto radial_emitter = Emitter{sprite_template_map.at(basilevs::EntityType::Enemy).position, 1.5f, emitter::shoot_circular};
@@ -124,8 +125,6 @@ void GameDefinition::initialize_world_() {
             {1.0f, Vector2{60.0, 10.0}, sprite_template_map.at(basilevs::EntityType::Enemy), basilevs::enemy::behavior_sinusoidal, radial_emitter},
             {3.0f, Vector2{60.0, 30.0}, sprite_template_map.at(basilevs::EntityType::Enemy), basilevs::enemy::behavior_sinusoidal, spiral_emitter},
     });
-
-    //world.enemy_spawns.emplace_back(Spawn{1.0f, Vector2{60.0, 10.0}, sprite_template_map.at(basilevs::EntityType::Enemy), basilevs::enemy::behavior_sinusoidal, radial_emitter});
 
     world.enemies_on_screen = std::vector<Enemy>{};
 }
@@ -161,9 +160,9 @@ static void render_to_texture(raylib::RenderTexture &render_target, World &world
 
 static void render_to_screen(raylib::RenderTexture &render_target, const World &world) {
     DrawTexturePro(render_target.texture, Rectangle{0.0f, 0.0f, (float) render_target.texture.width, (float) -render_target.texture.height},
-                   Rectangle{0.0f, 0.0f, static_cast<float>(config::screenWidth), static_cast<float>(config::screenHeight)}, Vector2{0, 0}, 0.0f, WHITE);
-    raylib::DrawText(std::to_string(static_cast<int>(world.timer)), config::screenWidth - 60, 20, 30, GREEN);
-    raylib::DrawText(std::to_string(world.enemy_bullets.first_available_index), config::screenWidth - 60, 60, 30, ORANGE);
+                   Rectangle{0.0f, 0.0f, static_cast<float>(config::kScreenWidth), static_cast<float>(config::kScreenHeight)}, Vector2{0, 0}, 0.0f, WHITE);
+    raylib::DrawText(std::to_string(static_cast<int>(world.timer)), config::kScreenWidth - 60, 20, 30, GREEN);
+    raylib::DrawText(std::to_string(world.enemy_bullets.first_available_index), config::kScreenWidth - 60, 60, 30, ORANGE);
     DrawFPS(5, 5);
 }
 

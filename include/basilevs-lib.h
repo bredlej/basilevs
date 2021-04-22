@@ -29,7 +29,7 @@ private:
     mutable basilevs::SpriteTemplateMap sprite_template_map;
     mutable basilevs::SoundMap sound_map;
 
-    raylib::RenderTexture2D render_target_{config::frameWidth, config::frameHeight};
+    raylib::RenderTexture2D render_target_{config::kFrameWidth, config::kFrameHeight};
     void load_textures_() const;
     void load_sprites_() const;
     void load_sounds_() const;
@@ -38,41 +38,43 @@ private:
     void render_();
 };
 
-namespace events {
-    struct Init {};
-    struct Run {
-        raylib::Window &window;
-        raylib::AudioDevice &audio;
-    };
-    struct Stop {};
-}// namespace events
+namespace state {
+    namespace events {
+        struct Init {};
+        struct Run {
+            raylib::Window &window;
+            raylib::AudioDevice &audio;
+        };
+        struct Stop {};
+    }// namespace events
 
+    namespace guards {
+        constexpr auto is_initialized = [](const auto &event, const GameDefinition &game) { return game.is_initialized; };
+        constexpr auto should_stop = [](const auto &event, const GameDefinition &game) { return game.is_running; };
+    }// namespace guards
 
-namespace guards {
-    constexpr auto is_initialized = [](const auto &event, const GameDefinition &game) { return game.is_initialized; };
-    constexpr auto should_stop = [](const auto &event, const GameDefinition &game) { return game.is_running; };
-}// namespace guards
+    namespace actions {
+        constexpr auto initialize = [](const auto &event, GameDefinition &game) {
+            game.initialize();
+            game.is_initialized = true;
+        };
 
-namespace actions {
-    constexpr auto initialize = [](const auto &event, GameDefinition &game) {
-        game.initialize();
-        game.is_initialized = true;
-    };
+        constexpr auto run_action = [](const auto &event, GameDefinition &game) {
+            game.run(event.window, event.audio);
+            game.is_running = true;
+        };
 
-    constexpr auto run_action = [](const auto &event, GameDefinition &game) {
-        game.run(event.window, event.audio);
-        game.is_running = true;
-    };
-
-    constexpr auto stop_action = [](const auto &event, GameDefinition &game) {
-        game.is_running = false;
-    };
-}// namespace actions
+        constexpr auto stop_action = [](const auto &event, GameDefinition &game) {
+            game.is_running = false;
+        };
+    }// namespace actions
+}// namespace state
 
 namespace basilevs {
     struct GameState {
         auto operator()() const {
             using namespace sml;
+            using namespace state;
             return make_transition_table(
                     *"entry"_s + event<events::Init> / actions::initialize = "init"_s,
                     "init"_s + event<events::Run>[guards::is_initialized] / actions::run_action = "running"_s,

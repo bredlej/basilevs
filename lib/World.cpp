@@ -12,7 +12,6 @@ void World::update(std::chrono::duration<double> duration) {
     update_bullets_(duration);
 }
 
-
 void World::render(const Sprite &bullet_sprite) {
 
     DrawTextureRec(background.texture, background.texture_rect, Vector2{0.0f, 0.0f}, WHITE);
@@ -68,9 +67,7 @@ void World::render_bullets_(const Sprite &bullet_sprite) {
         }
     }
 }
-/*void World::update_emitters_(const std::chrono::duration<double> &elapsed) {
-}
-*/
+
 void World::update_emitters_(const std::chrono::duration<double> &elapsed) {
     for (auto &enemy : enemies_on_screen) {
         enemy.behavior(enemy, timer);

@@ -10,13 +10,14 @@
 #include "sprite.h"
 #include <functional>
 struct Enemy {
+    using EnemyBehaviorFunction = std::function<void(Enemy &, double)>;
 public:
     Enemy() = default;
-    Enemy(Sprite animation, std::function<void(Enemy &, double)> behavior, Vector2 position, Emitter emitter) : animation{animation}, behavior{std::move(behavior)}, position{position}, emitter{std::move(emitter)} {};
+    Enemy(Sprite animation, EnemyBehaviorFunction behavior, Vector2 position, Emitter emitter) : animation{animation}, behavior{std::move(behavior)}, position{position}, emitter{std::move(emitter)} {};
     Sprite animation;
     Emitter emitter;
     Vector2 emitter_offset{11, 13};
-    std::function<void(Enemy &, double)> behavior;
-    Vector2 position;
+    EnemyBehaviorFunction behavior;
+    Vector2 position{0.0f, 0.0f};
 };
 #endif//BASILEVS_ENEMY_H

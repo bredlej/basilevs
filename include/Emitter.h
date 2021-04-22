@@ -6,11 +6,13 @@
 #define BASILEVS_EMITTER_H
 #include <Vector2.hpp>
 #include <functional>
+
 struct World;
 class Emitter {
+    using EmitterFunction = std::function<void(const double time, Emitter &emitter, World &world)>;
 public:
     Emitter() = default;
-    explicit Emitter(Vector2 position, float delay, std::function<void(const float time, Emitter &emitter, World &world)> emitterFunction) : position{position}, delay_between_shots{delay}, emitter_function{std::move(emitterFunction)} {};
+    explicit Emitter(Vector2 position, float delay, EmitterFunction emitterFunction) : position{position}, delay_between_shots{delay}, emitter_function{std::move(emitterFunction)} {};
     Vector2 position {0.0f, 0.0f};
     float delay_between_shots{0.0f};
     float last_shot{0};
@@ -18,7 +20,7 @@ public:
     int emission_count{0};
     float angle{0.0f};
 
-    std::function<void(const float time, Emitter &emitter, World &world)> emitter_function;
+    EmitterFunction emitter_function;
 
 private:
     double last_emission_time_{0};

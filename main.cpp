@@ -12,7 +12,7 @@ extern "C" {
 
 int main() {
     using namespace basilevs;
-    auto window = raylib::Window{config::screenWidth, config::screenHeight, "Basilevs"};
+    auto window = raylib::Window{config::kScreenWidth, config::kScreenHeight, "Basilevs"};
     auto audio = raylib::AudioDevice();
     basilevs::Game::run(window, audio);
     return 0;
