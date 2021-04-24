@@ -53,35 +53,27 @@ auto &get(is_an_emitter auto &emitter) {
     return std::get<T>(emitter.components);
 }
 
+struct EmitterMemoryBase {};
+template<typename... Ts>
+concept is_a_memory = std::is_base_of_v<EmitterMemoryBase, Ts...>;
+
+template<is_a_component T>
+auto &get(is_a_memory auto &memory) {
+    return std::get<std::vector<T>>(memory.components);
+}
+
 template<is_many_components... Ts>
-class EmitterMemory {
+class EmitterMemory : EmitterMemoryBase {
     using TupleOfVectors = std::tuple<std::vector<Ts>...>;
 public:
     static constexpr std::size_t AmountComponents = sizeof...(Ts);
-    TupleOfVectors emitter_tuple;
+    template <is_a_component T, is_an_emitter ... Emitters>
+    static constexpr std::vector<T> unpack_components(Emitters const & ...emitter_pack) { return { get<T>(emitter_pack)... }; }
+    TupleOfVectors components;
 
-    EmitterMemory(std::initializer_list<TEmitter<Ts...>> emitters)
-        : emitter_tuple {
-
-            std::make_tuple<>(std::vector<Ts>{}...)
-          } {
-                  for (auto emitter: emitters) {
-                      //auto [comp, idx] = {{std::get<TEmitter<Ts>>(emitter)}...};
-                      std::cout << emitter.id << std::endl;
-                  }
-                  //auto a = {std::get<std::vector<Ts>>({emitters})...};
-                  /*for (auto &emitter: emitters) {
-                      auto a = decltype(emitter)();
-                      //std::vector<Ts> vec = std::get<Ts...>(emitter_tuple);
-                    //  vec.emplace_back(get(emitter));
-                  }*/
-          };
-
-    /*void iterate(const std::initializer_list<TEmitter<Ts...>> emitters) {
-        for (auto const &emit : emitters) {
-            std::cout << emit.id << std::endl;
-        }
-    };*/
+    explicit EmitterMemory(is_an_emitter auto &...emitter_pack)
+            : components { unpack_components<Ts>(emitter_pack...)... }
+    { };
 };
 
 #endif//BASILEVS_EMITTER_H

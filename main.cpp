@@ -15,20 +15,20 @@ int main() {
     auto window = raylib::Window{config::kScreenWidth, config::kScreenHeight, "Basilevs"};
     auto audio = raylib::AudioDevice();
 
-        auto emitter1 = TEmitter<components::Position, components::ActiveComponent, components::ShootComponent>{10};
+    auto emitter1 = TEmitter<components::Position, components::ActiveComponent, components::ShootComponent>{10};
+    auto &position1 = get<components::Position>(emitter1);
+    position1.position = {10.0f, 10.0f};
+    auto &active1 = get<components::ActiveComponent>(emitter1);
+    active1.is_active = true;
     auto emitter2 = TEmitter<components::Position, components::ActiveComponent, components::ShootComponent>{20};
+    auto &position2 = get<components::Position>(emitter2);
+    position2.position = {20.0f, 20.0f};
+    auto &active2 = get<components::ActiveComponent>(emitter2);
+    active2.is_active = false;
+    auto memory = EmitterMemory<components::Position, components::ActiveComponent, components::ShootComponent>(emitter1, emitter2);
+    auto position_components = get<components::Position>(memory);
+    auto active_components = get<components::ActiveComponent>(memory);
 
-    auto memory = EmitterMemory<components::Position, components::ActiveComponent, components::ShootComponent>({emitter1});
-   /*memory.iterate({emitter1, emitter2});
-
-    emitter1.function = [](auto d, decltype(emitter1) &emitter, auto &world) {
-        auto &position = get<components::Position>(emitter);
-        position.position = {1.0f, 20.0f};
-    };
-
-    auto world = World {};
-    emitter1.function(1.0, emitter1, world);
-*/
   //  basilevs::Game::run(window, audio);
     return 0;
 }
