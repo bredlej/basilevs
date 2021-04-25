@@ -40,7 +40,6 @@ template<is_many_components... Ts>
 class TEmitter : EmitterBase {
     using EmitterFunction = std::function<void(const double time, TEmitter<Ts...> &emitter, World &world)>;
     using Components = std::tuple<Ts...>;
-
 public:
     explicit TEmitter(int id) : id{id} {};
     int id{0};
@@ -64,16 +63,16 @@ auto &get(is_a_memory auto &memory) {
 
 template<is_many_components... Ts>
 class EmitterMemory : EmitterMemoryBase {
-    using TupleOfVectors = std::tuple<std::vector<Ts>...>;
+    using Components = std::tuple<std::vector<Ts>...>;
 public:
-    static constexpr std::size_t AmountComponents = sizeof...(Ts);
+    Components components;
     template <is_a_component T, is_an_emitter ... Emitters>
     static constexpr std::vector<T> unpack_components(Emitters const & ...emitter_pack) { return { get<T>(emitter_pack)... }; }
-    TupleOfVectors components;
-
     explicit EmitterMemory(is_an_emitter auto &...emitter_pack)
-            : components { unpack_components<Ts>(emitter_pack...)... }
-    { };
+        : components { unpack_components<Ts>(emitter_pack...)... } { };
 };
+
+template <is_a_component ... Components, is_an_emitter ... Emitters>
+EmitterMemory (TEmitter<Components...>, Emitters...) -> EmitterMemory<Components...>;
 
 #endif//BASILEVS_EMITTER_H
