@@ -87,6 +87,6 @@ EmitterMemory (TEmitter<Components...>, Emitters...) -> EmitterMemory<Components
 
 
 namespace functions {
-    static constexpr auto kEmptyFunction = [] (const double, World &, components::Position &, components::ActiveComponent &, components::ShootComponent &) -> void { };
+    static constexpr auto kEmptyFunction = [] (const double, World &, components::Position &, components::EmissionComponent &,components::ActiveComponent &, components::ShootComponent &) -> void { };
 }
 #endif//BASILEVS_EMITTER_H
