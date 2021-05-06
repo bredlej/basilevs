@@ -32,19 +32,24 @@ private:
     double last_emission_time_{0};
 };
 
-struct EmitterBase {
+struct BlueprintBase {
 };
+
 template<typename T>
-concept is_an_emitter = std::is_base_of_v<EmitterBase, T>;
+concept is_a_blueprint = std::is_base_of_v<BlueprintBase, T> && requires {{T::id} -> std::convertible_to<int>;};
 
 template<is_a_component T>
-auto &get(is_an_emitter auto &emitter) {
+auto &get(is_a_blueprint auto &emitter) {
     return std::get<T>(emitter.components);
 }
 
-struct EmitterMemoryBase {};
+struct MemoryBase {
+public:
+    virtual void update(double time, World &world) = 0;
+    virtual ~MemoryBase()= default;
+};
 template<typename... Ts>
-concept is_a_memory = std::is_base_of_v<EmitterMemoryBase, Ts...>;
+concept is_a_memory = std::is_base_of_v<MemoryBase, Ts...>;
 
 template<is_a_component T>
 auto &get(is_a_memory auto &memory) {
@@ -52,11 +57,12 @@ auto &get(is_a_memory auto &memory) {
 }
 
 template<is_many_components... Ts>
-class TEmitter : EmitterBase {
-    using ComponentFunction = std::function<void(const double, World &, Ts&...)>;
+class EntityBlueprint : BlueprintBase {
+    using ComponentFunction = std::function<void(const double, World &, Ts &...)>;
     using Components = std::tuple<Ts...>;
+
 public:
-    explicit TEmitter(int id, ComponentFunction func)
+    explicit EntityBlueprint(int id, ComponentFunction func)
         : id{id}, component_function{func} {};
 
     int id{0};
@@ -65,28 +71,45 @@ public:
 };
 
 template<is_many_components... Ts>
-class EmitterMemory : EmitterMemoryBase {
+class BlueprintsInMemory : public MemoryBase {
     using Components = std::tuple<std::vector<Ts>...>;
-    using ComponentFunction = std::function<void(const double, World &, Ts&...)>;
+    using ComponentFunction = std::function<void(const double, World &, Ts &...)>;
     using ComponentFunctionVector = std::vector<ComponentFunction>;
-public:
-    template <is_a_component T, is_an_emitter ... Emitters>
-    static constexpr std::vector<T> unpack_components(Emitters const & ...emitter_pack) { return { std::get<T>(emitter_pack.components)... }; }
-    static constexpr ComponentFunction unpack_function(is_an_emitter auto &emitter) { return emitter.component_function; }
-    template<is_an_emitter ... Emitters>
-    explicit EmitterMemory(Emitters const &...emitter_pack)
-        : components { unpack_components<Ts>(emitter_pack...)... },
-          functions{ unpack_function(emitter_pack)... } { };
 
+public:
+    template<is_a_component T, is_a_blueprint... Emitters>
+    static constexpr std::vector<T> unpack_components(Emitters const &...emitter_pack) { return {std::get<T>(emitter_pack.components)...}; }
+    static constexpr ComponentFunction unpack_function(is_a_blueprint auto &emitter) { return emitter.component_function; }
+    template<is_a_blueprint... Blueprints>
+    explicit BlueprintsInMemory(Blueprints const &...blueprint_pack)
+        : components{unpack_components<Ts>(blueprint_pack...)...},
+          functions{unpack_function(blueprint_pack)...} {};
     Components components;
     ComponentFunctionVector functions;
+
+    ~BlueprintsInMemory() override = default;
+    void update(double time, World &world) override;
 };
 
-template <is_a_component ... Components, is_an_emitter ... Emitters>
-EmitterMemory (TEmitter<Components...>, Emitters...) -> EmitterMemory<Components...>;
-
+template<is_many_components... Ts>
+void BlueprintsInMemory<Ts...>::update(double time, World &world) {
+    for (int i = 0; i < functions.size(); i++) {
+        functions[i](time, world, std::get<std::vector<Ts>>(components)[i]...);
+    }
+}
+template<is_a_component... Components, is_a_blueprint... Bs>
+BlueprintsInMemory(EntityBlueprint<Components...>, Bs...) -> BlueprintsInMemory<Components...>;
 
 namespace functions {
-    static constexpr auto kEmptyFunction = [] (const double, World &, components::Position &, components::EmissionComponent &,components::ActiveComponent &, components::ShootComponent &) -> void { };
-}
+    static constexpr auto kEmptyFunction = [](const double time, World &, components::EmitterPosition &pos, components::EmissionComponent &, components::ActiveComponent &, components::ShootComponent &) -> void {
+        pos.position.x += time;
+        pos.position.y += time;
+        std::cout << "Time: " << time << " Position: " << pos.position.x << "," << pos.position.y << std::endl;
+    };
+    static constexpr auto kEmptyFunction2 = [](const double time, World &, components::EmitterPosition &pos, components::EmissionComponent &, components::ActiveComponent &, components::ShootComponent &) -> void {
+        pos.direction.x += time;
+        pos.direction.y += time;
+        std::cout << "Time: " << time << " Direction: " << pos.direction.x << "," << pos.direction.y << std::endl;
+    };
+}// namespace functions
 #endif//BASILEVS_EMITTER_H

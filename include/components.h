@@ -7,6 +7,7 @@
 #include <concepts>
 
 struct ComponentBase{};
+enum class TextureId;
 
 template<typename T>
 concept is_a_component = std::is_base_of_v<ComponentBase, T>;
@@ -14,11 +15,17 @@ template<typename ...T>
 concept is_many_components = (is_a_component<T> && ...);
 
 namespace components {
-    struct Position : ComponentBase{
+    struct EmitterPosition : ComponentBase{
     public:
-        Position() = default;
         Vector2 position;
         Vector2 direction;
+    };
+
+    struct SpriteComponent : ComponentBase {
+        TextureId texture;
+        int amount_frames{1};
+        int current_frame{0};
+        int frame_counter{0};
     };
 
     struct ShootComponent : ComponentBase {

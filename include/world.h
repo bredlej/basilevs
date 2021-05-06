@@ -12,6 +12,8 @@
 #include <bulletpool.h>
 #include <bullets.h>
 
+#include <utility>
+
 using namespace basilevs;
 
 struct World;
@@ -36,5 +38,11 @@ public:
     void update_bullets_(const std::chrono::duration<double> &elapsed);
     void update_emitters_(const std::chrono::duration<double> &elapsed);
     void render_bullets_(const Sprite &bullet_sprite);
+};
+
+struct TWorld {
+    explicit TWorld(is_a_memory auto memory) : enemies(std::move(std::make_unique<decltype(memory)>(memory))) {};
+public:
+    std::unique_ptr<MemoryBase> enemies;
 };
 #endif//BASILEVS_WORLD_H
