@@ -5,6 +5,7 @@
 #ifndef BASILEVS_COMPONENTS_H
 #define BASILEVS_COMPONENTS_H
 #include <concepts>
+#include <boost/sml/sml.hpp>
 
 struct ComponentBase{};
 enum class TextureId;
@@ -15,7 +16,7 @@ template<typename ...T>
 concept is_many_components = (is_a_component<T> && ...);
 
 namespace components {
-    struct EmitterPosition : ComponentBase{
+    struct MovementComponent : ComponentBase{
     public:
         Vector2 position;
         Vector2 direction;
@@ -40,6 +41,13 @@ namespace components {
 
     struct EmissionComponent : ComponentBase {
         int emission_count{0};
+    };
+
+    template<typename StateDeclaration, typename StatefulObject>
+    struct StateComponent : ComponentBase {
+    public:
+        explicit StateComponent(StatefulObject stateful_object) : state_machine{stateful_object} {};
+        boost::sml::sm<StateDeclaration> state_machine;
     };
 }
 

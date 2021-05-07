@@ -33,6 +33,7 @@ private:
 };
 
 struct BlueprintBase {
+    virtual ~BlueprintBase() = default;
 };
 
 template<typename T>
@@ -57,14 +58,14 @@ auto &get(is_a_memory auto &memory) {
 }
 
 template<is_many_components... Ts>
-class EntityBlueprint : BlueprintBase {
+class EntityBlueprint : public BlueprintBase {
     using ComponentFunction = std::function<void(const double, World &, Ts &...)>;
     using Components = std::tuple<Ts...>;
 
 public:
     explicit EntityBlueprint(int id, ComponentFunction func)
         : id{id}, component_function{func} {};
-
+    ~EntityBlueprint() override = default;
     int id{0};
     ComponentFunction component_function;
     Components components = std::make_tuple(Ts()...);
@@ -97,16 +98,17 @@ void BlueprintsInMemory<Ts...>::update(double time, World &world) {
         functions[i](time, world, std::get<std::vector<Ts>>(components)[i]...);
     }
 }
-template<is_a_component... Components, is_a_blueprint... Bs>
-BlueprintsInMemory(EntityBlueprint<Components...>, Bs...) -> BlueprintsInMemory<Components...>;
+
+template<is_a_component... Cs, is_a_blueprint... Bs>
+BlueprintsInMemory(EntityBlueprint<Cs...>, Bs...) -> BlueprintsInMemory<Cs...>;
 
 namespace functions {
-    static constexpr auto kEmptyFunction = [](const double time, World &, components::EmitterPosition &pos, components::EmissionComponent &, components::ActiveComponent &, components::ShootComponent &) -> void {
+    static constexpr auto kEmptyFunction = [](const double time, World &, components::MovementComponent &pos, components::EmissionComponent &, components::ActiveComponent &, components::ShootComponent &) -> void {
         pos.position.x += time;
         pos.position.y += time;
         std::cout << "Time: " << time << " Position: " << pos.position.x << "," << pos.position.y << std::endl;
     };
-    static constexpr auto kEmptyFunction2 = [](const double time, World &, components::EmitterPosition &pos, components::EmissionComponent &, components::ActiveComponent &, components::ShootComponent &) -> void {
+    static constexpr auto kEmptyFunction2 = [](const double time, World &, components::MovementComponent &pos, components::EmissionComponent &, components::ActiveComponent &, components::ShootComponent &) -> void {
         pos.direction.x += time;
         pos.direction.y += time;
         std::cout << "Time: " << time << " Direction: " << pos.direction.x << "," << pos.direction.y << std::endl;

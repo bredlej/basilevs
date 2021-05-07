@@ -41,8 +41,12 @@ public:
 };
 
 struct TWorld {
-    explicit TWorld(is_a_memory auto memory) : enemies(std::move(std::make_unique<decltype(memory)>(memory))) {};
+    static constexpr auto install(auto entity) { return std::make_unique<decltype(entity)>(entity); }
+    explicit TWorld(is_a_blueprint auto player_blueprint, is_a_memory auto enemies_memory)
+        : player(install(player_blueprint)),
+          enemies(install(enemies_memory)) {};
 public:
-    std::unique_ptr<MemoryBase> enemies;
+    std::unique_ptr<BlueprintBase> player = nullptr;
+    std::unique_ptr<MemoryBase> enemies = nullptr;
 };
 #endif//BASILEVS_WORLD_H
