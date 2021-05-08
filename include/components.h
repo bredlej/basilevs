@@ -36,7 +36,7 @@ namespace components {
     };
 
     struct ActiveComponent : ComponentBase {
-        bool is_active{true};
+        bool is_active{false};
     };
 
     struct EmissionComponent : ComponentBase {
