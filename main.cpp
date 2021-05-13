@@ -41,12 +41,12 @@ int main() {
     struct StatefulObject {
         int i{0};
     };
-    auto state_object = StatefulObject();
+    /*auto state_object = StatefulObject();
     auto state_component = components::StateMachine<basilevs::GameState, StatefulObject>(state_object);
    // state_component.state_machine.process_event(state::events::Init{});
     using namespace sml;
     using namespace state;
     std::cout << "STATE INITIALIZED: " << state_component.state_machine.is("init"_s) << std::endl;
-    //basilevs::Game::run(window, audio);
+    //basilevs::Game::run(window, audio);*/
     return 0;
 }

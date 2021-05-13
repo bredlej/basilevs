@@ -6,7 +6,7 @@
 #define BASILEVS_COMPONENTS_H
 #include <concepts>
 #include <boost/sml/sml.hpp>
-
+#include <iostream>
 struct ComponentBase{};
 enum class TextureId;
 

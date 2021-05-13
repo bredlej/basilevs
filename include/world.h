@@ -15,7 +15,7 @@
 
 #include <utility>
 #include <list>
-
+#include <memory>
 using namespace basilevs;
 /*
 struct World;
