@@ -19,12 +19,12 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 enable_testing()
 
-FetchContent_Declare(
-        gperftools
-        GIT_REPOSITORY https://github.com/gperftools/gperftools
-        GIT_TAG        gperftools-2.9.1
-)
-FetchContent_MakeAvailable(gperftools)
+#FetchContent_Declare(
+#        gperftools
+#        GIT_REPOSITORY https://github.com/gperftools/gperftools
+#        GIT_TAG        gperftools-2.9.1
+#)
+#FetchContent_MakeAvailable(gperftools)
 
 target_link_libraries(basilevs basilevs-lib)
 add_custom_command(

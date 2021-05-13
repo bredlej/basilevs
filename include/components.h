@@ -16,37 +16,43 @@ template<typename ...T>
 concept is_many_components = (is_a_component<T> && ...);
 
 namespace components {
-    struct MovementComponent : ComponentBase{
+    struct Movement : ComponentBase{
     public:
         Vector2 position;
         Vector2 direction;
     };
 
-    struct SpriteComponent : ComponentBase {
+    struct Sprite : ComponentBase {
         TextureId texture;
         int amount_frames{1};
         int current_frame{0};
         int frame_counter{0};
     };
 
-    struct ShootComponent : ComponentBase {
+    struct Shooting : ComponentBase {
         float delay_between_shots{0.0f};
         float last_shot{0};
         float angle{0.0f};
     };
 
-    struct ActiveComponent : ComponentBase {
+    struct Activation : ComponentBase {
         bool is_active{false};
     };
 
-    struct EmissionComponent : ComponentBase {
+    struct Emission : ComponentBase {
         int emission_count{0};
     };
 
+    struct TimeCounter : ComponentBase {
+        double elapsed_time{0};
+    };
+
     template<typename StateDeclaration, typename StatefulObject>
-    struct StateComponent : ComponentBase {
+    struct StateMachine : ComponentBase {
+        StatefulObject obj;
     public:
-        explicit StateComponent(StatefulObject stateful_object) : state_machine{stateful_object} {};
+        explicit StateMachine(StatefulObject stateful_object) : state_machine{std::forward<StatefulObject>(stateful_object)} {};
+        explicit StateMachine() : state_machine{std::forward<StatefulObject>(obj)} { std::cout << "StateMachine ctor: " << &obj << std::endl;};
         boost::sml::sm<StateDeclaration> state_machine;
     };
 }

@@ -4,7 +4,7 @@
 
 #ifndef BASILEVS_BULLETS_H
 #define BASILEVS_BULLETS_H
-
+/*
 #include <basilevs.h>
 
 struct World;
@@ -34,4 +34,5 @@ public:
     explicit NormalBullet(Vector2 position, Vector2 direction, BulletUpdateFunction update_function)
             : position{position}, direction{direction}, update_function{std::move(update_function)} {};
 };
+ */
 #endif//BASILEVS_BULLETS_H

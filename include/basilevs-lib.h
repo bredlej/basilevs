@@ -17,7 +17,7 @@ namespace sml = boost::sml;
 
 struct GameDefinition {
 public:
-    World world;
+    TWorld world;
     bool is_running{false};
     bool is_initialized{false};
 

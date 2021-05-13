@@ -2,7 +2,7 @@
 // Created by geoco on 21.04.2021.
 //
 #include <basilevs-lib.h>
-
+/*
 namespace basilevs {
     void Game::run(raylib::Window &window, raylib::AudioDevice &audio) {
         using namespace sml;
@@ -173,4 +173,4 @@ void GameDefinition::render_() {
     render_to_screen(render_target_, world);
     EndDrawing();
 }
-
+*/

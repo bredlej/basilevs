@@ -4,7 +4,7 @@
 
 #ifndef BASILEVS_BEHAVIOURS_H
 #define BASILEVS_BEHAVIOURS_H
-
+/*
 #include "bullets.h"
 #include "enemy.h"
 namespace basilevs {
@@ -52,4 +52,5 @@ namespace basilevs {
         };
     }
 }// namespace basilevs
+ */
 #endif//BASILEVS_BEHAVIOURS_H

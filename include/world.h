@@ -4,6 +4,7 @@
 
 #ifndef BASILEVS_WORLD_H
 #define BASILEVS_WORLD_H
+#include "Emitter.h"
 #include "background.h"
 #include "basilevs_player.h"
 #include "enemy.h"
@@ -13,9 +14,10 @@
 #include <bullets.h>
 
 #include <utility>
+#include <list>
 
 using namespace basilevs;
-
+/*
 struct World;
 
 struct World {
@@ -39,9 +41,14 @@ public:
     void update_emitters_(const std::chrono::duration<double> &elapsed);
     void render_bullets_(const Sprite &bullet_sprite);
 };
-
+*/
+/*concept is_a_blueprint;
+concept is_a_memory;*/
+struct BlueprintBase;
+struct MemoryBase;
 struct TWorld {
     static constexpr auto install(auto entity) { return std::make_unique<decltype(entity)>(entity); }
+    explicit TWorld() = default;
     explicit TWorld(is_a_blueprint auto player_blueprint, is_a_memory auto enemies_memory)
         : player(install(player_blueprint)),
           enemies(install(enemies_memory)) {};

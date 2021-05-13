@@ -2,7 +2,7 @@
 // Created by geoco on 22.04.2021.
 //
 #include <basilevs_player.h>
-
+/*
 void BasilevsPlayer::update() {
     sprite.update_animation(12);
     if (move_right) {
@@ -18,3 +18,4 @@ void BasilevsPlayer::update() {
     }
 }
 BasilevsPlayer::BasilevsPlayer() = default;
+*/

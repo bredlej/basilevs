@@ -8,7 +8,7 @@
 #include "enemy.h"
 #include <Vector2.hpp>
 #include <functional>
-
+/*
 struct Spawn {
 public:
     float start_time;
@@ -17,4 +17,5 @@ public:
     Enemy::EnemyBehaviorFunction behavior;
     Emitter emitter;
 };
+ */
 #endif//BASILEVS_SPAWN_H
