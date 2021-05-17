@@ -1,4 +1,4 @@
-#Basilevs
+# Basilevs
 ![Basilevs logo](assets/basilevs_logo.png)
 
 A work-in-progress 1-bit bullet hell SHMUP game written in C++20.
@@ -9,8 +9,8 @@ A work-in-progress 1-bit bullet hell SHMUP game written in C++20.
 ## Sample gif #2 (another early build)
 ![Sample gif](assets/basilevs_007.gif)
 
-#Author
+# Author
 Patryk Szczypień (patryk.szczypien@gmail.com)
 
-#License
+# License
 MIT License
