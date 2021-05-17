@@ -71,13 +71,14 @@ template<is_many_components... Ts>
 class Blueprint : public BlueprintBase {
     using ComponentFunction = std::function<void(const double, TWorld &, Ts &...)>;
     using Components = std::tuple<Ts...>;
+
 public:
+    ComponentFunction component_function;
+    Components components = std::make_tuple(Ts()...);
+
     explicit Blueprint(ComponentFunction func)
         : component_function{std::forward<ComponentFunction>(func)} {};
     ~Blueprint() override = default;
-
-    ComponentFunction component_function;
-    Components components = std::make_tuple(Ts()...);
 };
 
 /**
@@ -131,15 +132,18 @@ class BlueprintsInMemory : public MemoryBase {
     using ComponentFunctionVector = std::vector<ComponentFunction>;
 
 public:
-    template<is_a_component T, is_a_blueprint... Emitters>
-    static constexpr std::vector<T> unpack_components(Emitters const &...emitter_pack) { return {std::move(std::get<T>(emitter_pack.components))...}; }
-    static constexpr ComponentFunction unpack_function(is_a_blueprint auto &emitter) { return std::move(emitter.component_function); }
+    Components components;
+    ComponentFunctionVector functions;
+
+    static constexpr ComponentFunction unpack_function(is_a_blueprint auto &blueprint) { return std::move(blueprint.component_function); }
+
+    template<is_a_component T, is_a_blueprint... Blueprint>
+    static constexpr std::vector<T> unpack_components(Blueprint const &...blueprint_pack) { return {std::move(std::get<T>(blueprint_pack.components))...}; }
+
     template<is_a_blueprint... Blueprints>
     explicit BlueprintsInMemory(Blueprints const &...blueprint_pack)
         : components{unpack_components<Ts>(blueprint_pack...)...},
           functions{unpack_function(blueprint_pack)...} {};
-    Components components;
-    ComponentFunctionVector functions;
 
     ~BlueprintsInMemory() override = default;
     void update(double time, TWorld &world) override;
@@ -235,18 +239,18 @@ class BlueprintsInPool : MemoryBase {
     using Components = std::tuple<std::vector<Ts>...>;
     using ComponentFunction = std::function<void(const double, TWorld &, Ts &...)>;
     using ComponentFunctionVector = std::vector<ComponentFunction>;
+
 public:
     Components components;
     ComponentFunctionVector functions;
+    size_t first_available_index;
+    size_t size;
 
     explicit BlueprintsInPool(const size_t amount)
         : components{std::make_tuple(std::vector<Ts>(amount)...)},
           functions{std::vector<ComponentFunction>(amount)},
           first_available_index{0},
           size{amount} {};
-
-    size_t first_available_index;
-    size_t size;
 
     void add(is_a_blueprint auto &blueprint);
     void removeAt(size_t index);
@@ -257,7 +261,6 @@ private:
     constexpr void insert_component_at_index(size_t index, T component) {
         std::get<std::vector<T>>(components)[index] = component;
     }
-
     template<is_a_component T>
     constexpr void swap_components_at_index(size_t index1, size_t index2) {
         std::get<std::vector<T>>(components)[index1] = std::get<std::vector<T>>(components)[index2];
@@ -270,7 +273,6 @@ void BlueprintsInPool<Ts...>::update(double time, TWorld &world) {
         functions[i](time, world, std::get<std::vector<Ts>>(components)[i]...);
     }
 }
-
 template<is_many_components... Ts>
 void BlueprintsInPool<Ts...>::add(is_a_blueprint auto &blueprint) {
     if (first_available_index < size) {
@@ -279,7 +281,6 @@ void BlueprintsInPool<Ts...>::add(is_a_blueprint auto &blueprint) {
         first_available_index += 1;
     }
 }
-
 template<is_many_components... Ts>
 void BlueprintsInPool<Ts...>::removeAt(size_t index) {
     if (index < size && index < first_available_index) {
