@@ -4,7 +4,7 @@
 
 #ifndef BASILEVS_SPAWN_H
 #define BASILEVS_SPAWN_H
-#include "Emitter.h"
+#include "blueprints.h"
 #include "enemy.h"
 #include <Vector2.hpp>
 #include <functional>

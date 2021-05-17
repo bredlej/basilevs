@@ -37,6 +37,7 @@ namespace components {
 
     struct Activation : ComponentBase {
         bool is_active{false};
+        double activate_after_time{0.0};
     };
 
     struct Emission : ComponentBase {
@@ -52,7 +53,7 @@ namespace components {
         StatefulObject obj;
     public:
         explicit StateMachine(StatefulObject stateful_object) : state_machine{std::forward<StatefulObject>(stateful_object)} {};
-        explicit StateMachine() : state_machine{std::forward<StatefulObject>(obj)} { std::cout << "StateMachine ctor: " << &obj << std::endl;};
+        explicit StateMachine() : state_machine{std::forward<StatefulObject>(obj)} {};
         boost::sml::sm<StateDeclaration> state_machine;
     };
 }

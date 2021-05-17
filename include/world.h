@@ -4,9 +4,9 @@
 
 #ifndef BASILEVS_WORLD_H
 #define BASILEVS_WORLD_H
-#include "Emitter.h"
 #include "background.h"
 #include "basilevs_player.h"
+#include "blueprints.h"
 #include "enemy.h"
 #include "spawn.h"
 #include <basilevs.h>

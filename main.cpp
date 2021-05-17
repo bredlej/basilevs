@@ -20,10 +20,10 @@ int main() {
     auto emitter_func2 = std::function<void(const double, TWorld &, components::Movement &, components::Emission &, components::Activation &, components::Shooting &)>(functions::kEmptyFunction2);
     //auto emitter_func3 = std::function<void(const double, World &, components::EmitterPosition &, components::EmissionComponent &, components::ActiveComponent &, components::ShootComponent &)>(functions::kEmptyFunction2);
 
-    auto emitter1 = EntityBlueprint(1, emitter_func);
-    auto emitter2 = EntityBlueprint(2, emitter_func2);
+    auto emitter1 = Blueprint(1, emitter_func);
+    auto emitter2 = Blueprint(2, emitter_func2);
 
-    auto player = EntityBlueprint(3, emitter_func2);
+    auto player = Blueprint(3, emitter_func2);
     auto memory = BlueprintsInMemory(emitter1, emitter2);
     auto w = TWorld();
     memory.update(1, w);
