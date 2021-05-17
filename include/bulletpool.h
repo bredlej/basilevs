@@ -4,7 +4,7 @@
 
 #ifndef BASILEVS_BULLETPOOL_H
 #define BASILEVS_BULLETPOOL_H
-
+/*
 #include <cstdint>
 #include <vector>
 #include <bullets.h>
@@ -27,5 +27,5 @@ public:
     }
 };
 
-
+*/
 #endif//BASILEVS_BULLETPOOL_H

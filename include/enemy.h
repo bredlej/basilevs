@@ -5,7 +5,7 @@
 #ifndef BASILEVS_ENEMY_H
 #define BASILEVS_ENEMY_H
 
-
+/*
 #include "Emitter.h"
 #include "sprite.h"
 #include <functional>
@@ -20,4 +20,5 @@ public:
     EnemyBehaviorFunction behavior;
     Vector2 position{0.0f, 0.0f};
 };
+ */
 #endif//BASILEVS_ENEMY_H

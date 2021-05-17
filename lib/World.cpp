@@ -2,7 +2,7 @@
 // Created by geoco on 22.04.2021.
 //
 #include "world.h"
-
+/*
 void World::update(std::chrono::duration<double> duration) {
     timer += duration.count();
     background.update_background(6, GetFrameTime());
@@ -75,3 +75,4 @@ void World::update_emitters_(const std::chrono::duration<double> &elapsed) {
         enemy.emitter.emitter_function(elapsed.count(), enemy.emitter, (*this));
     }
 }
+ */

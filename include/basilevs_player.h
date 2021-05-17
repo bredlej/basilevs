@@ -5,10 +5,10 @@
 #ifndef BASILEVS_BASILEVS_PLAYER_H
 #define BASILEVS_BASILEVS_PLAYER_H
 
-#include "Emitter.h"
 #include "basilevs.h"
+#include "blueprints.h"
 #include "sprite.h"
-
+/*
 struct BasilevsPlayer {
 public:
     BasilevsPlayer();
@@ -20,5 +20,5 @@ public:
 
     void update();
 };
-
+*/
 #endif//BASILEVS_BASILEVS_PLAYER_H

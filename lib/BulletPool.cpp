@@ -2,6 +2,7 @@
 // Created by geoco on 22.04.2021.
 //
 #include <bulletpool.h>
+/*
 template<>
 void BulletPool<NormalBullet>::add(NormalBullet &&bullet) {
     if (first_available_index < pool.size()) {
@@ -14,3 +15,4 @@ void BulletPool<NormalBullet>::add(NormalBullet &&bullet) {
         first_available_index += 1;
     }
 }
+*/
