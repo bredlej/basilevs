@@ -41,7 +41,7 @@ auto &get(is_a_memory auto &memory) {
     return std::get<std::vector<T>>(memory.components);
 }
 /**
- * Describes a structure defined by a set of components and a function which acts upon them and provides a reference to a {@link TWorld} object.
+ * Describes a structure defined by a set of components and a function which acts upon them and provides a reference to a TWorld object.
  * Components are used to describe the properties and behaviour of a Blueprint.
  * For example a blueprint defined as:
  *
@@ -65,7 +65,7 @@ auto &get(is_a_memory auto &memory) {
  *            |
  *            use a reference if you want to change the components internal values
  *
- * @tparam Ts a list of components which adhere to the is_many_components concept.
+ * @tparam Ts a list of components which adhere to the is_many_components concept (see components.h).
  */
 template<is_many_components... Ts>
 class Blueprint : public BlueprintBase {
@@ -123,7 +123,7 @@ public:
  *      auto &direction_components = get<Direction>(memory);
  *                                   -> returns &std::vector<Direction> { Direction(bp1), Direction(bp2), Direction(bp3) }
  *
- * @tparam Ts a list of components which adhere to the is_many_components concept.
+ * @tparam Ts a list of components which adhere to the is_many_components concept (see components.h).
  */
 template<is_many_components... Ts>
 class BlueprintsInMemory : public MemoryBase {
@@ -230,9 +230,9 @@ BlueprintsInMemory(Blueprint<Cs...>, Bs...) -> BlueprintsInMemory<Cs...>;
  *                                    data at index [0] in all vectors has now the contents of previously [1]
  *
  * Generally speaking the intention of this class is to allow the adding and removal of lots of objects without the actual use of expensive (de)allocation of memory.
- * For example creation of hundreds of bullets on screen, which are removed after hitting an object or leaving the screen boundary,
+ * For example creation of hundreds of bullets on screen, which are removed after hitting an object or when leaving the screen boundary.
  *
- * @tparam Ts a list of components which adhere to the is_many_components concept
+ * @tparam Ts a list of components which adhere to the is_many_components concept (see components.h)
  */
 template<is_many_components... Ts>
 class BlueprintsInPool : MemoryBase {
