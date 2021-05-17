@@ -182,9 +182,9 @@ BlueprintsInMemory(Blueprint<Cs...>, Bs...) -> BlueprintsInMemory<Cs...>;
  *      |  |- std::vector<Rotation>  { Rot1, Rot2, Rot3, Rot4, Rot5 }
  *      |
  *      |- std::vector<std::function<const double, TWorld &, ... >>
- *                                  { fun1, fun2, fun3, fun4, fun5 }
- *                                    *                          ^
- *                                    first_available_index=[0]  size=[5]
+ *                                   { fun1, fun2, fun3, fun4, fun5 }
+ *                                     *                          ^
+ *                                     first_available_index=[0]  size=[5]
  *
  * The class provides functions for adding, removing and update of data:
  *
@@ -206,9 +206,9 @@ BlueprintsInMemory(Blueprint<Cs...>, Bs...) -> BlueprintsInMemory<Cs...>;
  *      |  |- std::vector<Rotation>  { Rot(bp1), Rot(bp2), Rot3, Rot4, Rot5 }
  *      |
  *      |- std::vector<std::function<const double, TWorld &, ... >>
- *                                  { fun(bp1), fun(bp2), fun3, fun4, fun5 }
- *                                                        *
- *                                                        first_available_index=[2]    // note how the index increased after adding two blueprints
+ *                                   { fun(bp1), fun(bp2), fun3, fun4, fun5 }
+ *                                                         *
+ *                                                         first_available_index=[2]    // note how the index increased after adding two blueprints
  *
  * Now removing data at a given index doesn't "remove" it per se, just copies entries from right to left up until the current `first_available_index` value.
  * The `first_available_index` is decreased after removal.
@@ -218,17 +218,17 @@ BlueprintsInMemory(Blueprint<Cs...>, Bs...) -> BlueprintsInMemory<Cs...>;
  *
  *      BlueprintsInPool
  *      |                                       note how both entries at [1] and [2] have the same contents because of shifting from right to left until the index value
- *      - std::tuple<>                          v     v
- *      | |- std::vector<Position>  { Pos(bp2), Pos3, Pos3, Pos4, Pos5 }
- *      | |- std::vector<Direction> { Dir(bp2), Dir3, Dir3, Dir4, Dir5 }
- *      | |- std::vector<Rotation>  { Rot(bp2), Rot3, Rot3, Rot4, Rot5 }
+ *      |- std::tuple<>                          v     v
+ *      |  |- std::vector<Position>  { Pos(bp2), Pos3, Pos3, Pos4, Pos5 }
+ *      |  |- std::vector<Direction> { Dir(bp2), Dir3, Dir3, Dir4, Dir5 }
+ *      |  |- std::vector<Rotation>  { Rot(bp2), Rot3, Rot3, Rot4, Rot5 }
  *      |
- *      - std::vector<std::function<const double, TWorld &, ... >>
- *                                  { fun(bp2), fun3, fun3, fun4, fun5 }
- *                                    ^         *
- *                                    |         first_available_index=[1]
- *                                    |
- *                                    data at index [0] in all vectors has now the contents of previously [1]
+ *      |- std::vector<std::function<const double, TWorld &, ... >>
+ *                                   { fun(bp2), fun3, fun3, fun4, fun5 }
+ *                                     ^         *
+ *                                     |         first_available_index=[1]
+ *                                     |
+ *                                     data at index [0] in all vectors has now the contents of previously [1]
  *
  * Generally speaking the intention of this class is to allow the adding and removal of lots of objects without the actual use of expensive (de)allocation of memory.
  * For example creation of hundreds of bullets on screen, which are removed after hitting an object or when leaving the screen boundary.
