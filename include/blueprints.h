@@ -82,7 +82,7 @@ public:
 };
 
 /**
- * BlueprintsInMemory is a utility class which given a collection of {@link Blueprint} objects, takes them apart and stores their components and functions in vectors.
+ * BlueprintsInMemory is a utility class which given a collection of Blueprint objects, takes them apart and stores their components and functions in vectors.
  * The class stores copies of the original objects, so it's best to discard them after BlueprintsInMemory is created.
  * As an example how it works let's say there are the following blueprints:
  *
@@ -105,8 +105,9 @@ public:
  *      |
  *      - std::vector<std::function<const double, TWorld &, Position &, Direction &, Rotation &>> { func1, func2, func3 }
  *
- * The class provides an update(const double, TWorld &) function which iterates through all functions stored in the 'functions' vector and calls them with the respective 'components'
- * as attributes.
+ * The class provides an update(const double, TWorld &) function which iterates through all functions stored in the 'functions' vector and calls them with
+ * the respective 'components' as attributes.
+ *
  * Using the above example, a call to:
  *
  *      memory.update(1, world_obj);
@@ -175,23 +176,23 @@ BlueprintsInMemory(Blueprint<Cs...>, Bs...) -> BlueprintsInMemory<Cs...>;
  *
  *      BlueprintsInPool
  *      |
- *      - std::tuple<>
- *      | |- std::vector<Position>  { Pos1, Pos2, Pos3, Pos4, Pos5 }
- *      | |- std::vector<Direction> { Dir1, Dir2, Dir3, Dir4, Dir5 }
- *      | |- std::vector<Rotation>  { Rot1, Rot2, Rot3, Rot4, Rot5 }
+ *      |- std::tuple<>
+ *      |  |- std::vector<Position>  { Pos1, Pos2, Pos3, Pos4, Pos5 }
+ *      |  |- std::vector<Direction> { Dir1, Dir2, Dir3, Dir4, Dir5 }
+ *      |  |- std::vector<Rotation>  { Rot1, Rot2, Rot3, Rot4, Rot5 }
  *      |
- *      - std::vector<std::function<const double, TWorld &, ... >>
+ *      |- std::vector<std::function<const double, TWorld &, ... >>
  *                                  { fun1, fun2, fun3, fun4, fun5 }
  *                                    *                          ^
  *                                    first_available_index=[0]  size=[5]
  *
- * The class provides two functions for adding, removing and update of data:
+ * The class provides functions for adding, removing and update of data:
  *
  *      void add(is_a_blueprint auto &blueprint)
  *      void removeAt(size_t index);
  *      void update(double time, TWorld &world); // works the same as in BulletsInMemory
  *
- * Whenever a Blueprint is added, it's components and functions are stored in their respective slots, and the index is increased by 1 (with bounds checking of `size`).
+ * Whenever a Blueprint is added, its components and functions are stored in their respective slots, and the index is increased by 1 (with bounds checking of `size`).
  * Adding two Blueprints "bp1" and "bp2" as an example will modify the structure:
  *
  *      pool.add(bp1);
@@ -199,12 +200,12 @@ BlueprintsInMemory(Blueprint<Cs...>, Bs...) -> BlueprintsInMemory<Cs...>;
  *
  *      BlueprintsInPool
  *      |
- *      - std::tuple<>
- *      | |- std::vector<Position>  { Pos(bp1), Pos(bp2), Pos3, Pos4, Pos5 }
- *      | |- std::vector<Direction> { Dir(bp1), Dir(bp2), Dir3, Dir4, Dir5 }
- *      | |- std::vector<Rotation>  { Rot(bp1), Rot(bp2), Rot3, Rot4, Rot5 }
+ *      |- std::tuple<>
+ *      |  |- std::vector<Position>  { Pos(bp1), Pos(bp2), Pos3, Pos4, Pos5 }
+ *      |  |- std::vector<Direction> { Dir(bp1), Dir(bp2), Dir3, Dir4, Dir5 }
+ *      |  |- std::vector<Rotation>  { Rot(bp1), Rot(bp2), Rot3, Rot4, Rot5 }
  *      |
- *      - std::vector<std::function<const double, TWorld &, ... >>
+ *      |- std::vector<std::function<const double, TWorld &, ... >>
  *                                  { fun(bp1), fun(bp2), fun3, fun4, fun5 }
  *                                                        *
  *                                                        first_available_index=[2]    // note how the index increased after adding two blueprints
