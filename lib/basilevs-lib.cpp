@@ -2,7 +2,7 @@
 // Created by geoco on 21.04.2021.
 //
 #include <basilevs-lib.h>
-/*
+
 namespace basilevs {
     void Game::run(raylib::Window &window, raylib::AudioDevice &audio) {
         using namespace sml;
@@ -41,7 +41,7 @@ namespace emitter {
                       ShootNormal,
                       ShootCircular };
 
-    static constexpr auto shoot_every_second = [](const float time, Emitter &emitter, World &world) {
+    /*static constexpr auto shoot_every_second = [](const float time, Emitter &emitter, World &world) {
         if (emitter.is_active) {
             if (emitter.last_shot > emitter.delay_between_shots) {
 
@@ -104,12 +104,12 @@ namespace emitter {
             }
             emitter.last_shot += sin(time);
         }
-    };
+    };*/
 }// namespace emitter
 
 void GameDefinition::initialize_world_() {
 
-    auto player = BasilevsPlayer{};
+   /* auto player = BasilevsPlayer{};
     player.sprite = sprite_template_map.at(basilevs::EntityType::Player);
     player.emitter = Emitter{{0.0f, 0.0f}, 0.023f, emitter::player_normal_shoot};
     world = World{
@@ -126,20 +126,20 @@ void GameDefinition::initialize_world_() {
             {3.0f, Vector2{60.0, 30.0}, sprite_template_map.at(basilevs::EntityType::Enemy), basilevs::enemy::behavior_sinusoidal, spiral_emitter},
     });
 
-    world.enemies_on_screen = std::vector<Enemy>{};
+    world.enemies_on_screen = std::vector<Enemy>{};*/
 }
 
 void GameDefinition::initialize() {
-    load_textures_();
-    load_sprites_();
-    load_sounds_();
+    //load_textures_();
+    //load_sprites_();
+    //load_sounds_();
     initialize_world_();
-    SetTargetFPS(60);
-    SetTextureFilter(world.background.texture, FILTER_ANISOTROPIC_16X);
+    //SetTargetFPS(60);
+    //SetTextureFilter(world.background.texture, FILTER_ANISOTROPIC_16X);
 }
 
 void GameDefinition::loop_(std::chrono::duration<double> duration) {
-    world.update(duration);
+   // world.update(duration);
     render_();
 }
 
@@ -151,7 +151,7 @@ void GameDefinition::run(raylib::Window &window, raylib::AudioDevice &audio) {
         loop_duration = std::chrono::steady_clock::now() - now;
     }
 }
-
+/*
 static void render_to_texture(raylib::RenderTexture &render_target, World &world, const basilevs::SpriteTemplateMap &sprite_template_map) {
     BeginTextureMode(render_target);
     world.render(sprite_template_map.at(basilevs::EntityType::BulletRound));
@@ -165,12 +165,12 @@ static void render_to_screen(raylib::RenderTexture &render_target, const World &
     raylib::DrawText(std::to_string(world.enemy_bullets.first_available_index), config::kScreenWidth - 60, 60, 30, ORANGE);
     DrawFPS(5, 5);
 }
-
+*/
 void GameDefinition::render_() {
     BeginDrawing();
     ClearBackground(BLACK);
-    render_to_texture(render_target_, world, sprite_template_map);
-    render_to_screen(render_target_, world);
+    //render_to_texture(render_target_, world, sprite_template_map);
+    //render_to_screen(render_target_, world);
     EndDrawing();
 }
-*/
+

@@ -204,7 +204,7 @@ TEST_F(BlueprintsInPoolTest, RemovesFirstBlueprintFromPool) {
     auto pool = BlueprintsInPool<components::Movement, components::Activation>(2);
     pool.add(blueprint);
     pool.add(blueprint2);
-    pool.removeAt(0);
+    pool.remove_at(0);
     ASSERT_EQ(1, pool.first_available_index);
     ASSERT_EQ(100.0f, get<components::Movement>(pool)[0].position.x);
     ASSERT_EQ(100.0f, get<components::Movement>(pool)[0].position.y);
@@ -229,7 +229,7 @@ TEST_F(BlueprintsInPoolTest, RemovesLastBlueprintFromPool) {
     auto pool = BlueprintsInPool<components::Movement, components::Activation>(2);
     pool.add(blueprint);
     pool.add(blueprint2);
-    pool.removeAt(1);
+    pool.remove_at(1);
     ASSERT_EQ(1, pool.first_available_index);
     ASSERT_EQ(10.0f, get<components::Movement>(pool)[0].position.x);
     ASSERT_EQ(10.0f, get<components::Movement>(pool)[0].position.y);
@@ -259,7 +259,7 @@ TEST_F(BlueprintsInPoolTest, RemovesMiddleBlueprintFromPool) {
     pool.add(blueprint);
     pool.add(blueprint2);
     pool.add(blueprint3);
-    pool.removeAt(1);
+    pool.remove_at(1);
     ASSERT_EQ(2, pool.first_available_index);
     ASSERT_EQ(10.0f, get<components::Movement>(pool)[0].position.x);
     ASSERT_EQ(10.0f, get<components::Movement>(pool)[0].position.y);

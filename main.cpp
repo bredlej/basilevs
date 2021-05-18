@@ -13,15 +13,11 @@ extern "C" {
 
 int main() {
 
-    /*
-     * Disabled until done with refactor, use tests instead.
-
     using namespace basilevs;
     auto window = raylib::Window{config::kScreenWidth, config::kScreenHeight, "Basilevs"};
     auto audio = raylib::AudioDevice();
 
     basilevs::Game::run(window, audio);
 
-     */
     return 0;
 }

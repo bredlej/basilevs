@@ -47,13 +47,16 @@ concept is_a_memory;*/
 struct BlueprintBase;
 struct MemoryBase;
 struct TWorld {
-    static constexpr auto install(auto entity) { return std::make_unique<decltype(entity)>(entity); }
+    static constexpr auto install(auto entity) { return std::make_shared<decltype(entity)>(entity); }
     explicit TWorld() = default;
-    explicit TWorld(is_a_blueprint auto player_blueprint, is_a_memory auto enemies_memory)
+    explicit TWorld(is_a_blueprint auto &player_blueprint, is_a_memory auto &enemies_memory, size_t amount_of_enemy_bullets)
         : player(install(player_blueprint)),
-          enemies(install(enemies_memory)) {};
+          enemies(install(enemies_memory)) {}
+          //enemy_bullets(std::make_shared<BlueprintsInPool<components::Movement>>(amount_of_enemy_bullets)) {};
 public:
-    std::unique_ptr<BlueprintBase> player = nullptr;
-    std::unique_ptr<MemoryBase> enemies = nullptr;
+    std::shared_ptr<BlueprintBase> player = nullptr;
+    std::shared_ptr<MemoryBase> enemies = nullptr;
+    //std::shared_ptr<BlueprintsInPool<components::Movement>> enemy_bullets = nullptr;
+    BlueprintsInPool<components::Movement> enemy_bullets{1000};
 };
 #endif//BASILEVS_WORLD_H

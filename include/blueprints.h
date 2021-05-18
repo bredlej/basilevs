@@ -22,6 +22,12 @@ struct BlueprintBase {
 template<typename T>
 concept is_a_blueprint = std::is_base_of_v<BlueprintBase, T>;
 
+/**
+ * Helper function to get the Component of type T from a Blueprint
+ * @tparam T type specified by the is_a_component concept (see components.h)
+ * @param blueprint object to get the component from.
+ * @return reference to the component if present in the Blueprint.
+ */
 template<is_a_component T>
 auto &get(is_a_blueprint auto &blueprint) {
     return std::get<T>(blueprint.components);
@@ -189,7 +195,7 @@ BlueprintsInMemory(Blueprint<Cs...>, Bs...) -> BlueprintsInMemory<Cs...>;
  * The class provides functions for adding, removing and update of data:
  *
  *      void add(is_a_blueprint auto &blueprint)
- *      void removeAt(size_t index);
+ *      void remove_at(size_t index);
  *      void update(double time, TWorld &world); // works the same as in BulletsInMemory
  *
  * Whenever a Blueprint is added, its components and functions are stored in their respective slots, and the index is increased by 1 (with bounds checking of `size`).
@@ -214,7 +220,7 @@ BlueprintsInMemory(Blueprint<Cs...>, Bs...) -> BlueprintsInMemory<Cs...>;
  * The `first_available_index` is decreased after removal.
  * This means that deleting the first position in this example will modify the structure in the following way:
  *
- *      pool.removeAt(0);
+ *      pool.remove_at(0);
  *
  *      BlueprintsInPool
  *      |                                       note how both entries at [1] and [2] have the same contents because of shifting from right to left until the index value
@@ -254,7 +260,7 @@ public:
           size{amount} {};
 
     void add(is_a_blueprint auto &blueprint);
-    void removeAt(size_t index);
+    void remove_at(size_t index);
     void update(double time, TWorld &world) override;
 
 private:
@@ -283,7 +289,7 @@ void BlueprintsInPool<Ts...>::add(is_a_blueprint auto &blueprint) {
     }
 }
 template<is_many_components... Ts>
-void BlueprintsInPool<Ts...>::removeAt(size_t index) {
+void BlueprintsInPool<Ts...>::remove_at(size_t index) {
     if (index < size && index < first_available_index) {
         for (int i = index; i < first_available_index - 1; i++) {
             (swap_components_at_index<Ts>(i, i + 1), ...);
@@ -292,17 +298,4 @@ void BlueprintsInPool<Ts...>::removeAt(size_t index) {
         first_available_index -= 1;
     }
 }
-
-namespace functions {
-    static constexpr auto kEmptyFunction = [](const double time, TWorld &, components::Movement &pos, components::Emission &, components::Activation &, components::Shooting &) -> void {
-        pos.position.x += time;
-        pos.position.y += time;
-        std::cout << "Time: " << time << " Position: " << pos.position.x << "," << pos.position.y << std::endl;
-    };
-    static constexpr auto kEmptyFunction2 = [](const double time, TWorld &, components::Movement &pos, components::Emission &, components::Activation &, components::Shooting &) -> void {
-        pos.direction.x += time;
-        pos.direction.y += time;
-        std::cout << "Time: " << time << " Direction: " << pos.direction.x << "," << pos.direction.y << std::endl;
-    };
-}// namespace functions
 #endif//BASILEVS_BLUEPRINTS_H
