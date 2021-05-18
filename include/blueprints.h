@@ -84,8 +84,17 @@ public:
 
     explicit Blueprint(ComponentFunction func)
         : component_function{std::forward<ComponentFunction>(func)} {};
+
     ~Blueprint() override = default;
 };
+
+/**
+ * Deduction guide allowing to infer Blueprint template types from the function provided in the constructor
+ *
+ * @tparam Cs set of components adhering to is_a_component concept (see components.h)
+ */
+template<is_a_component... Cs>
+Blueprint(std::function<void(const double, TWorld &, Cs &...)>) -> Blueprint<Cs...>;
 
 /**
  * BlueprintsInMemory is a utility class which given a collection of Blueprint objects, takes them apart and stores their components and functions in vectors.

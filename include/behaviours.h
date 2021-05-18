@@ -4,9 +4,17 @@
 
 #ifndef BASILEVS_BEHAVIOURS_H
 #define BASILEVS_BEHAVIOURS_H
+#include <world.h>
+#include <functional>
+
+namespace behaviours::player {
+    constexpr auto kPlayerNormalBehaviour = [](const double, TWorld &, components::Sprite &, components::Movement &) {};
+    using PlayerUpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
+}
 /*
 #include "bullets.h"
 #include "enemy.h"
+
 namespace basilevs {
     namespace bullet {
         enum class Type {FlyForward, FlyForwardFast, FlySpiral};

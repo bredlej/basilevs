@@ -2,7 +2,7 @@
 // Created by geoco on 21.04.2021.
 //
 #include <basilevs-lib.h>
-
+#include <assets.h>
 namespace basilevs {
     void Game::run(raylib::Window &window, raylib::AudioDevice &audio) {
         using namespace sml;
@@ -109,6 +109,10 @@ namespace emitter {
 
 void GameDefinition::initialize_world_() {
 
+    auto player = Blueprint(behaviours::player::PlayerUpdateFunction(behaviours::player::kPlayerNormalBehaviour));
+    auto &player_sprite = get<components::Sprite>(player);
+    player_sprite.texture = TextureId::Player;
+    world.player = std::make_shared<decltype(player)>(player);
    /* auto player = BasilevsPlayer{};
     player.sprite = sprite_template_map.at(basilevs::EntityType::Player);
     player.emitter = Emitter{{0.0f, 0.0f}, 0.023f, emitter::player_normal_shoot};
@@ -151,13 +155,16 @@ void GameDefinition::run(raylib::Window &window, raylib::AudioDevice &audio) {
         loop_duration = std::chrono::steady_clock::now() - now;
     }
 }
-/*
-static void render_to_texture(raylib::RenderTexture &render_target, World &world, const basilevs::SpriteTemplateMap &sprite_template_map) {
+
+static void render_to_texture(raylib::RenderTexture &render_target, TWorld &world, const basilevs::TextureMap &textures) {
     BeginTextureMode(render_target);
-    world.render(sprite_template_map.at(basilevs::EntityType::BulletRound));
+    auto player = world.player.get();
+    auto sprite_component = std::get<components::Sprite>(player->components);
+
+    //get<static_cast<Blueprint<>>(player_sprite)>(player_sprite);
     EndTextureMode();
 }
-
+/*
 static void render_to_screen(raylib::RenderTexture &render_target, const World &world) {
     DrawTexturePro(render_target.texture, Rectangle{0.0f, 0.0f, (float) render_target.texture.width, (float) -render_target.texture.height},
                    Rectangle{0.0f, 0.0f, static_cast<float>(config::kScreenWidth), static_cast<float>(config::kScreenHeight)}, Vector2{0, 0}, 0.0f, WHITE);
@@ -169,7 +176,7 @@ static void render_to_screen(raylib::RenderTexture &render_target, const World &
 void GameDefinition::render_() {
     BeginDrawing();
     ClearBackground(BLACK);
-    //render_to_texture(render_target_, world, sprite_template_map);
+    render_to_texture(render_target_, world, texture_map);
     //render_to_screen(render_target_, world);
     EndDrawing();
 }
