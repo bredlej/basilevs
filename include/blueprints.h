@@ -167,8 +167,9 @@ public:
 
 template<is_many_components... Ts>
 void BlueprintsInMemory<Ts...>::update(double time, TWorld &world) {
-    for (int i = 0; i < functions.size(); i++) {
-        functions[i](time, world, std::get<std::vector<Ts>>(components)[i]...);
+    for (int i = 0; i < functions.size(); i++) {        
+        auto func = functions[i];
+        func(time, world, std::get<std::vector<Ts>>(components)[i]...);
     }
 }
 
