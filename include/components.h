@@ -52,8 +52,8 @@ namespace components {
     struct StateMachine : ComponentBase {
         StatefulObject obj;
     public:
-        explicit StateMachine(StatefulObject stateful_object) : state_machine{std::forward<StatefulObject>(stateful_object)} {};
-        explicit StateMachine() : state_machine{std::forward<StatefulObject>(obj)} {};
+        explicit StateMachine(StatefulObject stateful_object) : state_machine{stateful_object} {};
+        explicit StateMachine() : state_machine{obj} {};
         boost::sml::sm<StateDeclaration> state_machine;
     };
 }

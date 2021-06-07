@@ -167,7 +167,7 @@ public:
 
 template<is_many_components... Ts>
 void BlueprintsInMemory<Ts...>::update(double time, TWorld &world) {
-    for (int i = 0; i < functions.size(); i++) {        
+    for (typename ComponentFunctionVector::size_type i = 0; i < functions.size(); i++) {
         auto func = functions[i];
         func(time, world, std::get<std::vector<Ts>>(components)[i]...);
     }
@@ -286,7 +286,7 @@ private:
 
 template<is_many_components... Ts>
 void BlueprintsInPool<Ts...>::update(double time, TWorld &world) {
-    for (int i = 0; i < first_available_index; i++) {
+    for (typename ComponentFunctionVector::size_type i = 0; i < first_available_index; i++) {
         functions[i](time, world, std::get<std::vector<Ts>>(components)[i]...);
     }
 }
@@ -301,7 +301,7 @@ void BlueprintsInPool<Ts...>::add(is_a_blueprint auto &blueprint) {
 template<is_many_components... Ts>
 void BlueprintsInPool<Ts...>::remove_at(size_t index) {
     if (index < size && index < first_available_index) {
-        for (int i = index; i < first_available_index - 1; i++) {
+        for (typename ComponentFunctionVector::size_type i = index; i < first_available_index - 1; i++) {
             (swap_components_at_index<Ts>(i, i + 1), ...);
             functions[i] = functions[i + 1];
         }
