@@ -25,12 +25,12 @@ public:
     void run(raylib::Window &window, raylib::AudioDevice &audio);
 
 private:
-    mutable basilevs::TextureMap texture_map;
+    std::vector<Texture2D> textures_ = load_textures_();
     mutable basilevs::SpriteTemplateMap sprite_template_map;
     mutable basilevs::SoundMap sound_map;
 
     raylib::RenderTexture2D render_target_{config::kFrameWidth, config::kFrameHeight};
-    void load_textures_() const;
+    static std::vector<Texture2D> load_textures_() ;
     void load_sprites_() const;
     void load_sounds_() const;
     void initialize_world_();

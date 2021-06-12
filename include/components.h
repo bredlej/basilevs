@@ -4,8 +4,9 @@
 
 #ifndef BASILEVS_COMPONENTS_H
 #define BASILEVS_COMPONENTS_H
-#include <concepts>
+#include "assets.h"
 #include <boost/sml/sml.hpp>
+#include <concepts>
 #include <iostream>
 struct ComponentBase{};
 enum class TextureId;
@@ -23,7 +24,10 @@ namespace components {
     };
 
     struct Sprite : ComponentBase {
-        TextureId texture;
+        TextureId texture{TextureId::Player};
+        int texture_width{1};
+        int texture_height{1};
+        Rectangle frame_rect{0,0,1,1};
         int amount_frames{1};
         int current_frame{0};
         int frame_counter{0};

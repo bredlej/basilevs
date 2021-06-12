@@ -7,8 +7,25 @@
 #include <world.h>
 #include <functional>
 
+constexpr auto kFrameSpeed = 12;
+
 namespace behaviours::player {
-    constexpr auto kPlayerNormalBehaviour = [](const double, TWorld &, components::Sprite &, components::Movement &) {};
+
+    constexpr auto frame_update = [] (components::Sprite &sprite) {
+        sprite.frame_counter++;
+
+        if (sprite.frame_counter >= (60 / kFrameSpeed)) {
+            sprite.frame_counter = 0;
+            sprite.current_frame++;
+
+            if (sprite.current_frame > sprite.amount_frames- 1) sprite.current_frame = 0;
+
+            sprite.frame_rect.x = static_cast<float>(sprite.current_frame) * static_cast<float>(sprite.texture_width) / static_cast<float>(sprite.amount_frames);
+        }
+    };
+    constexpr auto kPlayerNormalBehaviour = [](const double time, TWorld &, components::Sprite & sprite, components::Movement &) {
+        frame_update(sprite);
+    };
     using PlayerUpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
 }
 /*

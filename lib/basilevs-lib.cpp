@@ -1,8 +1,8 @@
 //
 // Created by geoco on 21.04.2021.
 //
-#include <basilevs-lib.h>
 #include <assets.h>
+#include <basilevs-lib.h>
 namespace basilevs {
     void Game::run(raylib::Window &window, raylib::AudioDevice &audio) {
         using namespace sml;
@@ -15,14 +15,15 @@ namespace basilevs {
     }
 }// namespace basilevs
 
-void GameDefinition::load_textures_() const {
-    texture_map = {
-            {basilevs::EntityType::Player, LoadTextureFromImage(raylib::LoadImage("assets/player.png"))},
-            {basilevs::EntityType::Enemy, LoadTextureFromImage(raylib::LoadImage("assets/enemy.png"))},
-            {basilevs::EntityType::BulletPlayer, LoadTextureFromImage(raylib::LoadImage("assets/bullet8-002.png"))},
-            {basilevs::EntityType::BulletRound, LoadTextureFromImage(raylib::LoadImage("assets/bullet8.png"))}};
+std::vector<Texture2D> GameDefinition::load_textures_() {
+    return {
+            LoadTextureFromImage(raylib::LoadImage("assets/player.png")),
+            LoadTextureFromImage(raylib::LoadImage("assets/enemy.png")),
+            LoadTextureFromImage(raylib::LoadImage("assets/bullet8-002.png")),
+            LoadTextureFromImage(raylib::LoadImage("assets/bullet8.png"))};
 }
 
+/*
 void GameDefinition::load_sprites_() const {
     sprite_template_map = {
             {basilevs::EntityType::Player, Sprite(texture_map.at(basilevs::EntityType::Player), raylib::Vector2{64, 90}, 7)},
@@ -30,7 +31,7 @@ void GameDefinition::load_sprites_() const {
             {basilevs::EntityType::BulletRound,Sprite(texture_map.at(basilevs::EntityType::BulletRound), raylib::Vector2(50, 50), 1)},
             {basilevs::EntityType::BulletPlayer, Sprite(texture_map.at(basilevs::EntityType::BulletPlayer), raylib::Vector2(50, 50), 1)}};
 }
-
+*/
 void GameDefinition::load_sounds_() const {
     sound_map = {{basilevs::EntityType::BulletRound, LoadSound("assets/bullet.wav")}};
 }
@@ -107,13 +108,25 @@ namespace emitter {
     };*/
 }// namespace emitter
 
-void GameDefinition::initialize_world_() {
-
+static constexpr auto initialize_player = [](const std::vector<Texture2D> &textures) {
     auto player = Blueprint(behaviours::player::PlayerUpdateFunction(behaviours::player::kPlayerNormalBehaviour));
     auto &player_sprite = get<components::Sprite>(player);
     player_sprite.texture = TextureId::Player;
-    world.player = std::make_shared<decltype(player)>(player);
-   /* auto player = BasilevsPlayer{};
+    player_sprite.amount_frames = 7;
+    auto texture_width = textures[static_cast<int>(player_sprite.texture)].width;
+    auto texture_height = textures[static_cast<int>(player_sprite.texture)].height;
+    player_sprite.texture_width = texture_width;
+    player_sprite.texture_height = texture_height;
+    player_sprite.frame_rect = {0.0f, 0.0f, static_cast<float>(texture_width) / static_cast<float>(player_sprite.amount_frames), static_cast<float>(texture_height)};
+
+    return std::make_shared<decltype(player)>(player);
+};
+
+void GameDefinition::initialize_world_() {
+
+    world.player = initialize_player(textures_);
+
+    /* auto player = BasilevsPlayer{};
     player.sprite = sprite_template_map.at(basilevs::EntityType::Player);
     player.emitter = Emitter{{0.0f, 0.0f}, 0.023f, emitter::player_normal_shoot};
     world = World{
@@ -134,16 +147,15 @@ void GameDefinition::initialize_world_() {
 }
 
 void GameDefinition::initialize() {
-    //load_textures_();
     //load_sprites_();
     //load_sounds_();
     initialize_world_();
-    //SetTargetFPS(60);
+    SetTargetFPS(60);
     //SetTextureFilter(world.background.texture, FILTER_ANISOTROPIC_16X);
 }
 
 void GameDefinition::loop_(std::chrono::duration<double> duration) {
-   // world.update(duration);
+    world.player->update(duration.count(), world);
     render_();
 }
 
@@ -156,28 +168,33 @@ void GameDefinition::run(raylib::Window &window, raylib::AudioDevice &audio) {
     }
 }
 
-static void render_to_texture(raylib::RenderTexture &render_target, TWorld &world, const basilevs::TextureMap &textures) {
-    BeginTextureMode(render_target);
+static void render_player(raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {
     auto player = world.player.get();
     auto sprite_component = std::get<components::Sprite>(player->components);
+    auto texture = textures[static_cast<int>(sprite_component.texture)];
 
+    DrawTextureRec(texture, sprite_component.frame_rect, {20, 20}, WHITE);
     //get<static_cast<Blueprint<>>(player_sprite)>(player_sprite);
+}
+static void render_to_texture(raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {
+    BeginTextureMode(render_target);
+    ClearBackground(config::colors::kBackground);
+    render_player(render_target, world, textures);
     EndTextureMode();
 }
-/*
-static void render_to_screen(raylib::RenderTexture &render_target, const World &world) {
+
+static void render_to_screen(raylib::RenderTexture &render_target, const TWorld &world) {
     DrawTexturePro(render_target.texture, Rectangle{0.0f, 0.0f, (float) render_target.texture.width, (float) -render_target.texture.height},
                    Rectangle{0.0f, 0.0f, static_cast<float>(config::kScreenWidth), static_cast<float>(config::kScreenHeight)}, Vector2{0, 0}, 0.0f, WHITE);
-    raylib::DrawText(std::to_string(static_cast<int>(world.timer)), config::kScreenWidth - 60, 20, 30, GREEN);
+    //raylib::DrawText(std::to_string(static_cast<int>(world.timer)), config::kScreenWidth - 60, 20, 30, GREEN);
     raylib::DrawText(std::to_string(world.enemy_bullets.first_available_index), config::kScreenWidth - 60, 60, 30, ORANGE);
     DrawFPS(5, 5);
 }
-*/
+
 void GameDefinition::render_() {
     BeginDrawing();
-    ClearBackground(BLACK);
-    render_to_texture(render_target_, world, texture_map);
-    //render_to_screen(render_target_, world);
+    ClearBackground(config::colors::kBackground);
+    render_to_texture(render_target_, world, textures_);
+    render_to_screen(render_target_, world);
     EndDrawing();
 }
-

@@ -16,6 +16,7 @@
 struct TWorld;
 
 struct BlueprintBase {
+    virtual void update(double time, TWorld &world) = 0;
     virtual ~BlueprintBase() = default;
 };
 
@@ -75,18 +76,23 @@ auto &get(is_a_memory auto &memory) {
  */
 template<is_many_components... Ts>
 class Blueprint : public BlueprintBase {
-    using ComponentFunction = std::function<void(const double, TWorld &, Ts &...)>;
+    using BlueprintUpdateFunction = std::function<void(const double, TWorld &, Ts &...)>;
     using Components = std::tuple<Ts...>;
 
 public:
-    ComponentFunction component_function;
+    BlueprintUpdateFunction update_function;
     Components components = std::make_tuple(Ts()...);
 
-    explicit Blueprint(ComponentFunction func)
-        : component_function{std::forward<ComponentFunction>(func)} {};
-
+    explicit Blueprint(BlueprintUpdateFunction blueprint_update_function)
+        : update_function{blueprint_update_function} {};
+    void update(double time, TWorld &world) override;
     ~Blueprint() override = default;
 };
+
+template<is_many_components... Ts>
+void Blueprint<Ts...>::update(double time, TWorld &world) {
+    update_function(time, world, std::get<Ts>(components)...);
+}
 
 /**
  * Deduction guide allowing to infer Blueprint template types from the function provided in the constructor
@@ -144,14 +150,14 @@ Blueprint(std::function<void(const double, TWorld &, Cs &...)>) -> Blueprint<Cs.
 template<is_many_components... Ts>
 class BlueprintsInMemory : public MemoryBase {
     using Components = std::tuple<std::vector<Ts>...>;
-    using ComponentFunction = std::function<void(const double, TWorld &, Ts &...)>;
-    using ComponentFunctionVector = std::vector<ComponentFunction>;
+    using BlueprintUpdateFunction = std::function<void(const double, TWorld &, Ts &...)>;
+    using VectorOfUpdateFunctions = std::vector<BlueprintUpdateFunction>;
 
 public:
     Components components;
-    ComponentFunctionVector functions;
+    VectorOfUpdateFunctions functions;
 
-    static constexpr ComponentFunction unpack_function(is_a_blueprint auto &blueprint) { return std::move(blueprint.component_function); }
+    static constexpr BlueprintUpdateFunction unpack_function(is_a_blueprint auto &blueprint) { return std::move(blueprint.update_function); }
 
     template<is_a_component T, is_a_blueprint... Blueprint>
     static constexpr std::vector<T> unpack_components(Blueprint const &...blueprint_pack) { return {std::move(std::get<T>(blueprint_pack.components))...}; }
@@ -167,9 +173,9 @@ public:
 
 template<is_many_components... Ts>
 void BlueprintsInMemory<Ts...>::update(double time, TWorld &world) {
-    for (typename ComponentFunctionVector::size_type i = 0; i < functions.size(); i++) {
-        auto func = functions[i];
-        func(time, world, std::get<std::vector<Ts>>(components)[i]...);
+    for (typename VectorOfUpdateFunctions::size_type i = 0; i < functions.size(); i++) {
+        auto blueprint_update_function = functions[i];
+        blueprint_update_function(time, world, std::get<std::vector<Ts>>(components)[i]...);
     }
 }
 
@@ -270,7 +276,7 @@ public:
           size{amount} {};
 
     void add(is_a_blueprint auto &blueprint);
-    void remove_at(size_t index);
+    void remove_at(typename ComponentFunctionVector::size_type index);
     void update(double time, TWorld &world) override;
 
 private:
@@ -294,12 +300,12 @@ template<is_many_components... Ts>
 void BlueprintsInPool<Ts...>::add(is_a_blueprint auto &blueprint) {
     if (first_available_index < size) {
         (insert_component_at_index(first_available_index, get<Ts>(blueprint)), ...);
-        functions[first_available_index] = blueprint.component_function;
+        functions[first_available_index] = blueprint.update_function;
         first_available_index += 1;
     }
 }
 template<is_many_components... Ts>
-void BlueprintsInPool<Ts...>::remove_at(size_t index) {
+void BlueprintsInPool<Ts...>::remove_at(typename ComponentFunctionVector::size_type index) {
     if (index < size && index < first_available_index) {
         for (typename ComponentFunctionVector::size_type i = index; i < first_available_index - 1; i++) {
             (swap_components_at_index<Ts>(i, i + 1), ...);

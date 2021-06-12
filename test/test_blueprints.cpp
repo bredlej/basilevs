@@ -40,10 +40,10 @@ TEST_F(BlueprintTest, RunsComponentFunctionWithOneComponent) {
     auto movement_component = get<components::Movement>(blueprint);
     EXPECT_TRUE(movement_component.position.x == 0);
     EXPECT_TRUE(movement_component.position.y == 0);
-    blueprint.component_function(1, w, movement_component);
+    blueprint.update_function(1, w, movement_component);
     EXPECT_TRUE(movement_component.position.x == 1);
     EXPECT_TRUE(movement_component.position.y == 1);
-    blueprint.component_function(1, w, movement_component);
+    blueprint.update_function(1, w, movement_component);
     EXPECT_TRUE(movement_component.position.x == 2);
     EXPECT_TRUE(movement_component.position.y == 2);
 }
@@ -61,11 +61,11 @@ TEST_F(BlueprintTest, RunsComponentFunctionWithManyComponents) {
     EXPECT_TRUE(movement_component.position.x == 0);
     EXPECT_TRUE(movement_component.position.y == 0);
     EXPECT_FALSE(active_component.is_active);
-    blueprint.component_function(1, world, movement_component, active_component);
+    blueprint.update_function(1, world, movement_component, active_component);
     EXPECT_TRUE(movement_component.position.x == 1);
     EXPECT_TRUE(movement_component.position.y == 1);
     EXPECT_TRUE(active_component.is_active);
-    blueprint.component_function(1, world, movement_component, active_component);
+    blueprint.update_function(1, world, movement_component, active_component);
     EXPECT_TRUE(movement_component.position.x == 2);
     EXPECT_TRUE(movement_component.position.y == 2);
 }
@@ -354,16 +354,16 @@ TEST_F(StateComponentTest, DoesStateComponentTransitionBetweenStates) {
     auto &state_component = get<components::StateMachine<StateMachineDeclaration, StatefulObject>>(blueprint);
 
     EXPECT_TRUE(state_component.state_machine.is("entry"_s));
-    blueprint.component_function(1, world, state_component);
+    blueprint.update_function(1, world, state_component);
 
     EXPECT_TRUE(state_component.state_machine.is("init"_s));
-    blueprint.component_function(2, world, state_component);
+    blueprint.update_function(2, world, state_component);
 
     EXPECT_TRUE(state_component.state_machine.is("running"_s));
-    blueprint.component_function(1, world, state_component);
+    blueprint.update_function(1, world, state_component);
 
     EXPECT_TRUE(state_component.state_machine.is("running"_s));
-    blueprint.component_function(3, world, state_component);
+    blueprint.update_function(3, world, state_component);
 
     EXPECT_TRUE(state_component.state_machine.is(X));
 }
