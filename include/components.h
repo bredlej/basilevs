@@ -24,7 +24,7 @@ namespace components {
     };
 
     struct Sprite : ComponentBase {
-        TextureId texture{TextureId::Player};
+        assets::TextureId texture{assets::TextureId::Player};
         int texture_width{1};
         int texture_height{1};
         Rectangle frame_rect{0,0,1,1};

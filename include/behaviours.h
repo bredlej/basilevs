@@ -9,24 +9,37 @@
 
 constexpr auto kFrameSpeed = 12;
 
-namespace behaviours::player {
+namespace behaviours {
+    namespace player {
+        constexpr auto frame_update = [](components::Sprite &sprite) {
+            sprite.frame_counter++;
 
-    constexpr auto frame_update = [] (components::Sprite &sprite) {
-        sprite.frame_counter++;
+            if (sprite.frame_counter >= (60 / kFrameSpeed)) {
+                sprite.frame_counter = 0;
+                sprite.current_frame++;
 
-        if (sprite.frame_counter >= (60 / kFrameSpeed)) {
-            sprite.frame_counter = 0;
-            sprite.current_frame++;
+                if (sprite.current_frame > sprite.amount_frames - 1) sprite.current_frame = 0;
 
-            if (sprite.current_frame > sprite.amount_frames- 1) sprite.current_frame = 0;
-
-            sprite.frame_rect.x = static_cast<float>(sprite.current_frame) * static_cast<float>(sprite.texture_width) / static_cast<float>(sprite.amount_frames);
-        }
-    };
-    constexpr auto kPlayerNormalBehaviour = [](const double time, TWorld &, components::Sprite & sprite, components::Movement &) {
-        frame_update(sprite);
-    };
-    using PlayerUpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
+                sprite.frame_rect.x = static_cast<float>(sprite.current_frame) * static_cast<float>(sprite.texture_width) / static_cast<float>(sprite.amount_frames);
+            }
+        };
+        constexpr auto kPlayerNormalBehaviour = [](const double time, TWorld &, components::Sprite &sprite, components::Movement &) {
+            frame_update(sprite);
+        };
+        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
+    }
+    namespace background {
+        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
+        constexpr auto level1_background_update = [] (const double time, TWorld &, components::Sprite &sprite, components::Movement &) {
+          sprite.frame_counter += 1;
+          if (sprite.frame_rect.y > 0) {
+              if (sprite.frame_counter >= (60 / kFrameSpeed)) {
+                  sprite.frame_counter = 0;
+                  sprite.frame_rect.y -= 1 - time;
+              }
+          }
+        };
+    }
 }
 /*
 #include "bullets.h"

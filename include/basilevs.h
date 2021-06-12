@@ -20,7 +20,7 @@ namespace config {
     namespace colors {
         auto const kForeground = raylib::Color{240, 246, 240};
         auto const kBackground = raylib::Color{34, 35, 35};
-    };
+    };// namespace colors
 }// namespace config
 namespace basilevs {
     enum class EntityType { Player,

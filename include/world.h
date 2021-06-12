@@ -37,9 +37,11 @@ struct MemoryBase;
  *
  */
 struct TWorld {
+    using Background = std::shared_ptr<Blueprint<components::Sprite, components::Movement>>;
     using PlayerType = Blueprint<components::Sprite, components::Movement>;
     explicit TWorld() = default;
 public:
+    Background background = nullptr;
     std::shared_ptr<PlayerType> player = nullptr;
     std::shared_ptr<MemoryBase> enemies = nullptr;
     BlueprintsInPool<components::Movement> enemy_bullets{1000};
