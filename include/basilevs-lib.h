@@ -5,13 +5,11 @@
 #ifndef BASILEVS_BASILEVS_LIB_H
 #define BASILEVS_BASILEVS_LIB_H
 
-#include <behaviours.h>
+
 #include <boost/sml/sml.hpp>
 #include <iostream>
-#include <raylib-cpp/include/Functions.hpp>
-#include <raylib-cpp/include/Vector2.hpp>
-#include <raylib.h>
-#include <world.h>
+
+#include <basilevs.h>
 
 namespace sml = boost::sml;
 
