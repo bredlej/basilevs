@@ -39,11 +39,12 @@ struct MemoryBase;
 struct TWorld {
     using Background = std::shared_ptr<Blueprint<components::Sprite, components::Movement>>;
     using PlayerType = Blueprint<components::Sprite, components::Movement>;
+    using EnemyListType = BlueprintsInMemory<components::Sprite, components::Movement, components::Activation, components::TimeCounter>;
     explicit TWorld() = default;
 public:
     Background background = nullptr;
     std::shared_ptr<PlayerType> player = nullptr;
-    std::shared_ptr<MemoryBase> enemies = nullptr;
+    std::shared_ptr<EnemyListType> enemies = nullptr;
     BlueprintsInPool<components::Movement> enemy_bullets{1000};
 };
 #endif//BASILEVS_WORLD_H

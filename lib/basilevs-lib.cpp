@@ -8,17 +8,13 @@ namespace basilevs {
         using namespace sml;
         using namespace state;
         GameDefinition game;
-        sm<GameState> sm{game};
-        sm.process_event(events::Init{});
-        sm.process_event(events::Run{window, audio});
-        sm.process_event(events::Stop{});
+
+        //sm.process_event(events::Init{});
+        //sm.process_event(events::Run{});
+        //sm.process_event(events::Stop{});
+        game.run(window, audio);
     }
 }// namespace basilevs
-
-std::vector<Texture2D> GameDefinition::load_textures_() {
-
-    return assets::load_textures_level_1();
-}
 
 /*
 void GameDefinition::load_sprites_() const {
@@ -29,9 +25,6 @@ void GameDefinition::load_sprites_() const {
             {basilevs::EntityType::BulletPlayer, Sprite(texture_map.at(basilevs::EntityType::BulletPlayer), raylib::Vector2(50, 50), 1)}};
 }
 */
-void GameDefinition::load_sounds_() const {
-    sound_map = {{basilevs::EntityType::BulletRound, LoadSound("assets/bullet.wav")}};
-}
 
 namespace emitter {
     enum class Type { ShootEverySecond,
@@ -106,11 +99,11 @@ namespace emitter {
 }// namespace emitter
 
 
-
 void GameDefinition::initialize_world_() {
 
     world.background = basilevs::initialize_background(textures_);
     world.player = basilevs::initialize_player(textures_);
+    world.enemies = basilevs::initialize_enemies(textures_);
 
     /* auto player = BasilevsPlayer{};
     player.sprite = sprite_template_map.at(basilevs::EntityType::Player);
@@ -133,20 +126,24 @@ void GameDefinition::initialize_world_() {
 }
 
 void GameDefinition::initialize() {
-    //load_sprites_();
-    //load_sounds_();
+    sm.process_event(state::events::Init{});
+    textures_ = assets::load_textures_level_1();
     initialize_world_();
     SetTargetFPS(60);
-    //SetTextureFilter(world.background.texture, FILTER_ANISOTROPIC_16X);
+    sm.process_event(state::events::Run{});
 }
 
 void GameDefinition::loop_(std::chrono::duration<double> duration) {
     world.background->update(duration.count(), world);
     world.player->update(duration.count(), world);
+    world.enemies->update(duration.count(), world);
     render_();
 }
 
 void GameDefinition::run(raylib::Window &window, raylib::AudioDevice &audio) {
+    if (!state.is_initialized) {
+        initialize();
+    }
     std::chrono::duration<double> loop_duration = std::chrono::steady_clock::now() - std::chrono::steady_clock::now();
     while (!window.ShouldClose()) {
         auto now = std::chrono::steady_clock::now();

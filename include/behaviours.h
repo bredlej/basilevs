@@ -28,6 +28,15 @@ namespace behaviours {
         };
         using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
     }
+    namespace enemy {
+        constexpr auto kEnemyNormal = [](const double time, TWorld &, components::Sprite &sprite, components::Movement &, components::Activation &activation, components::TimeCounter &time_counter) {
+            time_counter.elapsed_time += time;
+            if (time_counter.elapsed_time > activation.activate_after_time) {
+                activation.is_active = true;
+            }
+        };
+        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::Activation &, components::TimeCounter &)>;
+    }
     namespace background {
         using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
         constexpr auto level1_background_update = [] (const double time, TWorld &, components::Sprite &sprite, components::Movement &) {

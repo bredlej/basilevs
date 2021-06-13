@@ -5,7 +5,6 @@
 #ifndef BASILEVS_BASILEVS_LIB_H
 #define BASILEVS_BASILEVS_LIB_H
 
-
 #include <boost/sml/sml.hpp>
 #include <iostream>
 
@@ -13,56 +12,33 @@
 
 namespace sml = boost::sml;
 
-struct GameDefinition {
-public:
-    TWorld world;
+struct GameStateMachine{
     bool is_running{false};
     bool is_initialized{false};
-
-    void initialize();
-    void run(raylib::Window &window, raylib::AudioDevice &audio);
-
-private:
-    std::vector<Texture2D> textures_ = load_textures_();
-    mutable basilevs::SpriteTemplateMap sprite_template_map;
-    mutable basilevs::SoundMap sound_map;
-
-    raylib::RenderTexture2D render_target_{config::kFrameWidth, config::kFrameHeight};
-    static std::vector<Texture2D> load_textures_() ;
-    void load_sprites_() const;
-    void load_sounds_() const;
-    void initialize_world_();
-    void loop_(std::chrono::duration<double> duration);
-    void render_();
 };
 
 namespace state {
     namespace events {
         struct Init {};
-        struct Run {
-            raylib::Window &window;
-            raylib::AudioDevice &audio;
-        };
+        struct Run {};
         struct Stop {};
     }// namespace events
 
     namespace guards {
-        constexpr auto is_initialized = [](const auto &event, const GameDefinition &game) { return game.is_initialized; };
-        constexpr auto should_stop = [](const auto &event, const GameDefinition &game) { return game.is_running; };
+        constexpr auto is_initialized = [](const auto &event, const GameStateMachine &game) { return game.is_initialized; };
+        constexpr auto should_stop = [](const auto &event, const GameStateMachine &game) { return game.is_running; };
     }// namespace guards
 
     namespace actions {
-        constexpr auto initialize = [](const auto &event, GameDefinition &game) {
-            game.initialize();
+        constexpr auto initialize = [](const auto &event, GameStateMachine &game) {
             game.is_initialized = true;
         };
 
-        constexpr auto run_action = [](const auto &event, GameDefinition &game) {
-            game.run(event.window, event.audio);
+        constexpr auto run_action = [](const auto &event, GameStateMachine &game) {
             game.is_running = true;
         };
 
-        constexpr auto stop_action = [](const auto &event, GameDefinition &game) {
+        constexpr auto stop_action = [](const auto &event, GameStateMachine &game) {
             game.is_running = false;
         };
     }// namespace actions
@@ -85,4 +61,20 @@ namespace basilevs {
         static void run(raylib::Window &window, raylib::AudioDevice &audio);
     };
 }// namespace basilevs
+
+struct GameDefinition {
+public:
+    TWorld world;
+    GameStateMachine state;
+    boost::sml::sm<basilevs::GameState> sm{state};
+    void initialize();
+    void run(raylib::Window &window, raylib::AudioDevice &audio);
+
+private:
+    std::vector<Texture2D> textures_;
+    raylib::RenderTexture2D render_target_{config::kFrameWidth, config::kFrameHeight};
+    void initialize_world_();
+    void loop_(std::chrono::duration<double> duration);
+    void render_();
+};
 #endif//BASILEVS_BASILEVS_LIB_H

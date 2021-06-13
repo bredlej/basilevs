@@ -28,9 +28,9 @@ namespace components {
         int texture_width{1};
         int texture_height{1};
         Rectangle frame_rect{0,0,1,1};
-        int amount_frames{1};
-        int current_frame{0};
-        int frame_counter{0};
+        uint32_t amount_frames{1};
+        uint32_t current_frame{0};
+        uint32_t frame_counter{0};
     };
 
     struct Shooting : ComponentBase {
@@ -49,7 +49,7 @@ namespace components {
     };
 
     struct TimeCounter : ComponentBase {
-        double elapsed_time{0};
+        double elapsed_time{0.0};
     };
 
     template<typename StateDeclaration, typename StatefulObject>

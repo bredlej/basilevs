@@ -9,7 +9,8 @@
 namespace assets {
     enum class TextureId {
         Player = 0,
-        Background_Level_1 = 1
+        Background_Level_1 = 1,
+        Enemy = 2
     };
     constexpr auto load_textures_level_1 = []() -> std::vector<Texture2D> {
       return {

@@ -37,16 +37,20 @@ namespace basilevs {
     using SpriteTemplateMap = std::unordered_map<EntityType, Sprite>;
     using SoundMap = std::unordered_map<EntityType, Sound>;
 
+    constexpr auto prepare_sprite = [](components::Sprite &sprite_component, const std::vector<Texture2D> &textures, const assets::TextureId texture_id, const uint32_t amount_frames) {
+      sprite_component.texture = texture_id;
+      sprite_component.amount_frames = amount_frames;
+      auto texture_width = textures[static_cast<int>(sprite_component.texture)].width;
+      auto texture_height = textures[static_cast<int>(sprite_component.texture)].height;
+      sprite_component.texture_width = texture_width;
+      sprite_component.texture_height = texture_height;
+      sprite_component.frame_rect = {0.0f, 0.0f, static_cast<float>(texture_width) / static_cast<float>(sprite_component.amount_frames), static_cast<float>(texture_height)};
+    };
+
     constexpr auto initialize_player = [](const std::vector<Texture2D> &textures) {
       auto player = Blueprint(behaviours::player::UpdateFunction(behaviours::player::kPlayerNormalBehaviour));
       auto &player_sprite = get<components::Sprite>(player);
-      player_sprite.texture = assets::TextureId::Player;
-      player_sprite.amount_frames = 7;
-      auto texture_width = textures[static_cast<int>(player_sprite.texture)].width;
-      auto texture_height = textures[static_cast<int>(player_sprite.texture)].height;
-      player_sprite.texture_width = texture_width;
-      player_sprite.texture_height = texture_height;
-      player_sprite.frame_rect = {0.0f, 0.0f, static_cast<float>(texture_width) / static_cast<float>(player_sprite.amount_frames), static_cast<float>(texture_height)};
+      prepare_sprite(player_sprite, textures, assets::TextureId::Player, 7);
 
       return std::make_shared<decltype(player)>(player);
     };
@@ -59,9 +63,27 @@ namespace basilevs {
       background_sprite.amount_frames = 6;
       background_sprite.texture_width = texture.width;
       background_sprite.texture_height = texture.height;
-      background_sprite.frame_rect = {0.0, static_cast<float>(texture.height - (texture.height / background_sprite.amount_frames)), static_cast<float>(texture.width), static_cast<float>((texture.height / background_sprite.amount_frames))};
+      background_sprite.frame_rect = {0.0, static_cast<float>(texture.height) - (static_cast<float>(texture.height) / static_cast<float>(background_sprite.amount_frames)), static_cast<float>(texture.width), static_cast<float>(texture.height) / static_cast<float>(background_sprite.amount_frames)};
 
       return std::make_shared<decltype(background)>(background);
+    };
+
+    constexpr auto spawn_enemy_after_seconds = [](const double time, const std::vector<Texture2D> &textures) {
+      auto enemy = Blueprint(behaviours::enemy::UpdateFunction(behaviours::enemy::kEnemyNormal));
+      auto &activation_component = get<components::Activation>(enemy);
+      activation_component.activate_after_time = time;
+      activation_component.is_active = false;
+      auto &sprite_component = get<components::Sprite>(enemy);
+      prepare_sprite(sprite_component, textures, assets::TextureId::Enemy, 1);
+      auto &movement_component = get<components::Movement>(enemy);
+      auto &time_counter = get<components::TimeCounter>(enemy);
+      time_counter.elapsed_time = 0.0;
+      return enemy;
+    };
+
+    constexpr auto initialize_enemies = [](const std::vector<Texture2D> &textures) {
+        auto enemies_in_memory = BlueprintsInMemory(spawn_enemy_after_seconds(4, textures));
+        return std::make_shared<decltype(enemies_in_memory)>(enemies_in_memory);
     };
 
     constexpr auto render_player = [](raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {
@@ -70,6 +92,23 @@ namespace basilevs {
       auto texture = textures[static_cast<int>(sprite_component.texture)];
 
       DrawTextureRec(texture, sprite_component.frame_rect, {20, 20}, WHITE);
+    };
+
+    constexpr auto render_enemies = [](raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {
+      auto enemy_components = world.enemies->components;
+      auto &sprites = std::get<std::vector<components::Sprite>>(enemy_components);
+      auto &activations = std::get<std::vector<components::Activation>>(enemy_components);
+
+      for (size_t i = 0; i < sprites.size(); i++) {
+          if (activations[i].is_active) {
+              DrawTextureRec(textures[static_cast<int>(sprites[i].texture)], sprites[i].frame_rect, {50, 50}, WHITE);
+          }
+      }
+      /*for (const auto &enemy: enemies)
+      auto sprite_component = std::get<components::Sprite>(player->components);
+      auto texture = textures[static_cast<int>(sprite_component.texture)];
+
+      DrawTextureRec(texture, sprite_component.frame_rect, {20, 20}, WHITE);*/
     };
 
     constexpr auto render_background = [](raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {
@@ -85,6 +124,7 @@ namespace basilevs {
       ClearBackground(config::colors::kBackground);
       render_background(render_target, world, textures);
       render_player(render_target, world, textures);
+      render_enemies(render_target, world, textures);
       EndTextureMode();
     };
 
