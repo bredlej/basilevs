@@ -9,7 +9,6 @@
 #include <raylib.h>
 #include <world.h>
 #include <behaviours.h>
-#include "sprite.h"
 #include <chrono>
 #include <concepts>
 #include <functional>
@@ -33,10 +32,6 @@ namespace basilevs {
                             BulletRound,
                             BulletPlayer };
 
-    using TextureMap = std::unordered_map<EntityType, Texture2D>;
-    using SpriteTemplateMap = std::unordered_map<EntityType, Sprite>;
-    using SoundMap = std::unordered_map<EntityType, Sound>;
-
     constexpr auto prepare_sprite = [](components::Sprite &sprite_component, const std::vector<Texture2D> &textures, const assets::TextureId texture_id, const uint32_t amount_frames) {
       sprite_component.texture = texture_id;
       sprite_component.amount_frames = amount_frames;
@@ -51,7 +46,8 @@ namespace basilevs {
       auto player = Blueprint(behaviours::player::UpdateFunction(behaviours::player::kPlayerNormalBehaviour));
       auto &player_sprite = get<components::Sprite>(player);
       prepare_sprite(player_sprite, textures, assets::TextureId::Player, 7);
-
+      auto &movement_component = get<components::Movement>(player);
+      movement_component.position = {70, 100};
       return std::make_shared<decltype(player)>(player);
     };
 
@@ -68,7 +64,7 @@ namespace basilevs {
       return std::make_shared<decltype(background)>(background);
     };
 
-    constexpr auto spawn_enemy_after_seconds = [](const double time, const std::vector<Texture2D> &textures) {
+    constexpr auto spawn_enemy_after_seconds = [](const double time, const std::vector<Texture2D> &textures, const Vector2 &&position) {
       auto enemy = Blueprint(behaviours::enemy::UpdateFunction(behaviours::enemy::kEnemyNormal));
       auto &activation_component = get<components::Activation>(enemy);
       activation_component.activate_after_time = time;
@@ -76,39 +72,43 @@ namespace basilevs {
       auto &sprite_component = get<components::Sprite>(enemy);
       prepare_sprite(sprite_component, textures, assets::TextureId::Enemy, 1);
       auto &movement_component = get<components::Movement>(enemy);
+      movement_component.position = position;
       auto &time_counter = get<components::TimeCounter>(enemy);
       time_counter.elapsed_time = 0.0;
       return enemy;
     };
 
     constexpr auto initialize_enemies = [](const std::vector<Texture2D> &textures) {
-        auto enemies_in_memory = BlueprintsInMemory(spawn_enemy_after_seconds(4, textures));
+        auto enemies_in_memory = BlueprintsInMemory(
+                spawn_enemy_after_seconds(1, textures, {0, 20}),
+                spawn_enemy_after_seconds(2, textures, {35, 20}),
+                spawn_enemy_after_seconds(3, textures, {70, 20}),
+                spawn_enemy_after_seconds(4, textures, {105, 20}),
+                spawn_enemy_after_seconds(5, textures, {140, 20}));
         return std::make_shared<decltype(enemies_in_memory)>(enemies_in_memory);
     };
 
     constexpr auto render_player = [](raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {
       auto player = world.player.get();
       auto sprite_component = std::get<components::Sprite>(player->components);
+      auto movement_component = std::get<components::Movement>(player->components);
+
       auto texture = textures[static_cast<int>(sprite_component.texture)];
 
-      DrawTextureRec(texture, sprite_component.frame_rect, {20, 20}, WHITE);
+      DrawTextureRec(texture, sprite_component.frame_rect, movement_component.position, WHITE);
     };
 
     constexpr auto render_enemies = [](raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {
       auto enemy_components = world.enemies->components;
-      auto &sprites = std::get<std::vector<components::Sprite>>(enemy_components);
-      auto &activations = std::get<std::vector<components::Activation>>(enemy_components);
+      auto sprites = std::get<std::vector<components::Sprite>>(enemy_components);
+      auto activations = std::get<std::vector<components::Activation>>(enemy_components);
+      auto movement = std::get<std::vector<components::Movement>>(enemy_components);
 
       for (size_t i = 0; i < sprites.size(); i++) {
           if (activations[i].is_active) {
-              DrawTextureRec(textures[static_cast<int>(sprites[i].texture)], sprites[i].frame_rect, {50, 50}, WHITE);
+              DrawTextureRec(textures[static_cast<int>(sprites[i].texture)], sprites[i].frame_rect, movement[i].position, WHITE);
           }
       }
-      /*for (const auto &enemy: enemies)
-      auto sprite_component = std::get<components::Sprite>(player->components);
-      auto texture = textures[static_cast<int>(sprite_component.texture)];
-
-      DrawTextureRec(texture, sprite_component.frame_rect, {20, 20}, WHITE);*/
     };
 
     constexpr auto render_background = [](raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {

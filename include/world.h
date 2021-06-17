@@ -4,19 +4,10 @@
 
 #ifndef BASILEVS_WORLD_H
 #define BASILEVS_WORLD_H
-//#include "background.h"
-//#include "basilevs_player.h"
 #include "blueprints.h"
-//#include "enemy.h"
-//#include "spawn.h"
-//#include <basilevs.h>
-//#include <bulletpool.h>
-//#include <bullets.h>
-
 #include <utility>
 #include <list>
 #include <memory>
-//using namespace basilevs;
 
 /* Forward declarations */
 struct BlueprintBase;
