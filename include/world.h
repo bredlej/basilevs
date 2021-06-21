@@ -5,9 +5,9 @@
 #ifndef BASILEVS_WORLD_H
 #define BASILEVS_WORLD_H
 #include "blueprints.h"
-#include <utility>
 #include <list>
 #include <memory>
+#include <utility>
 
 /* Forward declarations */
 struct BlueprintBase;
@@ -30,12 +30,14 @@ struct MemoryBase;
 struct TWorld {
     using Background = std::shared_ptr<Blueprint<components::Sprite, components::Movement>>;
     using PlayerType = Blueprint<components::Sprite, components::Movement>;
-    using EnemyListType = BlueprintsInMemory<components::Sprite, components::Movement, components::Activation, components::TimeCounter>;
+    using EnemyListType = BlueprintsInMemory<components::Sprite, components::Movement, components::Activation, components::TimeCounter, components::Emission>;
     explicit TWorld() = default;
+
 public:
     Background background = nullptr;
     std::shared_ptr<PlayerType> player = nullptr;
     std::shared_ptr<EnemyListType> enemies = nullptr;
-    BlueprintsInPool<components::Movement> enemy_bullets{1000};
+    BlueprintsInPool<components::Sprite, components::Movement> enemy_bullets{1000};
+    raylib::Rectangle bounds{-10, -10, 170, 154};
 };
 #endif//BASILEVS_WORLD_H

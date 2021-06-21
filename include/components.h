@@ -19,8 +19,8 @@ concept is_many_components = (is_a_component<T> && ...);
 namespace components {
     struct Movement : ComponentBase{
     public:
-        Vector2 position;
-        Vector2 direction;
+        raylib::Vector2 position;
+        raylib::Vector2 direction;
     };
 
     struct Sprite : ComponentBase {
@@ -45,7 +45,8 @@ namespace components {
     };
 
     struct Emission : ComponentBase {
-        int emission_count{0};
+        uint32_t emission_count{0};
+        double last_emission{0.0};
     };
 
     struct TimeCounter : ComponentBase {

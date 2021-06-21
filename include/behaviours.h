@@ -4,8 +4,8 @@
 
 #ifndef BASILEVS_BEHAVIOURS_H
 #define BASILEVS_BEHAVIOURS_H
-#include <world.h>
 #include <functional>
+#include <world.h>
 
 constexpr auto kFrameSpeed = 12;
 
@@ -27,77 +27,54 @@ namespace behaviours {
             frame_update(sprite);
         };
         using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
-    }
+    }// namespace player
+    namespace bullet {
+        constexpr auto fly_down = [](const double time, TWorld &, components::Sprite &sprite, components::Movement &movement) {
+            movement.direction = movement.direction.Rotate(-5.0f);
+            movement.position.y += 20.0 * time;
+            movement.position = movement.position.Add(movement.direction);
+        };
+        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
+    }// namespace bullet
+    constexpr auto emit = [](TWorld &world, auto &emitter, const auto movement, const double time, const auto func) {
+        constexpr auto emit_every_seconds = 1.0;
+        if (emitter.last_emission > emit_every_seconds) {
+            emitter.last_emission = 0.0;
+            auto emitted_bullet = Blueprint(bullet::UpdateFunction(func));
+            auto &sprite_component = get<components::Sprite>(emitted_bullet);
+            sprite_component.texture = assets::TextureId::Bullet;
+            sprite_component.frame_rect = raylib::Rectangle(0, 0, 8, 8);
+            auto &movement_component = get<components::Movement>(emitted_bullet);
+            movement_component.position = movement.position;
+            movement_component.position.x += 8;
+            movement_component.direction = raylib::Vector2(0.0, 1.0);
+            world.enemy_bullets.add(emitted_bullet);
+        }
+        emitter.last_emission += time;
+    };
     namespace enemy {
-        constexpr auto kEnemyNormal = [](const double time, TWorld &, components::Sprite &sprite, components::Movement &, components::Activation &activation, components::TimeCounter &time_counter) {
+        constexpr auto kEnemyNormal = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter) {
             time_counter.elapsed_time += time;
             if (time_counter.elapsed_time > activation.activate_after_time) {
                 activation.is_active = true;
             }
+            if (activation.is_active) {
+                emit(world, emitter, movement, time, bullet::fly_down);
+            }
         };
-        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::Activation &, components::TimeCounter &)>;
-    }
+        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::Activation &, components::TimeCounter &, components::Emission &)>;
+    }// namespace enemy
     namespace background {
         using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
-        constexpr auto level1_background_update = [] (const double time, TWorld &, components::Sprite &sprite, components::Movement &) {
-          sprite.frame_counter += 1;
-          if (sprite.frame_rect.y > 0) {
-              if (sprite.frame_counter >= (60 / kFrameSpeed)) {
-                  sprite.frame_counter = 0;
-                  sprite.frame_rect.y -= 1 - time;
-              }
-          }
-        };
-    }
-}
-/*
-#include "bullets.h"
-#include "enemy.h"
-
-namespace basilevs {
-    namespace bullet {
-        enum class Type {FlyForward, FlyForwardFast, FlySpiral};
-        static constexpr auto bullet_fly_forward = [](float time, NormalBullet &bullet, const World &world) -> bool {
-            bullet.position = Vector2Add(bullet.position, bullet.direction);
-
-            bullet.timer += time;
-
-            Vector2Normalize(bullet.direction);
-            return true;
-        };
-        static constexpr auto bullet_fly_forward_fast = [](float time, NormalBullet &bullet, const World &world) -> bool {
-            //bullet.position = Vector2Add(bullet.position, bullet.direction);
-            bullet.position.y += bullet.direction.y * time*200;
-            bullet.position.x += bullet.direction.x * time*200;
-            bullet.timer += time;
-
-            Vector2Normalize(bullet.direction);
-            return true;
-        };
-
-        static constexpr auto bullet_fly_spiral = [](const float time, NormalBullet &bullet, const World &world) -> bool {
-            bullet.timer += time;
-            //if (bullet.timer > 0.1f) {
-            bullet.rotation += 0.01f;
-            if (bullet.rotation > 360) {
-                bullet.rotation = 0;
+        constexpr auto level1_background_update = [](const double time, TWorld &, components::Sprite &sprite, components::Movement &) {
+            sprite.frame_counter += 1;
+            if (sprite.frame_rect.y > 0) {
+                if (sprite.frame_counter >= (60 / kFrameSpeed)) {
+                    sprite.frame_counter = 0;
+                    sprite.frame_rect.y -= 1 - time;
+                }
             }
-            bullet.timer = 0.0f;
-            //}
-            //bullet.position.x += bullet.direction.x ;//
-
-            bullet.position = Vector2Add(bullet.position, bullet.direction);
-            //bullet.direction = Vector2Rotate(bullet.direction, bullet.rotation);
-            //bullet.direction = Vector2Normalize(bullet.direction);
-            return true;
         };
-    }// namespace bullet
-
-    namespace enemy {
-        constexpr auto behavior_sinusoidal = [](Enemy &enemy, double time) -> void {
-            enemy.position.x += sin(time) * 0.7;
-        };
-    }
-}// namespace basilevs
- */
+    }// namespace background
+}// namespace behaviours
 #endif//BASILEVS_BEHAVIOURS_H

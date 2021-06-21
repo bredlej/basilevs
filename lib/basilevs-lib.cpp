@@ -28,10 +28,25 @@ void GameDefinition::initialize() {
     sm.process_event(state::events::Run{});
 }
 
+constexpr auto bullets_bounds_check = [] (TWorld &world) {
+  const auto movements = std::get<std::vector<components::Movement>>(world.enemy_bullets.components);
+  const auto bullet_size = raylib::Vector2(8,8);
+
+    for (std::size_t index = world.enemy_bullets.first_available_index; index > 0; index--) {
+        const auto bullet_movement = movements[index];
+        const auto bullet_bounds = raylib::Rectangle(bullet_movement.position, bullet_size);
+        if (!bullet_bounds.CheckCollision(world.bounds)) {
+            world.enemy_bullets.remove_at(index);
+        }
+    }
+};
 void GameDefinition::loop_(std::chrono::duration<double> duration) {
     world.background->update(duration.count(), world);
     world.player->update(duration.count(), world);
     world.enemies->update(duration.count(), world);
+    world.enemy_bullets.update(duration.count(), world);
+    bullets_bounds_check(world);
+
     render_();
 }
 
