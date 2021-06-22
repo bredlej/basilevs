@@ -4,7 +4,9 @@
 
 #ifndef BASILEVS_CORE_H
 #define BASILEVS_CORE_H
-#include <behaviours.h>
+#include <behaviours/player.h>
+#include <behaviours/enemy.h>
+#include <behaviours/background.h>
 #include <chrono>
 #include <concepts>
 #include <functional>
@@ -15,22 +17,10 @@
 #include <raylib.h>
 #include <utility>
 #include <world.h>
+#include <config.h>
 
-namespace config {
-    constexpr auto kFrameWidth = 160;
-    constexpr auto kFrameHeight = 144;
-    constexpr auto kScreenWidth = 800;
-    constexpr auto kScreenHeight = 760;
-    namespace colors {
-        auto const kForeground = raylib::Color{240, 246, 240};
-        auto const kBackground = raylib::Color{34, 35, 35};
-    };// namespace colors
-}// namespace config
 namespace basilevs {
-    enum class EntityType { Player,
-                            Enemy,
-                            BulletRound,
-                            BulletPlayer };
+    enum class EntityType { Player };
 
     constexpr auto prepare_sprite = [](components::Sprite &sprite_component, const std::vector<Texture2D> &textures, const assets::TextureId texture_id, const uint32_t amount_frames) {
         sprite_component.texture = texture_id;
@@ -39,6 +29,7 @@ namespace basilevs {
         auto texture_height = textures[static_cast<int>(sprite_component.texture)].height;
         sprite_component.texture_width = texture_width;
         sprite_component.texture_height = texture_height;
+        sprite_component.frame_speed = 12;
         sprite_component.frame_rect = {0.0f, 0.0f, static_cast<float>(texture_width) / static_cast<float>(sprite_component.amount_frames), static_cast<float>(texture_height)};
     };
 
@@ -59,6 +50,7 @@ namespace basilevs {
         background_sprite.amount_frames = 6;
         background_sprite.texture_width = texture.width;
         background_sprite.texture_height = texture.height;
+        background_sprite.frame_speed = 12;
         background_sprite.frame_rect = {0.0, static_cast<float>(texture.height) - (static_cast<float>(texture.height) / static_cast<float>(background_sprite.amount_frames)), static_cast<float>(texture.width), static_cast<float>(texture.height) / static_cast<float>(background_sprite.amount_frames)};
 
         return std::make_shared<decltype(background)>(background);
@@ -151,6 +143,18 @@ namespace basilevs {
         DrawFPS(5, 5);
     };
 
+    constexpr auto bullets_bounds_check = [] (TWorld &world) {
+      const auto movements = std::get<std::vector<components::Movement>>(world.enemy_bullets.components);
+      const auto bullet_size = raylib::Vector2(8,8);
+
+      for (std::size_t index = world.enemy_bullets.first_available_index; index > 0; index--) {
+          const auto bullet_movement = movements[index];
+          const auto bullet_bounds = raylib::Rectangle(bullet_movement.position, bullet_size);
+          if (!bullet_bounds.CheckCollision(world.bounds)) {
+              world.enemy_bullets.remove_at(index);
+          }
+      }
+    };
 
 }// namespace basilevs
 

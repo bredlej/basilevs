@@ -21,6 +21,7 @@ namespace components {
     public:
         raylib::Vector2 position;
         raylib::Vector2 direction;
+        float speed{0.0f};
     };
 
     struct Sprite : ComponentBase {
@@ -31,6 +32,7 @@ namespace components {
         uint32_t amount_frames{1};
         uint32_t current_frame{0};
         uint32_t frame_counter{0};
+        float frame_speed{1.0f};
     };
 
     struct Shooting : ComponentBase {
