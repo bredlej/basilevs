@@ -29,6 +29,7 @@ void GameDefinition::initialize() {
 }
 
 void GameDefinition::loop_(std::chrono::duration<double> duration) {
+    basilevs::handle_player_input(world);
     world.background->update(duration.count(), world);
     world.player->update(duration.count(), world);
     world.enemies->update(duration.count(), world);

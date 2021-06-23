@@ -20,8 +20,23 @@ namespace behaviours {
                 sprite.frame_rect.x = static_cast<float>(sprite.current_frame) * static_cast<float>(sprite.texture_width) / static_cast<float>(sprite.amount_frames);
             }
         };
-        constexpr auto kPlayerNormalBehaviour = [](const double time, TWorld &, components::Sprite &sprite, components::Movement &) {
+        constexpr auto move = [] (const double time, TWorld &world, components::Movement &movement) {
+            if (world.player_input[input::PlayerInput::Left]) {
+                movement.position.x -= movement.speed * time;
+            }
+            if (world.player_input[input::PlayerInput::Right]) {
+                movement.position.x += movement.speed * time;
+            }
+            if (world.player_input[input::PlayerInput::Up]) {
+                movement.position.y -= movement.speed * time;
+            }
+            if (world.player_input[input::PlayerInput::Down]) {
+                movement.position.y += movement.speed * time;
+            }
+        };
+        constexpr auto kPlayerNormalBehaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement) {
             frame_update(sprite);
+            move(time, world, movement);
         };
         using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
     }// namespace player

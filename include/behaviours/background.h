@@ -4,7 +4,10 @@
 
 #ifndef BASILEVS_BACKGROUND_H
 #define BASILEVS_BACKGROUND_H
+#include <components.h>
 #include <config.h>
+#include <functional>
+class TWorld;
 namespace behaviours {
     namespace background {
 

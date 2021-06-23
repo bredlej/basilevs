@@ -4,11 +4,12 @@
 
 #ifndef BASILEVS_CORE_H
 #define BASILEVS_CORE_H
-#include <behaviours/player.h>
-#include <behaviours/enemy.h>
 #include <behaviours/background.h>
+#include <behaviours/enemy.h>
+#include <behaviours/player.h>
 #include <chrono>
 #include <concepts>
+#include <config.h>
 #include <functional>
 #include <iostream>
 #include <raylib-cpp.hpp>
@@ -17,7 +18,6 @@
 #include <raylib.h>
 #include <utility>
 #include <world.h>
-#include <config.h>
 
 namespace basilevs {
     enum class EntityType { Player };
@@ -39,6 +39,7 @@ namespace basilevs {
         prepare_sprite(player_sprite, textures, assets::TextureId::Player, 7);
         auto &movement_component = get<components::Movement>(player);
         movement_component.position = raylib::Vector2{70, 100};
+        movement_component.speed = 50.0;
         return std::make_shared<decltype(player)>(player);
     };
 
@@ -140,22 +141,47 @@ namespace basilevs {
                        raylib::Rectangle{0.0f, 0.0f, static_cast<float>(config::kScreenWidth), static_cast<float>(config::kScreenHeight)}, Vector2{0, 0}, 0.0f, WHITE);
         //raylib::DrawText(std::to_string(static_cast<int>(world.timer)), config::kScreenWidth - 60, 20, 30, GREEN);
         raylib::DrawText(std::to_string(world.enemy_bullets.first_available_index), config::kScreenWidth - 60, 60, 30, ORANGE);
+        if (IsKeyDown(KEY_A)) {
+            raylib::DrawText("Left", config::kScreenWidth - 60, 90, 30, ORANGE);
+        }
         DrawFPS(5, 5);
     };
 
-    constexpr auto bullets_bounds_check = [] (TWorld &world) {
-      const auto movements = std::get<std::vector<components::Movement>>(world.enemy_bullets.components);
-      const auto bullet_size = raylib::Vector2(8,8);
+    constexpr auto bullets_bounds_check = [](TWorld &world) {
+        const auto movements = std::get<std::vector<components::Movement>>(world.enemy_bullets.components);
+        const auto bullet_size = raylib::Vector2(8, 8);
 
-      for (std::size_t index = world.enemy_bullets.first_available_index; index > 0; index--) {
-          const auto bullet_movement = movements[index];
-          const auto bullet_bounds = raylib::Rectangle(bullet_movement.position, bullet_size);
-          if (!bullet_bounds.CheckCollision(world.bounds)) {
-              world.enemy_bullets.remove_at(index);
-          }
-      }
+        for (std::size_t index = world.enemy_bullets.first_available_index; index > 0; index--) {
+            const auto bullet_movement = movements[index];
+            const auto bullet_bounds = raylib::Rectangle(bullet_movement.position, bullet_size);
+            if (!bullet_bounds.CheckCollision(world.bounds)) {
+                world.enemy_bullets.remove_at(index);
+            }
+        }
     };
 
+    constexpr auto handle_player_input = [](TWorld &world) {
+        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
+            world.player_input.set(input::PlayerInput::Left);
+        } else if (IsKeyUp(KEY_A) || IsKeyUp(KEY_LEFT)) {
+            world.player_input.set(input::PlayerInput::Left, false);
+        }
+        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
+            world.player_input.set(input::PlayerInput::Right);
+        } else if (IsKeyUp(KEY_D) || IsKeyUp(KEY_RIGHT)) {
+            world.player_input.set(input::PlayerInput::Right, false);
+        }
+        if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) {
+            world.player_input.set(input::PlayerInput::Up);
+        } else if (IsKeyUp(KEY_W) || IsKeyUp(KEY_UP)) {
+            world.player_input.set(input::PlayerInput::Up, false);
+        }
+        if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) {
+            world.player_input.set(input::PlayerInput::Down);
+        } else if (IsKeyUp(KEY_S) || IsKeyUp(KEY_DOWN)) {
+            world.player_input.set(input::PlayerInput::Down, false);
+        }
+    };
 }// namespace basilevs
 
 #endif//BASILEVS_CORE_H

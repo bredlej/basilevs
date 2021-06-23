@@ -8,7 +8,7 @@
 #include <list>
 #include <memory>
 #include <utility>
-
+#include <input.h>
 /* Forward declarations */
 struct BlueprintBase;
 struct MemoryBase;
@@ -39,5 +39,6 @@ public:
     std::shared_ptr<EnemyListType> enemies = nullptr;
     BlueprintsInPool<components::Sprite, components::Movement> enemy_bullets{1000};
     raylib::Rectangle bounds{-10, -10, 170, 154};
+    input::UserInput<input::PlayerInput> player_input;
 };
 #endif//BASILEVS_WORLD_H
