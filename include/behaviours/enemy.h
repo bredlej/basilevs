@@ -18,7 +18,7 @@ namespace behaviours {
 
     namespace enemy {
         constexpr auto shoot_bullet = [](TWorld &world, auto &emitter, const auto movement, const double time, const auto func) {
-            constexpr auto emit_every_seconds = 1.0;
+            constexpr auto emit_every_seconds = 5.0;
             if (emitter.last_emission > emit_every_seconds) {
                 emitter.last_emission = 0.0;
                 auto emitted_bullet = Blueprint(bullet::UpdateFunction(func));
@@ -32,6 +32,7 @@ namespace behaviours {
                 bullet_movement.position.x += bullet_movement.speed;
                 bullet_movement.direction = raylib::Vector2(0.0, 1.0);
                 world.enemy_bullets.add(emitted_bullet);
+                world.sounds_queue.emplace_back(assets::SoundId::NormalBullet);
             }
             emitter.last_emission += time;
         };

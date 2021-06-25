@@ -23,6 +23,7 @@ void GameDefinition::initialize_world_() {
 void GameDefinition::initialize() {
     sm.process_event(state::events::Init{});
     textures_ = assets::load_textures_level_1();
+    sounds_ = assets::load_sounds();
     initialize_world_();
     SetTargetFPS(60);
     sm.process_event(state::events::Run{});
@@ -35,6 +36,7 @@ void GameDefinition::loop_(std::chrono::duration<double> duration) {
     world.enemies->update(duration.count(), world);
     world.enemy_bullets.update(duration.count(), world);
     basilevs::bullets_bounds_check(world);
+    basilevs::play_sounds(world.sounds_queue, sounds_);
 
     render_();
 }
@@ -57,4 +59,13 @@ void GameDefinition::render_() {
     basilevs::render_to_texture(render_target_, world, textures_);
     basilevs::render_to_screen(render_target_, world);
     EndDrawing();
+}
+
+GameDefinition::~GameDefinition() {
+    for (auto &texture : textures_) {
+        UnloadTexture(texture);
+    }
+    for (auto &sound : sounds_) {
+        UnloadSound(sound);
+    }
 }

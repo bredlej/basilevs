@@ -182,6 +182,13 @@ namespace basilevs {
             world.player_input.set(input::PlayerInput::Down, false);
         }
     };
+
+    constexpr auto play_sounds = [](std::vector<assets::SoundId> &sounds_queue, const std::vector<Sound> &sounds) {
+        for (auto &sound : sounds_queue) {
+            PlaySound(sounds[static_cast<uint8_t>(sound)]);
+        }
+        sounds_queue.clear();
+    };
 }// namespace basilevs
 
 #endif//BASILEVS_CORE_H
