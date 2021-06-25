@@ -7,6 +7,7 @@ add_subdirectory(extern)
 add_subdirectory(lib)
 include(FetchContent)
 include(CTest)
+enable_testing()
 add_subdirectory(test)
 add_executable(basilevs main.cpp)
 set(BUILD_RAYLIB_CPP_EXAMPLES 0)
@@ -19,7 +20,7 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
-enable_testing()
+
 
 #FetchContent_Declare(
 #        gperftools
@@ -28,7 +29,30 @@ enable_testing()
 #)
 #FetchContent_MakeAvailable(gperftools)
 
-target_link_libraries(basilevs basilevs-lib)
+if(WIN32)
+    # Windows: all libraries are built-in
+    add_compile_options(/DUNICODE) # Unicode app
+    if(NOT ${CUSTOM_FLAGS} MATCHES ".*PL_IMPL_STACKTRACE=0.*")
+        message("Palanteer feature 'stacktrace' enabled for testprogram")
+        add_definitions(-DPL_IMPL_STACKTRACE=1)
+    endif()
+else(WIN32)
+    if(NOT CUSTOM_FLAGS MATCHES ".*PL_IMPL_STACKTRACE=0.*")
+        # Linux: if libunwind and libdw are present, the stacktrace feature is activated
+        find_package(LibUnwind)
+        find_package(LibDw)
+        if (LIBUNWIND_FOUND AND LIBDW_FOUND)
+            add_definitions(-DPL_IMPL_STACKTRACE=1)
+            message("Palanteer feature 'stacktrace' enabled for testprogram")
+            set(STACKTRACE_LIBS ${LIBUNWIND_LIBRARY} ${LIBDW_LIBRARY} )
+        endif()
+    endif()
+endif(WIN32)
+add_definitions(-DUSE_PL=0)
+# Multithreading is used (both client and server applications)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(basilevs basilevs-lib ${STACKTRACE_LIBS} Threads::Threads)
 add_custom_command(
         TARGET basilevs POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory

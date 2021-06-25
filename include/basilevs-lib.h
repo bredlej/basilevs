@@ -70,8 +70,10 @@ public:
     void initialize();
     void run(raylib::Window &window, raylib::AudioDevice &audio);
 
+    ~GameDefinition();
 private:
     std::vector<Texture2D> textures_;
+    std::vector<Sound> sounds_;
     raylib::RenderTexture2D render_target_{config::kFrameWidth, config::kFrameHeight};
     void initialize_world_();
     void loop_(std::chrono::duration<double> duration);
