@@ -75,11 +75,11 @@ namespace basilevs {
 
     constexpr auto initialize_enemies = [](const std::vector<Texture2D> &textures) {
         auto enemies_in_memory = BlueprintsInMemory(
-                spawn_enemy_after_seconds(1, textures, {0, 20}),
-                spawn_enemy_after_seconds(2, textures, {35, 20}),
-                spawn_enemy_after_seconds(3, textures, {70, 20}),
-                spawn_enemy_after_seconds(4, textures, {105, 20}),
-                spawn_enemy_after_seconds(5, textures, {140, 20}));
+                spawn_enemy_after_seconds(1.1, textures, {0, 20}),
+                spawn_enemy_after_seconds(2.2, textures, {35, 20}),
+                spawn_enemy_after_seconds(3.3, textures, {70, 20}),
+                spawn_enemy_after_seconds(4.4, textures, {105, 20}),
+                spawn_enemy_after_seconds(5.5, textures, {140, 20}));
         return std::make_shared<decltype(enemies_in_memory)>(enemies_in_memory);
     };
 
@@ -91,6 +91,7 @@ namespace basilevs {
         auto texture = textures[static_cast<int>(sprite_component.texture)];
 
         DrawTextureRec(texture, sprite_component.frame_rect, movement_component.position, WHITE);
+        DrawCircleLines(movement_component.position.x + 16, movement_component.position.y + 16, 4.0f, RED);
     };
 
     constexpr auto render_enemies = [](raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {
@@ -113,7 +114,8 @@ namespace basilevs {
 
         for (std::size_t i = 0; i < world.enemy_bullets.first_available_index; i++) {
             const auto bullet_position = movement[i].position;
-            DrawTextureRec(textures[static_cast<int>(sprites[i].texture)], sprites[i].frame_rect, bullet_position, WHITE);
+            //DrawTextureRec(textures[static_cast<int>(sprites[i].texture)], sprites[i].frame_rect, bullet_position, WHITE);
+            DrawTextureEx(textures[static_cast<int>(sprites[i].texture)], bullet_position, sprites[i].rotation, 1.0f, WHITE);
             //  raylib::DrawText(std::to_string(i), bullet_position.x - 5, bullet_position.y -5, 7, ORANGE);
         }
     };

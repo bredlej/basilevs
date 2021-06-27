@@ -40,7 +40,6 @@ public:
     BlueprintsInPool<components::Sprite, components::Movement> enemy_bullets{1000};
     raylib::Rectangle bounds{-10, -10, 170, 154};
     input::UserInput<input::PlayerInput> player_input;
-
     std::vector<assets::SoundId> sounds_queue{16};
 };
 #endif//BASILEVS_WORLD_H

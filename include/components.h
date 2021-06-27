@@ -28,6 +28,7 @@ namespace components {
         assets::TextureId texture{assets::TextureId::Player};
         int texture_width{1};
         int texture_height{1};
+        float rotation{0.0};
         Rectangle frame_rect{0,0,1,1};
         uint32_t amount_frames{1};
         uint32_t current_frame{0};
