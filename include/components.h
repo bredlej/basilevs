@@ -33,6 +33,7 @@ namespace components {
         uint32_t amount_frames{1};
         uint32_t current_frame{0};
         uint32_t frame_counter{0};
+        raylib::Vector2 offset{0.0f, 0.0f};
         float frame_speed{1.0f};
     };
 

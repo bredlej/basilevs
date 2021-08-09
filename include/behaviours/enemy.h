@@ -15,22 +15,27 @@ namespace behaviours {
         using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
     }// namespace bullet
 
+    template<typename T>
+    constexpr auto emit = [](T seconds) {
+
+    };
     namespace enemy {
         constexpr auto shoot_towards_player = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::UpdateFunction &bullet_function) {
             const auto &player = world.player.get();
             const auto player_movement = get<components::Movement>(player->components);
             constexpr auto emit_every_seconds = 0.5;
             if (emitter.last_emission > emit_every_seconds) {
+
                 emitter.last_emission = 0.0;
                 auto emitted_bullet = Blueprint(bullet::UpdateFunction(bullet_function));
                 auto &sprite_component = get<components::Sprite>(emitted_bullet);
+                sprite_component.offset = raylib::Vector2{16.0f, 16.0f};
                 sprite_component.texture = assets::TextureId::Bullet;
                 sprite_component.frame_rect = raylib::Rectangle(0, 0, 8, 8);
 
                 auto &bullet_movement = get<components::Movement>(emitted_bullet);
                 bullet_movement.speed = 40.0;
-                bullet_movement.position.x = movement.position.x + 16;
-                bullet_movement.position.y = movement.position.y + 16;
+                bullet_movement.position = bullet_movement.position.Add(sprite_component.offset);
                 bullet_movement.direction = player_movement.position.Subtract(bullet_movement.position.Add({4.0, 4.0})).Add({16.0, 16.0}).Normalize();
                 sprite_component.rotation = player_movement.position.Add({16.0, 16.0}).Angle(bullet_movement.position.Add({4.0, 4.0}));
                 world.enemy_bullets.add(emitted_bullet);
