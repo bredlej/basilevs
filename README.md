@@ -3,10 +3,13 @@
 
 A work-in-progress 1-bit bullet hell SHMUP game written in C++20.
 
-## Sample gif #1 (early build)
+## Sample gif of current state
+![Sample gif](assets/basilevs_008.gif)
+
+## Sample gif #2 (early build)
 ![Sample gif](assets/basilevs_006.gif)
 
-## Sample gif #2 (another early build)
+## Sample gif #3 (another early build)
 ![Sample gif](assets/basilevs_007.gif)
 
 # Author

@@ -7,8 +7,11 @@
 #include "assets.h"
 #include <boost/sml/sml.hpp>
 #include <concepts>
+#include <functional>
 #include <iostream>
 struct ComponentBase{};
+struct TWorld;
+
 enum class TextureId;
 
 template<typename T>
@@ -55,6 +58,10 @@ namespace components {
 
     struct TimeCounter : ComponentBase {
         double elapsed_time{0.0};
+    };
+
+    struct CollisionCheck : ComponentBase {
+        std::function<bool(TWorld&)> is_collision;
     };
 
     template<typename StateDeclaration, typename StatefulObject>

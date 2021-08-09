@@ -7,8 +7,8 @@
 namespace config {
     constexpr auto kFrameWidth = 160;
     constexpr auto kFrameHeight = 144;
-    constexpr auto kScreenWidth = 1600;
-    constexpr auto kScreenHeight = 1440;
+    constexpr auto kScreenWidth = 800;
+    constexpr auto kScreenHeight = 720;
     namespace colors {
         auto const kForeground = raylib::Color{240, 246, 240};
         auto const kBackground = raylib::Color{34, 35, 35};

@@ -8,17 +8,19 @@
 namespace behaviours {
 
     namespace bullet {
-        constexpr auto fly_towards_direction = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement) {
+        constexpr auto fly_towards_direction = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::CollisionCheck &collisionCheck) {
             movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
             movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
+
+            const auto &player = world.player.get();
+            const auto player_movement = get<components::Movement>(player->components);
+            if (movement.position.CheckCollision(player_movement.position.Add({16, 16}), 4.0)) {
+                movement.speed = 0.0f;
+            }
         };
-        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
+        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::CollisionCheck &)>;
     }// namespace bullet
 
-    template<typename T>
-    constexpr auto emit = [](T seconds) {
-
-    };
     namespace enemy {
         constexpr auto shoot_towards_player = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::UpdateFunction &bullet_function) {
             const auto &player = world.player.get();
@@ -35,6 +37,7 @@ namespace behaviours {
 
                 auto &bullet_movement = get<components::Movement>(emitted_bullet);
                 bullet_movement.speed = 40.0;
+                bullet_movement.position = movement.position;
                 bullet_movement.position = bullet_movement.position.Add(sprite_component.offset);
                 bullet_movement.direction = player_movement.position.Subtract(bullet_movement.position.Add({4.0, 4.0})).Add({16.0, 16.0}).Normalize();
                 sprite_component.rotation = player_movement.position.Add({16.0, 16.0}).Angle(bullet_movement.position.Add({4.0, 4.0}));

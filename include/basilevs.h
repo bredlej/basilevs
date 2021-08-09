@@ -109,13 +109,23 @@ namespace basilevs {
 
     constexpr auto render_bullets = [](raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {
         auto enemy_components = world.enemy_bullets.components;
-        auto sprites = std::get<std::vector<components::Sprite>>(enemy_components);
-        auto movement = std::get<std::vector<components::Movement>>(enemy_components);
+        auto enemy_bullet_sprites = std::get<std::vector<components::Sprite>>(enemy_components);
+        auto enemy_bullet_movements = std::get<std::vector<components::Movement>>(enemy_components);
+
+        auto player_components = world.player_bullets.components;
+        auto player_bullet_sprites = std::get<std::vector<components::Sprite>>(player_components);
+        auto player_bullet_movements = std::get<std::vector<components::Movement>>(player_components);
 
         for (std::size_t i = 0; i < world.enemy_bullets.first_available_index; i++) {
-            const auto bullet_position = movement[i].position;
+            const auto bullet_position = enemy_bullet_movements[i].position;
             //DrawTextureRec(textures[static_cast<int>(sprites[i].texture)], sprites[i].frame_rect, bullet_position, WHITE);
-            DrawTextureEx(textures[static_cast<int>(sprites[i].texture)], bullet_position, sprites[i].rotation, 1.0f, WHITE);
+            DrawTextureEx(textures[static_cast<int>(enemy_bullet_sprites[i].texture)], bullet_position, enemy_bullet_sprites[i].rotation, 1.0f, WHITE);
+            //  raylib::DrawText(std::to_string(i), bullet_position.x - 5, bullet_position.y -5, 7, ORANGE);
+        }
+        for (std::size_t i = 0; i < world.player_bullets.first_available_index; i++) {
+            const auto bullet_position = player_bullet_movements[i].position;
+            //DrawTextureRec(textures[static_cast<int>(sprites[i].texture)], sprites[i].frame_rect, bullet_position, WHITE);
+            DrawTextureEx(textures[static_cast<int>(player_bullet_sprites[i].texture)], bullet_position, player_bullet_sprites[i].rotation, 1.0f, WHITE);
             //  raylib::DrawText(std::to_string(i), bullet_position.x - 5, bullet_position.y -5, 7, ORANGE);
         }
     };
@@ -143,6 +153,7 @@ namespace basilevs {
                        raylib::Rectangle{0.0f, 0.0f, static_cast<float>(config::kScreenWidth), static_cast<float>(config::kScreenHeight)}, Vector2{0, 0}, 0.0f, WHITE);
         //raylib::DrawText(std::to_string(static_cast<int>(world.timer)), config::kScreenWidth - 60, 20, 30, GREEN);
         raylib::DrawText(std::to_string(world.enemy_bullets.first_available_index), config::kScreenWidth - 60, 60, 30, ORANGE);
+        raylib::DrawText(std::to_string(world.player_bullets.first_available_index), config::kScreenWidth - 60, 95, 30, ORANGE);
         if (IsKeyDown(KEY_A)) {
             raylib::DrawText("Left", config::kScreenWidth - 60, 90, 30, ORANGE);
         }
@@ -150,16 +161,25 @@ namespace basilevs {
     };
 
     constexpr auto bullets_bounds_check = [](TWorld &world) {
-        const auto movements = std::get<std::vector<components::Movement>>(world.enemy_bullets.components);
+        const auto enemy_movements = std::get<std::vector<components::Movement>>(world.enemy_bullets.components);
+        const auto player_movements = std::get<std::vector<components::Movement>>(world.player_bullets.components);
         const auto bullet_size = raylib::Vector2(8, 8);
 
         for (std::size_t index = world.enemy_bullets.first_available_index; index > 0; index--) {
-            const auto bullet_movement = movements[index];
+            const auto bullet_movement = enemy_movements[index];
             const auto bullet_bounds = raylib::Rectangle(bullet_movement.position, bullet_size);
             if (!bullet_bounds.CheckCollision(world.bounds)) {
                 world.enemy_bullets.remove_at(index);
             }
         }
+
+      for (std::size_t index = world.player_bullets.first_available_index; index > 0; index--) {
+          const auto bullet_movement = player_movements[index];
+          const auto bullet_bounds = raylib::Rectangle(bullet_movement.position, bullet_size);
+          if (!bullet_bounds.CheckCollision(world.bounds)) {
+              world.player_bullets.remove_at(index);
+          }
+      }
     };
 
     constexpr auto handle_player_input = [](TWorld &world) {
@@ -182,6 +202,11 @@ namespace basilevs {
             world.player_input.set(input::PlayerInput::Down);
         } else if (IsKeyUp(KEY_S) || IsKeyUp(KEY_DOWN)) {
             world.player_input.set(input::PlayerInput::Down, false);
+        }
+        if (IsKeyDown(KEY_SPACE)) {
+            world.player_input.set(input::PlayerInput::Shoot);
+        } else {
+            world.player_input.set(input::PlayerInput::Shoot, false);
         }
     };
 

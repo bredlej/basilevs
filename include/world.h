@@ -29,7 +29,7 @@ struct MemoryBase;
  */
 struct TWorld {
     using Background = std::shared_ptr<Blueprint<components::Sprite, components::Movement>>;
-    using PlayerType = Blueprint<components::Sprite, components::Movement>;
+    using PlayerType = Blueprint<components::Sprite, components::Movement, components::Emission>;
     using EnemyListType = BlueprintsInMemory<components::Sprite, components::Movement, components::Activation, components::TimeCounter, components::Emission>;
     explicit TWorld() = default;
 
@@ -37,8 +37,9 @@ public:
     Background background = nullptr;
     std::shared_ptr<PlayerType> player = nullptr;
     std::shared_ptr<EnemyListType> enemies = nullptr;
-    BlueprintsInPool<components::Sprite, components::Movement> enemy_bullets{1000};
-    raylib::Rectangle bounds{-10, -10, 170, 154};
+    BlueprintsInPool<components::Sprite, components::Movement, components::CollisionCheck> enemy_bullets{1000};
+    BlueprintsInPool<components::Sprite, components::Movement, components::CollisionCheck> player_bullets{1000};
+    raylib::Rectangle bounds{-32, -32, 180, 180};
     input::UserInput<input::PlayerInput> player_input;
     std::vector<assets::SoundId> sounds_queue{16};
 };
