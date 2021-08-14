@@ -11,7 +11,7 @@ namespace behaviours {
 
     namespace bullet {
 
-        constexpr auto fly_towards_direction = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::StateMachine<state::BulletState, state::StatefulObject> &state) {
+        constexpr auto fly_towards_direction = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state) {
             movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
             movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
 
@@ -22,7 +22,7 @@ namespace behaviours {
                 state.state_machine.process_event(state::DestroyEvent());
             }
         };
-        using EnemyBulletUpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::StateMachine<state::BulletState, state::StatefulObject> &)>;
+        using EnemyBulletUpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, TWorld::BulletStateComponent &)>;
     }// namespace bullet
 
     namespace enemy {
@@ -46,7 +46,7 @@ namespace behaviours {
                 bullet_movement.direction = player_movement.position.Subtract(bullet_movement.position.Add({4.0, 4.0})).Add({16.0, 16.0}).Normalize();
                 sprite_component.rotation = player_movement.position.Add({16.0, 16.0}).Angle(bullet_movement.position.Add({4.0, 4.0}));
 
-                auto &bullet_state = get<components::StateMachine<state::BulletState, state::StatefulObject>>(emitted_bullet);
+                auto &bullet_state = get<TWorld::BulletStateComponent>(emitted_bullet);
 
                 world.enemy_bullets.add(emitted_bullet);
                 world.sounds_queue.emplace_back(assets::SoundId::NormalBullet);

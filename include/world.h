@@ -55,17 +55,17 @@ struct TWorld {
     using Background = std::shared_ptr<Blueprint<components::Sprite, components::Movement>>;
     using PlayerType = Blueprint<components::Sprite, components::Movement, components::Emission>;
     using EnemyListType = BlueprintsInMemory<components::Sprite, components::Movement, components::Activation, components::TimeCounter, components::Emission>;
-
+    using BulletStateComponent = components::StateMachine<state::BulletState, state::StatefulObject>;
     explicit TWorld() = default;
 
 public:
     Background background = nullptr;
     std::shared_ptr<PlayerType> player = nullptr;
     std::shared_ptr<EnemyListType> enemies = nullptr;
-    BlueprintsInPool<components::Sprite, components::Movement, components::StateMachine<state::BulletState, state::StatefulObject>> enemy_bullets{10};
-    BlueprintsInPool<components::Sprite, components::Movement, components::StateMachine<state::BulletState, state::StatefulObject>> player_bullets{10};
-    raylib::Rectangle bounds{-32, -32, 180, 180};
+    BlueprintsInPool<components::Sprite, components::Movement, BulletStateComponent> enemy_bullets{config::kEnemyBulletPoolSize};
+    BlueprintsInPool<components::Sprite, components::Movement, BulletStateComponent> player_bullets{config::kPlayerBulletPoolSize};
+    const raylib::Rectangle bounds{config::kFrameBoundLeft, config::kFrameBoundUp, config::kFrameBoundRight, config::kFrameBoundDown};
     input::UserInput<input::PlayerInput> player_input;
-    std::vector<assets::SoundId> sounds_queue{16};
+    std::vector<assets::SoundId> sounds_queue{config::kSoundQueueSize};
 };
 #endif//BASILEVS_WORLD_H

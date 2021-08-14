@@ -35,8 +35,7 @@ namespace basilevs {
 
     constexpr auto initialize_player = [](const std::vector<Texture2D> &textures) {
         auto player = Blueprint(behaviours::player::UpdateFunction(behaviours::player::kPlayerNormalBehaviour));
-        auto &player_sprite = get<components::Sprite>(player);
-        prepare_sprite(player_sprite, textures, assets::TextureId::Player, 7);
+        prepare_sprite(get<components::Sprite>(player), textures, assets::TextureId::Player, 7);
         auto &movement_component = get<components::Movement>(player);
         movement_component.position = raylib::Vector2{70, 100};
         movement_component.speed = 50.0;
@@ -59,17 +58,13 @@ namespace basilevs {
 
     constexpr auto spawn_enemy_after_seconds = [](const double time, const std::vector<Texture2D> &textures, const Vector2 &&position) {
         auto enemy = Blueprint(behaviours::enemy::UpdateFunction(behaviours::enemy::kEnemyNormal));
+        prepare_sprite(get<components::Sprite>(enemy), textures, assets::TextureId::Enemy, get<components::Sprite>(enemy).amount_frames);
+        get<components::Movement>(enemy).position = position;
+        get<components::TimeCounter>(enemy).elapsed_time = 0.0;
+        get<components::Emission>(enemy).last_emission = 0.0f;
         auto &activation_component = get<components::Activation>(enemy);
         activation_component.activate_after_time = time;
         activation_component.is_active = false;
-        auto &sprite_component = get<components::Sprite>(enemy);
-        prepare_sprite(sprite_component, textures, assets::TextureId::Enemy, 1);
-        auto &movement_component = get<components::Movement>(enemy);
-        movement_component.position = position;
-        auto &time_counter = get<components::TimeCounter>(enemy);
-        time_counter.elapsed_time = 0.0;
-        auto &emitter = get<components::Emission>(enemy);
-        emitter.last_emission = 0.0f;
         return enemy;
     };
 
@@ -160,38 +155,31 @@ namespace basilevs {
         DrawFPS(5, 5);
     };
 
-    constexpr auto bullets_bounds_check = [](TWorld &world) {
-        const auto enemy_movements = std::get<std::vector<components::Movement>>(world.enemy_bullets.components);
-        auto &enemy_states = std::get<std::vector<components::StateMachine<state::BulletState, state::StatefulObject>>>(world.enemy_bullets.components);
-        const auto player_movements = std::get<std::vector<components::Movement>>(world.player_bullets.components);
-        const auto bullet_size = raylib::Vector2(8, 8);
-
-        for (std::size_t index = world.enemy_bullets.first_available_index; index > 0; index--) {
-            const auto bullet_movement = enemy_movements[index-1];
-            const auto bullet_bounds = raylib::Rectangle(bullet_movement.position, bullet_size);
-            if (!bullet_bounds.CheckCollision(world.bounds)) {
-                auto &state_machine = enemy_states[index-1];
-                state_machine.state_machine.process_event(state::DestroyEvent());
+    constexpr auto destroy_bullets_outside_frame = [](const auto world, auto &pool) {
+        for (std::size_t index = pool.first_available_index; index > 0; index--) {
+            if (!raylib::Rectangle(std::get<std::vector<components::Movement>>(pool.components)[index - 1].position,
+                                   std::get<std::vector<components::Sprite>>(pool.components)[index - 1].bounds)
+                         .CheckCollision(world.bounds)) {
+                std::get<std::vector<TWorld::BulletStateComponent>>(pool.components)[index - 1]
+                        .state_machine
+                        .process_event(state::DestroyEvent());
             }
         }
-
-      for (std::size_t index = world.player_bullets.first_available_index; index > 0; index--) {
-          const auto bullet_movement = player_movements[index-1];
-          const auto bullet_bounds = raylib::Rectangle(bullet_movement.position, bullet_size);
-          if (!bullet_bounds.CheckCollision(world.bounds)) {
-              world.player_bullets.remove_at(index-1);
-          }
-      }
     };
 
-    constexpr auto bullets_cleanup = [](TWorld &world) {
-        for (std::size_t index = world.enemy_bullets.first_available_index; index > 0; index--) {
-            const auto enemy_states = std::get<std::vector<components::StateMachine<state::BulletState, state::StatefulObject>>>(world.enemy_bullets.components);
-            const auto bullet_state = enemy_states[index-1];
-            if (bullet_state.state_machine.is(boost::sml::X)) {
-                world.enemy_bullets.remove_at(index-1);
-            }
+    constexpr auto remove_destroyed_pool_objects = [](auto &pool) {
+        for (std::size_t index = pool.first_available_index; index > 0; index--) {
+            if (std::get<std::vector<TWorld::BulletStateComponent>>(pool.components)[index - 1]
+                        .state_machine
+                        .is(boost::sml::X)) { pool.remove_at(index - 1); }
         }
+    };
+
+    constexpr auto cleanup_bullet_pools = [](auto &world) {
+        basilevs::destroy_bullets_outside_frame(world, world.enemy_bullets);
+        basilevs::destroy_bullets_outside_frame(world, world.player_bullets);
+        basilevs::remove_destroyed_pool_objects(world.enemy_bullets);
+        basilevs::remove_destroyed_pool_objects(world.player_bullets);
     };
 
     constexpr auto handle_player_input = [](TWorld &world) {

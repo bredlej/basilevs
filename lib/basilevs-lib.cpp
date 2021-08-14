@@ -36,8 +36,7 @@ void GameDefinition::loop_(std::chrono::duration<double> duration) {
     world.enemies->update(duration.count(), world);
     world.enemy_bullets.update(duration.count(), world);
     world.player_bullets.update(duration.count(), world);
-    basilevs::bullets_bounds_check(world);
-    basilevs::bullets_cleanup(world);
+    basilevs::cleanup_bullet_pools(world);
     basilevs::play_sounds(world.sounds_queue, sounds_);
 
     render_();
