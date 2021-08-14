@@ -15,21 +15,10 @@ struct MemoryBase;
 namespace state {
     using namespace boost::sml;
     using namespace state;
-    struct InitEvent {};
-    struct RunEvent {};
-    struct StopEvent {};
-    struct DestroyEvent {};
 
+    struct DestroyEvent {};
     struct StatefulObject {};
 
-    struct StateMachineDeclaration {
-        auto operator()() const {
-            return make_transition_table(
-                    *"entry"_s + event<InitEvent> = "init"_s,
-                    "init"_s + event<RunEvent> = "running"_s,
-                    "running"_s + event<StopEvent> = X);
-        }
-    };
     struct BulletState {
         auto operator()() const {
             return make_transition_table(
@@ -56,16 +45,17 @@ struct TWorld {
     using PlayerType = Blueprint<components::Sprite, components::Movement, components::Emission>;
     using EnemyListType = BlueprintsInMemory<components::Sprite, components::Movement, components::Activation, components::TimeCounter, components::Emission>;
     using BulletStateComponent = components::StateMachine<state::BulletState, state::StatefulObject>;
+    using BulletPool = BlueprintsInPool<components::Sprite, components::Movement, BulletStateComponent>;
     explicit TWorld() = default;
 
 public:
     Background background = nullptr;
+    BulletPool player_bullets{config::kPlayerBulletPoolSize};
+    BulletPool enemy_bullets{config::kEnemyBulletPoolSize};
     std::shared_ptr<PlayerType> player = nullptr;
     std::shared_ptr<EnemyListType> enemies = nullptr;
-    BlueprintsInPool<components::Sprite, components::Movement, BulletStateComponent> enemy_bullets{config::kEnemyBulletPoolSize};
-    BlueprintsInPool<components::Sprite, components::Movement, BulletStateComponent> player_bullets{config::kPlayerBulletPoolSize};
-    const raylib::Rectangle bounds{config::kFrameBoundLeft, config::kFrameBoundUp, config::kFrameBoundRight, config::kFrameBoundDown};
     input::UserInput<input::PlayerInput> player_input;
     std::vector<assets::SoundId> sounds_queue{config::kSoundQueueSize};
+    const raylib::Rectangle frame_bounds{config::kFrameBoundLeft, config::kFrameBoundUp, config::kFrameBoundRight, config::kFrameBoundDown};
 };
 #endif//BASILEVS_WORLD_H

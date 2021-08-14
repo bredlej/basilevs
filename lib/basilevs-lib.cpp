@@ -8,15 +8,13 @@ namespace basilevs {
         using namespace sml;
         using namespace state;
 
-        GameDefinition game;
-        game.run(window, audio);
+        GameDefinition().run(window, audio);
     }
 }// namespace basilevs
 
 void GameDefinition::initialize_world_() {
-
-    world.background = basilevs::initialize_background(textures_);
-    world.player = basilevs::initialize_player(textures_);
+    world.background = basilevs::make_background_blueprint(textures_);
+    world.player = basilevs::make_player_blueprint(textures_);
     world.enemies = basilevs::initialize_enemies(textures_);
 }
 
