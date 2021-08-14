@@ -187,6 +187,22 @@ TEST_F(BlueprintsInPoolTest, AddsManyBlueprintsToPool) {
     ASSERT_EQ(1000.0f, get<components::Movement>(pool)[2].position.y);
 }
 
+TEST_F(BlueprintsInPoolTest, BlueprintPoolDoesNotOverflow) {
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
+        movement_component.position.x += time;
+        movement_component.position.y += time;
+    };
+    auto w = TWorld{};
+    auto blueprint = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
+    auto blueprint2 = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
+    auto blueprint3 = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
+    auto pool = BlueprintsInPool<components::Movement, components::Activation>(2);
+    pool.add(blueprint);
+    pool.add(blueprint2);
+    pool.add(blueprint3);
+    ASSERT_EQ(2, pool.first_available_index);
+}
+
 TEST_F(BlueprintsInPoolTest, RemovesFirstBlueprintFromPool) {
     static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
       movement_component.position.x += time;
@@ -235,6 +251,23 @@ TEST_F(BlueprintsInPoolTest, RemovesLastBlueprintFromPool) {
     ASSERT_EQ(10.0f, get<components::Movement>(pool)[0].position.y);
     ASSERT_EQ(100.0f, get<components::Movement>(pool)[1].position.x);
     ASSERT_EQ(100.0f, get<components::Movement>(pool)[1].position.y);
+}
+
+TEST_F(BlueprintsInPoolTest, RemovesAllBlueprintsFromPool) {
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
+        movement_component.position.x += time;
+        movement_component.position.y += time;
+    };
+    auto w = TWorld{};
+    auto blueprint = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
+    auto blueprint2 = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
+
+    auto pool = BlueprintsInPool<components::Movement, components::Activation>(2);
+    pool.add(blueprint);
+    pool.add(blueprint2);
+    pool.remove_at(2);
+    pool.remove_at(1);
+    ASSERT_EQ(0, pool.first_available_index);
 }
 
 TEST_F(BlueprintsInPoolTest, RemovesMiddleBlueprintFromPool) {

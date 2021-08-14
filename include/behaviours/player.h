@@ -8,7 +8,7 @@
 #include <config.h>
 namespace behaviours {
     namespace bullet {
-        constexpr auto player_bullet_1 = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::CollisionCheck &collisionCheck) {
+        constexpr auto player_bullet_1 = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::StateMachine<state::BulletState, state::StatefulObject> &state) {
           movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
           movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
 
@@ -18,7 +18,7 @@ namespace behaviours {
               movement.speed = 0.0f;
           }*/
         };
-        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::CollisionCheck &)>;
+        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::StateMachine<state::BulletState, state::StatefulObject> &state)>;
     }// namespace bullet
 
     namespace player {

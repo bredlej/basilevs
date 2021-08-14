@@ -306,7 +306,7 @@ void BlueprintsInPool<Ts...>::add(is_a_blueprint auto &blueprint) {
 }
 template<is_many_components... Ts>
 void BlueprintsInPool<Ts...>::remove_at(typename ComponentFunctionVector::size_type index) {
-    if (index < size && index < first_available_index) {
+    if (index <= size && index <= first_available_index) {
         for (typename ComponentFunctionVector::size_type i = index; i < first_available_index - 1; i++) {
             (swap_components_at_index<Ts>(i, i + 1), ...);
             functions[i] = functions[i + 1];

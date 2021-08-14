@@ -12,7 +12,31 @@
 /* Forward declarations */
 struct BlueprintBase;
 struct MemoryBase;
+namespace state {
+    using namespace boost::sml;
+    using namespace state;
+    struct InitEvent {};
+    struct RunEvent {};
+    struct StopEvent {};
+    struct DestroyEvent {};
 
+    struct StatefulObject {};
+
+    struct StateMachineDeclaration {
+        auto operator()() const {
+            return make_transition_table(
+                    *"entry"_s + event<InitEvent> = "init"_s,
+                    "init"_s + event<RunEvent> = "running"_s,
+                    "running"_s + event<StopEvent> = X);
+        }
+    };
+    struct BulletState {
+        auto operator()() const {
+            return make_transition_table(
+                    *"shoot"_s + event<DestroyEvent> = X);
+        }
+    };
+}
 /**
  * Describes a structure representing the game environment.
 
@@ -31,14 +55,15 @@ struct TWorld {
     using Background = std::shared_ptr<Blueprint<components::Sprite, components::Movement>>;
     using PlayerType = Blueprint<components::Sprite, components::Movement, components::Emission>;
     using EnemyListType = BlueprintsInMemory<components::Sprite, components::Movement, components::Activation, components::TimeCounter, components::Emission>;
+
     explicit TWorld() = default;
 
 public:
     Background background = nullptr;
     std::shared_ptr<PlayerType> player = nullptr;
     std::shared_ptr<EnemyListType> enemies = nullptr;
-    BlueprintsInPool<components::Sprite, components::Movement, components::CollisionCheck> enemy_bullets{1000};
-    BlueprintsInPool<components::Sprite, components::Movement, components::CollisionCheck> player_bullets{1000};
+    BlueprintsInPool<components::Sprite, components::Movement, components::StateMachine<state::BulletState, state::StatefulObject>> enemy_bullets{10};
+    BlueprintsInPool<components::Sprite, components::Movement, components::StateMachine<state::BulletState, state::StatefulObject>> player_bullets{10};
     raylib::Rectangle bounds{-32, -32, 180, 180};
     input::UserInput<input::PlayerInput> player_input;
     std::vector<assets::SoundId> sounds_queue{16};

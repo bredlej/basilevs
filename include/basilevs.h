@@ -162,24 +162,36 @@ namespace basilevs {
 
     constexpr auto bullets_bounds_check = [](TWorld &world) {
         const auto enemy_movements = std::get<std::vector<components::Movement>>(world.enemy_bullets.components);
+        auto &enemy_states = std::get<std::vector<components::StateMachine<state::BulletState, state::StatefulObject>>>(world.enemy_bullets.components);
         const auto player_movements = std::get<std::vector<components::Movement>>(world.player_bullets.components);
         const auto bullet_size = raylib::Vector2(8, 8);
 
         for (std::size_t index = world.enemy_bullets.first_available_index; index > 0; index--) {
-            const auto bullet_movement = enemy_movements[index];
+            const auto bullet_movement = enemy_movements[index-1];
             const auto bullet_bounds = raylib::Rectangle(bullet_movement.position, bullet_size);
             if (!bullet_bounds.CheckCollision(world.bounds)) {
-                world.enemy_bullets.remove_at(index);
+                auto &state_machine = enemy_states[index-1];
+                state_machine.state_machine.process_event(state::DestroyEvent());
             }
         }
 
       for (std::size_t index = world.player_bullets.first_available_index; index > 0; index--) {
-          const auto bullet_movement = player_movements[index];
+          const auto bullet_movement = player_movements[index-1];
           const auto bullet_bounds = raylib::Rectangle(bullet_movement.position, bullet_size);
           if (!bullet_bounds.CheckCollision(world.bounds)) {
-              world.player_bullets.remove_at(index);
+              world.player_bullets.remove_at(index-1);
           }
       }
+    };
+
+    constexpr auto bullets_cleanup = [](TWorld &world) {
+        for (std::size_t index = world.enemy_bullets.first_available_index; index > 0; index--) {
+            const auto enemy_states = std::get<std::vector<components::StateMachine<state::BulletState, state::StatefulObject>>>(world.enemy_bullets.components);
+            const auto bullet_state = enemy_states[index-1];
+            if (bullet_state.state_machine.is(boost::sml::X)) {
+                world.enemy_bullets.remove_at(index-1);
+            }
+        }
     };
 
     constexpr auto handle_player_input = [](TWorld &world) {
