@@ -45,7 +45,7 @@ struct TWorld {
     using PlayerType = Blueprint<components::Sprite, components::Movement, components::Emission>;
     using EnemyListType = BlueprintsInMemory<components::Sprite, components::Movement, components::Activation, components::TimeCounter, components::Emission>;
     using BulletStateComponent = components::StateMachine<state::BulletState, state::StatefulObject>;
-    using BulletPool = BlueprintsInPool<components::Sprite, components::Movement, BulletStateComponent>;
+    using BulletPool = BlueprintsInPool<components::Sprite, components::Movement, BulletStateComponent, components::TimeCounter>;
     explicit TWorld() = default;
 
 public:
@@ -56,6 +56,6 @@ public:
     std::shared_ptr<EnemyListType> enemies = nullptr;
     input::UserInput<input::PlayerInput> player_input;
     std::vector<assets::SoundId> sounds_queue{config::kSoundQueueSize};
-    const raylib::Rectangle frame_bounds{config::kFrameBoundLeft, config::kFrameBoundUp, config::kFrameBoundRight, config::kFrameBoundDown};
+    const raylib::Rectangle frame_bounds{config::kFrameBoundLeft, config::kFrameBoundUp, 260, 260};
 };
 #endif//BASILEVS_WORLD_H

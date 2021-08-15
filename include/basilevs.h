@@ -22,9 +22,23 @@
 namespace basilevs {
     enum class EntityType { Player };
 
-    static constexpr auto setup_sprite_component = [](components::Sprite &sprite_component, const std::vector<Texture2D> &textures, const assets::TextureId texture_id, const uint32_t amount_frames) {
-        sprite_component.texture = texture_id;
+    // TODO replace with common function for both player and enemies
+    static constexpr auto setup_player_sprite = [](components::Sprite &sprite_component, const std::vector<Texture2D> &textures, const auto texture, const auto amount_frames) {
+        sprite_component.current_frame = std::rand() % amount_frames;
+        sprite_component.texture = texture;
         sprite_component.amount_frames = amount_frames;
+        auto texture_width = textures[static_cast<int>(sprite_component.texture)].width;
+        auto texture_height = textures[static_cast<int>(sprite_component.texture)].height;
+        sprite_component.texture_width = texture_width;
+        sprite_component.texture_height = texture_height;
+        sprite_component.frame_speed = 12;
+        sprite_component.frame_rect = {0.0f, 0.0f, static_cast<float>(texture_width) / static_cast<float>(sprite_component.amount_frames), static_cast<float>(texture_height)};
+    };
+
+    static constexpr auto setup_sprite_component = [](components::Sprite &sprite_component, const std::vector<Texture2D> &textures, const behaviours::enemy::EnemyDefinition enemy_definition) {
+        sprite_component.current_frame = std::rand() % enemy_definition.amount_frames;
+        sprite_component.texture = enemy_definition.texture;
+        sprite_component.amount_frames = enemy_definition.amount_frames;
         auto texture_width = textures[static_cast<int>(sprite_component.texture)].width;
         auto texture_height = textures[static_cast<int>(sprite_component.texture)].height;
         sprite_component.texture_width = texture_width;
@@ -35,7 +49,7 @@ namespace basilevs {
 
     static constexpr auto make_player_blueprint = [](const std::vector<Texture2D> &textures) {
         auto player = Blueprint(behaviours::player::UpdateFunction(behaviours::player::kPlayerNormalBehaviour));
-        setup_sprite_component(get<components::Sprite>(player), textures, assets::TextureId::Player, 7);
+        setup_player_sprite(get<components::Sprite>(player), textures, assets::TextureId::Player, 7);
         auto &movement_component = get<components::Movement>(player);
         movement_component.position = raylib::Vector2{70, 100};
         movement_component.speed = 50.0;
@@ -56,9 +70,9 @@ namespace basilevs {
         return std::make_shared<decltype(background)>(background);
     };
 
-    static constexpr auto spawn_enemy_after_seconds = [](const double time, const std::vector<Texture2D> &textures, const Vector2 &&position) {
-        auto enemy = Blueprint(behaviours::enemy::UpdateFunction(behaviours::enemy::kEnemyNormal));
-        setup_sprite_component(get<components::Sprite>(enemy), textures, assets::TextureId::Enemy, get<components::Sprite>(enemy).amount_frames);
+    static constexpr auto spawn_enemy_after_seconds = [](const double time, const std::vector<Texture2D> &textures, const Vector2 &&position, const behaviours::enemy::EnemyDefinition &enemy_definition) {
+        auto enemy = Blueprint(behaviours::enemy::UpdateFunction(enemy_definition.behaviour));
+        setup_sprite_component(get<components::Sprite>(enemy), textures, enemy_definition);
         get<components::Movement>(enemy).position = position;
         get<components::TimeCounter>(enemy).elapsed_time = 0.0;
         get<components::Emission>(enemy).last_emission = 0.0f;
@@ -70,11 +84,11 @@ namespace basilevs {
 
     static constexpr auto initialize_enemies = [](const std::vector<Texture2D> &textures) {
         auto enemies_in_memory = BlueprintsInMemory(
-                spawn_enemy_after_seconds(1.1, textures, {0, 20}),
-                spawn_enemy_after_seconds(2.2, textures, {35, 20}),
-                spawn_enemy_after_seconds(3.3, textures, {70, 20}),
-                spawn_enemy_after_seconds(4.4, textures, {105, 20}),
-                spawn_enemy_after_seconds(5.5, textures, {140, 20}));
+                spawn_enemy_after_seconds(1.1, textures, {0, 20}, behaviours::enemy::tentacle()),
+                spawn_enemy_after_seconds(2.2, textures, {35, 50}, behaviours::enemy::mosquito()),
+                spawn_enemy_after_seconds(3.3, textures, {70, 40},  behaviours::enemy::tentacle()),
+                spawn_enemy_after_seconds(4.4, textures, {105, 50}, behaviours::enemy::mosquito()),
+                spawn_enemy_after_seconds(5.5, textures, {130, 30}, behaviours::enemy::tentacle()));
         return std::make_shared<decltype(enemies_in_memory)>(enemies_in_memory);
     };
 
@@ -87,7 +101,7 @@ namespace basilevs {
             auto texture = textures[static_cast<int>(sprite_component.texture)];
 
             DrawTextureRec(texture, sprite_component.frame_rect, movement_component.position, WHITE);
-            DrawCircleLines(static_cast<int>(movement_component.position.x + 16), static_cast<int>(movement_component.position.y + 16), 4.0f, RED);
+            //DrawCircleLines(static_cast<int>(movement_component.position.x + 16), static_cast<int>(movement_component.position.y + 16), 4.0f, RED);
         };
 
         static constexpr auto render_enemy_sprites = [](raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {
@@ -114,7 +128,8 @@ namespace basilevs {
 
             for (std::size_t i = 0; i < world.enemy_bullets.first_available_index; i++) {
                 const auto bullet_position = enemy_bullet_movements[i].position;
-                DrawTextureEx(textures[static_cast<int>(enemy_bullet_sprites[i].texture)], bullet_position, enemy_bullet_sprites[i].rotation, 1.0f, WHITE);
+                //DrawTextureEx(textures[static_cast<int>(enemy_bullet_sprites[i].texture)], bullet_position, enemy_bullet_sprites[i].rotation, 1.0f, WHITE);
+                DrawTextureRec(textures[static_cast<int>(enemy_bullet_sprites[i].texture)], enemy_bullet_sprites[i].frame_rect, bullet_position, WHITE);
             }
             for (std::size_t i = 0; i < world.player_bullets.first_available_index; i++) {
                 const auto bullet_position = player_bullet_movements[i].position;
@@ -173,8 +188,8 @@ namespace basilevs {
         remove_destroyed_pool_objects(world.player_bullets);
     };
 
-    constexpr auto handle_player_input = [](TWorld &world) {
-        constexpr auto register_input = [](const std::initializer_list<int32_t> keys, const auto action, auto &world) {
+    static constexpr auto handle_player_input = [](TWorld &world) {
+        static constexpr auto register_input = [](const std::initializer_list<int32_t> keys, const auto action, auto &world) {
             bool is_key_down = false;
             bool is_key_up = false;
             for (auto key: keys) {

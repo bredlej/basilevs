@@ -7,14 +7,14 @@
 namespace config {
     constexpr auto kFrameWidth = 160;
     constexpr auto kFrameHeight = 144;
-    constexpr auto kFrameBoundLeft = -32;
-    constexpr auto kFrameBoundUp = -32;
-    constexpr auto kFrameBoundRight = 180;
-    constexpr auto kFrameBoundDown = 180;
+    constexpr auto kFrameBoundLeft = -64;
+    constexpr auto kFrameBoundUp = -64;
+    constexpr auto kFrameBoundRight = 200;
+    constexpr auto kFrameBoundDown = 200;
     constexpr auto kScreenWidth = 800;
     constexpr auto kScreenHeight = 720;
-    constexpr auto kEnemyBulletPoolSize = 10;
-    constexpr auto kPlayerBulletPoolSize = 10;
+    constexpr auto kEnemyBulletPoolSize = 200;
+    constexpr auto kPlayerBulletPoolSize = 100;
     constexpr auto kSoundQueueSize = 16;
     namespace colors {
         auto const kForeground = raylib::Color{240, 246, 240};

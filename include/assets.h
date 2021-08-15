@@ -11,8 +11,11 @@ namespace assets {
         Player = 0,
         Background_Level_1 = 1,
         Enemy = 2,
-        Bullet = 3,
-        Player_Bullet = 4
+        Bullet_Tentacle = 3,
+        Player_Bullet = 4,
+        Tentacle = 5,
+        Mosquito = 6,
+        Bullet_Mosquito = 7
     };
     enum class SoundId : uint8_t {
         NormalBullet
@@ -30,6 +33,9 @@ namespace assets {
                 texture_of_image(raylib::LoadImage("assets/enemy.png")),
                 texture_of_image(raylib::LoadImage("assets/bullet8.png")),
                 texture_of_image(raylib::LoadImage("assets/bullet8-002.png")),
+                texture_of_image(raylib::LoadImage("assets/tentacle-0001.png")),
+                texture_of_image(raylib::LoadImage("assets/mosquito-0001.png")),
+                texture_of_image(raylib::LoadImage("assets/bullet8-003.png"))
         };
     };
 

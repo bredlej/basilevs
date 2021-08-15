@@ -8,11 +8,11 @@
 #include <config.h>
 namespace behaviours {
     namespace bullet {
-        static constexpr auto player_bullet_1 = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::StateMachine<state::BulletState, state::StatefulObject> &state) {
+        static constexpr auto player_bullet_1 = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::StateMachine<state::BulletState, state::StatefulObject> &state, components::TimeCounter &time_counter) {
           movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
           movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
         };
-        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::StateMachine<state::BulletState, state::StatefulObject> &state)>;
+        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::StateMachine<state::BulletState, state::StatefulObject> &state, components::TimeCounter &time_counter)>;
     }// namespace bullet
 
     namespace player {
@@ -21,7 +21,7 @@ namespace behaviours {
           const auto &player = world.player.get();
           constexpr auto emit_every_seconds = 0.2;
           constexpr auto speed = 100;
-          static constexpr auto emit = [](auto &world, const bullet::UpdateFunction &bullet_function, const auto movement_component, const auto position, const auto direction, const auto rotation)
+          static constexpr auto emit = [&](auto &world, const bullet::UpdateFunction &bullet_function, const auto movement_component, const auto position, const auto direction, const auto rotation)
           {
               auto emitted_bullet = Blueprint(bullet::UpdateFunction(bullet_function));
               auto &sprite_component = get<components::Sprite>(emitted_bullet);
