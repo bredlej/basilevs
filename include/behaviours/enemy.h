@@ -22,20 +22,13 @@ namespace behaviours {
             }
         };
 
-        constexpr auto fly_towards_direction = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter) {
+        constexpr auto fly_towards_direction = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &damage) {
             movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
             movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
             bullet_sprite_update(sprite);
-
-            const auto &player = world.player.get();
-            const auto player_movement = get<components::Movement>(player->components);
-            if (movement.position.CheckCollision(player_movement.position.Add({16, 16}), 4.0)) {
-                movement.speed = 0.0f;
-                state.state_machine.process_event(state::DestroyEvent());
-            }
         };
 
-        constexpr auto fly_and_rotate = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter) {
+        constexpr auto fly_and_rotate = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &damage) {
             movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
             movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
             time_counter.elapsed_time += time;
@@ -45,16 +38,9 @@ namespace behaviours {
                 time_counter.elapsed_time = 0;
             }
             bullet_sprite_update(sprite);
-
-            const auto &player = world.player.get();
-            const auto player_movement = get<components::Movement>(player->components);
-            if (movement.position.CheckCollision(player_movement.position.Add({16, 16}), 4.0)) {
-                movement.speed = 0.0f;
-                state.state_machine.process_event(state::DestroyEvent());
-            }
         };
 
-        using EnemyBulletUpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, TWorld::BulletStateComponent &, components::TimeCounter &)>;
+        using EnemyBulletUpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, TWorld::BulletStateComponent &, components::TimeCounter &, components::Collision &, components::Damage &)>;
         struct BulletDefinition {
             assets::TextureId texture;
             uint32_t amount_frames;
@@ -63,7 +49,7 @@ namespace behaviours {
     }// namespace bullet
 
     namespace enemy {
-        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::Activation &, components::TimeCounter &, components::Emission &)>;
+        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::Activation &, components::TimeCounter &, components::Emission &, components::Collision &, components::Health &)>;
         struct EnemyDefinition {
             assets::TextureId texture;
             uint32_t amount_frames;
@@ -92,6 +78,14 @@ namespace behaviours {
 
                 auto &bullet_state = get<TWorld::BulletStateComponent>(bullet_blueprint);
 
+                auto &bullet_collision = get<components::Collision>(bullet_blueprint);
+                bullet_collision.bounds.center = raylib::Vector2{4.5f, 4.5f};
+                bullet_collision.bounds.radius = 4.0f;
+                bullet_collision.is_collidable = false;
+
+                auto &bullet_damage = get<components::Damage>(bullet_blueprint);
+                bullet_damage.value = 30.0f;
+
                 world.enemy_bullets.add(bullet_blueprint);
                 world.sounds_queue.emplace_back(assets::SoundId::NormalBullet);
             }
@@ -100,7 +94,6 @@ namespace behaviours {
 
         constexpr auto mosquito_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::EnemyBulletUpdateFunction &bullet_function) {
             const auto &player = world.player.get();
-            const auto player_movement = get<components::Movement>(player->components);
             constexpr auto emit_every_seconds = 1.0;
             if (emitter.last_emission > emit_every_seconds) {
 
@@ -125,6 +118,11 @@ namespace behaviours {
 
                     auto &bullet_state = get<TWorld::BulletStateComponent>(bullet_blueprint);
 
+                    auto &bullet_collision = get<components::Collision>(bullet_blueprint);
+                    bullet_collision.bounds.center = raylib::Vector2{5.0f, 5.0f};
+                    bullet_collision.bounds.radius = 2.0f;
+                    bullet_collision.is_collidable = true;
+
                     world.enemy_bullets.add(bullet_blueprint);
                 }
 
@@ -146,7 +144,7 @@ namespace behaviours {
             }
         };
 
-        constexpr auto kTentacleBehaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter) {
+        constexpr auto kTentacleBehaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health) {
             frame_update(sprite);
             time_counter.elapsed_time += time;
             if (time_counter.elapsed_time > activation.activate_after_time) {
@@ -157,7 +155,7 @@ namespace behaviours {
             }
         };
 
-        constexpr auto kMosquitoBehaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter) {
+        constexpr auto kMosquitoBehaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health) {
             frame_update(sprite);
             time_counter.elapsed_time += time;
             if (time_counter.elapsed_time > activation.activate_after_time) {

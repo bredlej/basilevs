@@ -41,10 +41,13 @@ namespace components {
         float frame_speed{1.0f};
     };
 
-    struct Shooting : ComponentBase {
-        float delay_between_shots{0.0f};
-        float last_shot{0};
-        float angle{0.0f};
+    struct Collision : ComponentBase {
+        struct {
+            raylib::Vector2 center{0.0f, 0.0f};
+            float radius{0.0f};
+        } bounds;
+
+        bool is_collidable{false};
     };
 
     struct Activation : ComponentBase {
@@ -61,10 +64,6 @@ namespace components {
         double elapsed_time{0.0};
     };
 
-    struct CollisionCheck : ComponentBase {
-        std::function<bool(TWorld&)> is_collision;
-    };
-
     template<typename StateDeclaration, typename StatefulObject>
     struct StateMachine : ComponentBase {
         StatefulObject obj;
@@ -72,6 +71,14 @@ namespace components {
         explicit StateMachine(StatefulObject stateful_object) : state_machine{stateful_object} {};
         explicit StateMachine() : state_machine{obj} {};
         boost::sml::sm<StateDeclaration> state_machine;
+    };
+
+    struct Damage : ComponentBase {
+        float value{1.0f};
+    };
+
+    struct Health : ComponentBase {
+        double hp{100.0};
     };
 }
 

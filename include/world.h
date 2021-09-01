@@ -5,10 +5,10 @@
 #ifndef BASILEVS_WORLD_H
 #define BASILEVS_WORLD_H
 #include "blueprints.h"
+#include <input.h>
 #include <list>
 #include <memory>
 #include <utility>
-#include <input.h>
 /* Forward declarations */
 struct BlueprintBase;
 struct MemoryBase;
@@ -25,7 +25,7 @@ namespace state {
                     *"shoot"_s + event<DestroyEvent> = X);
         }
     };
-}
+}// namespace state
 /**
  * Describes a structure representing the game environment.
 
@@ -42,10 +42,31 @@ namespace state {
  */
 struct TWorld {
     using Background = std::shared_ptr<Blueprint<components::Sprite, components::Movement>>;
-    using PlayerType = Blueprint<components::Sprite, components::Movement, components::Emission>;
-    using EnemyListType = BlueprintsInMemory<components::Sprite, components::Movement, components::Activation, components::TimeCounter, components::Emission>;
+    using PlayerType = Blueprint<
+            components::Sprite,
+            components::Movement,
+            components::Emission,
+            components::Collision,
+            components::Health>;
+
+    using EnemyListType = BlueprintsInMemory<
+            components::Sprite,
+            components::Movement,
+            components::Activation,
+            components::TimeCounter,
+            components::Emission,
+            components::Collision,
+            components::Health>;
+
     using BulletStateComponent = components::StateMachine<state::BulletState, state::StatefulObject>;
-    using BulletPool = BlueprintsInPool<components::Sprite, components::Movement, BulletStateComponent, components::TimeCounter>;
+    using BulletPool = BlueprintsInPool<
+            components::Sprite,
+            components::Movement,
+            BulletStateComponent,
+            components::TimeCounter,
+            components::Collision,
+            components::Damage>;
+
     explicit TWorld() = default;
 
 public:
