@@ -11,8 +11,8 @@ namespace config {
     constexpr auto kFrameBoundUp = -64;
     constexpr auto kFrameBoundRight = 200;
     constexpr auto kFrameBoundDown = 200;
-    constexpr auto kScreenWidth = 800;
-    constexpr auto kScreenHeight = 720;
+    constexpr auto kScreenWidth = 960;
+    constexpr auto kScreenHeight = 864;
     constexpr auto kEnemyBulletPoolSize = 200;
     constexpr auto kPlayerBulletPoolSize = 100;
     constexpr auto kSoundQueueSize = 16;

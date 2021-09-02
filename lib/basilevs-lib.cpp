@@ -13,9 +13,9 @@ namespace basilevs {
 }// namespace basilevs
 
 void GameDefinition::initialize_world_() {
-    world.background = basilevs::make_background_blueprint(textures_);
-    world.player = basilevs::make_player_blueprint(textures_);
-    world.enemies = basilevs::initialize_enemies(textures_);
+    world.background = basilevs::initialization::create_blueprint_of_background(textures_);
+    world.player = basilevs::initialization::create_blueprint_of_player(textures_);
+    world.enemies = basilevs::initialization::create_blueprints_of_enemies(textures_);
 }
 
 void GameDefinition::initialize() {
@@ -28,15 +28,11 @@ void GameDefinition::initialize() {
 }
 
 void GameDefinition::loop_(std::chrono::duration<double> duration) {
-    basilevs::handle_player_input(world);
-    world.background->update(duration.count(), world);
-    world.player->update(duration.count(), world);
-    world.enemies->update(duration.count(), world);
-    world.enemy_bullets.update(duration.count(), world);
-    world.player_bullets.update(duration.count(), world);
-    basilevs::collision_checks(world);
-    basilevs::cleanup_bullet_pools(world);
-    basilevs::play_sounds(world.sounds_queue, sounds_);
+    basilevs::io::handle_player_input(world);
+    basilevs::game_state::update_world(duration,world);
+    basilevs::collision_checking::collision_checks(world);
+    basilevs::memory::cleanup_bullet_pools(world);
+    basilevs::audio::play_sounds(world.sounds_queue, sounds_);
 
     render_();
 }
@@ -56,8 +52,8 @@ void GameDefinition::run(raylib::Window &window, raylib::AudioDevice &audio) {
 void GameDefinition::render_() {
     BeginDrawing();
     ClearBackground(config::colors::kBackground);
-    basilevs::render_to_texture(render_target_, world, textures_);
-    basilevs::render_to_screen(render_target_, world);
+    basilevs::rendering::render_to_texture(render_target_, world, textures_);
+    basilevs::rendering::render_to_screen(render_target_, world);
     EndDrawing();
 }
 

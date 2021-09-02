@@ -50,86 +50,6 @@ namespace behaviours {
 
     namespace enemy {
         using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::Activation &, components::TimeCounter &, components::Emission &, components::Collision &, components::Health &)>;
-        struct EnemyDefinition {
-            assets::TextureId texture;
-            uint32_t amount_frames;
-            bullet::BulletDefinition bullet;
-            UpdateFunction behaviour;
-        };
-        constexpr auto tentacle_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::EnemyBulletUpdateFunction &bullet_function) {
-            const auto &player = world.player.get();
-            const auto player_movement = get<components::Movement>(player->components);
-            constexpr auto emit_every_seconds = 1.0;
-            if (emitter.last_emission > emit_every_seconds) {
-
-                emitter.last_emission = 0.0;
-                auto bullet_blueprint = Blueprint(bullet::EnemyBulletUpdateFunction(bullet_function));
-                auto &bullet_sprite = get<components::Sprite>(bullet_blueprint);
-                bullet_sprite.offset = raylib::Vector2{0.0f, 8.0f};
-                bullet_sprite.texture = assets::TextureId::Bullet_Tentacle;
-                bullet_sprite.frame_rect = raylib::Rectangle(0, 0, 8, 8);
-
-                auto &bullet_movement = get<components::Movement>(bullet_blueprint);
-                bullet_movement.speed = 40.0;
-                bullet_movement.position = movement.position;
-                bullet_movement.position = bullet_movement.position.Add(bullet_sprite.offset);
-                bullet_movement.direction = player_movement.position.Subtract(bullet_movement.position.Add({6.0, 4.0})).Add({16.0, 16.0}).Normalize();
-                bullet_sprite.rotation = player_movement.position.Add({16.0, 16.0}).Angle(bullet_movement.position.Add({4.0, 4.0}));
-
-                auto &bullet_state = get<TWorld::BulletStateComponent>(bullet_blueprint);
-
-                auto &bullet_collision = get<components::Collision>(bullet_blueprint);
-                bullet_collision.bounds.center = raylib::Vector2{4.5f, 4.5f};
-                bullet_collision.bounds.radius = 4.0f;
-                bullet_collision.is_collidable = false;
-
-                auto &bullet_damage = get<components::Damage>(bullet_blueprint);
-                bullet_damage.value = 30.0f;
-
-                world.enemy_bullets.add(bullet_blueprint);
-                world.sounds_queue.emplace_back(assets::SoundId::NormalBullet);
-            }
-            emitter.last_emission += time;
-        };
-
-        constexpr auto mosquito_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::EnemyBulletUpdateFunction &bullet_function) {
-            const auto &player = world.player.get();
-            constexpr auto emit_every_seconds = 1.0;
-            if (emitter.last_emission > emit_every_seconds) {
-
-                emitter.last_emission = 0.0;
-                for (int i = 1; i <= 12; i++) {
-                    auto bullet_blueprint = Blueprint(bullet::EnemyBulletUpdateFunction(bullet_function));
-                    auto &bullet_sprite = get<components::Sprite>(bullet_blueprint);
-                    bullet_sprite.offset = raylib::Vector2{4.0f, 4.0f};
-                    bullet_sprite.texture = assets::TextureId::Bullet_Mosquito;
-                    bullet_sprite.current_frame = 0;
-                    bullet_sprite.amount_frames = 6;
-                    bullet_sprite.frame_rect = raylib::Rectangle(0, 0, 8, 8);
-                    bullet_sprite.frame_speed = 12.0f;
-                    bullet_sprite.texture_width = 48;
-                    bullet_sprite.texture_height = 8;
-
-                    auto &bullet_movement = get<components::Movement>(bullet_blueprint);
-                    bullet_movement.speed = 15.0;
-                    bullet_movement.position = movement.position;
-                    bullet_movement.position = bullet_movement.position.Add(bullet_sprite.offset).Add(raylib::Vector2(0.0, 9.0).Rotate(180 / 3.14 * i));
-                    bullet_movement.direction = raylib::Vector2(0.0, 1.0).Rotate(180 / 3.14 * i).Normalize();
-
-                    auto &bullet_state = get<TWorld::BulletStateComponent>(bullet_blueprint);
-
-                    auto &bullet_collision = get<components::Collision>(bullet_blueprint);
-                    bullet_collision.bounds.center = raylib::Vector2{5.0f, 5.0f};
-                    bullet_collision.bounds.radius = 2.0f;
-                    bullet_collision.is_collidable = true;
-
-                    world.enemy_bullets.add(bullet_blueprint);
-                }
-
-                world.sounds_queue.emplace_back(assets::SoundId::NormalBullet);
-            }
-            emitter.last_emission += time;
-        };
 
         static constexpr auto frame_update = [](components::Sprite &sprite) {
             sprite.frame_counter++;
@@ -144,7 +64,42 @@ namespace behaviours {
             }
         };
 
-        constexpr auto kTentacleBehaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health) {
+        static constexpr auto tentacle_update_function = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health) {
+            static constexpr auto tentacle_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::EnemyBulletUpdateFunction &bullet_function) {
+                const auto &player = world.player.get();
+                const auto player_movement = get<components::Movement>(player->components);
+                constexpr auto emit_every_seconds = 1.0;
+                if (emitter.last_emission > emit_every_seconds) {
+
+                    emitter.last_emission = 0.0;
+                    auto bullet_blueprint = Blueprint(bullet::EnemyBulletUpdateFunction(bullet_function));
+                    auto &bullet_sprite = get<components::Sprite>(bullet_blueprint);
+                    bullet_sprite.offset = raylib::Vector2{0.0f, 8.0f};
+                    bullet_sprite.texture = assets::TextureId::Bullet_Tentacle;
+                    bullet_sprite.frame_rect = raylib::Rectangle(0, 0, 8, 8);
+
+                    auto &bullet_movement = get<components::Movement>(bullet_blueprint);
+                    bullet_movement.speed = 40.0;
+                    bullet_movement.position = movement.position;
+                    bullet_movement.position = bullet_movement.position.Add(bullet_sprite.offset);
+                    bullet_movement.direction = player_movement.position.Subtract(bullet_movement.position.Add({6.0, 4.0})).Add({16.0, 16.0}).Normalize();
+                    bullet_sprite.rotation = player_movement.position.Add({16.0, 16.0}).Angle(bullet_movement.position.Add({4.0, 4.0}));
+
+                    auto &bullet_state = get<TWorld::BulletStateComponent>(bullet_blueprint);
+
+                    auto &bullet_collision = get<components::Collision>(bullet_blueprint);
+                    bullet_collision.bounds.center = raylib::Vector2{4.5f, 4.5f};
+                    bullet_collision.bounds.radius = 4.0f;
+                    bullet_collision.is_collidable = false;
+
+                    auto &bullet_damage = get<components::Damage>(bullet_blueprint);
+                    bullet_damage.value = 30.0f;
+
+                    world.enemy_bullets.add(bullet_blueprint);
+                    world.sounds_queue.emplace_back(assets::SoundId::NormalBullet);
+                }
+                emitter.last_emission += time;
+            };
             frame_update(sprite);
             time_counter.elapsed_time += time;
             if (time_counter.elapsed_time > activation.activate_after_time) {
@@ -155,7 +110,45 @@ namespace behaviours {
             }
         };
 
-        constexpr auto kMosquitoBehaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health) {
+        static constexpr auto mosquito_update_function = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health) {
+            static constexpr auto mosquito_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::EnemyBulletUpdateFunction &bullet_function) {
+                const auto &player = world.player.get();
+                constexpr auto emit_every_seconds = 1.0;
+                if (emitter.last_emission > emit_every_seconds) {
+
+                    emitter.last_emission = 0.0;
+                    for (int i = 1; i <= 12; i++) {
+                        auto bullet_blueprint = Blueprint(bullet::EnemyBulletUpdateFunction(bullet_function));
+                        auto &bullet_sprite = get<components::Sprite>(bullet_blueprint);
+                        bullet_sprite.offset = raylib::Vector2{4.0f, 4.0f};
+                        bullet_sprite.texture = assets::TextureId::Bullet_Mosquito;
+                        bullet_sprite.current_frame = 0;
+                        bullet_sprite.amount_frames = 6;
+                        bullet_sprite.frame_rect = raylib::Rectangle(0, 0, 8, 8);
+                        bullet_sprite.frame_speed = 12.0f;
+                        bullet_sprite.texture_width = 48;
+                        bullet_sprite.texture_height = 8;
+
+                        auto &bullet_movement = get<components::Movement>(bullet_blueprint);
+                        bullet_movement.speed = 15.0;
+                        bullet_movement.position = movement.position;
+                        bullet_movement.position = bullet_movement.position.Add(bullet_sprite.offset).Add(raylib::Vector2(0.0, 9.0).Rotate(180 / 3.14 * i));
+                        bullet_movement.direction = raylib::Vector2(0.0, 1.0).Rotate(180 / 3.14 * i).Normalize();
+
+                        auto &bullet_state = get<TWorld::BulletStateComponent>(bullet_blueprint);
+
+                        auto &bullet_collision = get<components::Collision>(bullet_blueprint);
+                        bullet_collision.bounds.center = raylib::Vector2{5.0f, 5.0f};
+                        bullet_collision.bounds.radius = 2.0f;
+                        bullet_collision.is_collidable = true;
+
+                        world.enemy_bullets.add(bullet_blueprint);
+                    }
+
+                    world.sounds_queue.emplace_back(assets::SoundId::NormalBullet);
+                }
+                emitter.last_emission += time;
+            };
             frame_update(sprite);
             time_counter.elapsed_time += time;
             if (time_counter.elapsed_time > activation.activate_after_time) {
@@ -165,11 +158,36 @@ namespace behaviours {
                 mosquito_shoot_behaviour(world, emitter, movement, time, bullet::fly_and_rotate);
             }
         };
-        constexpr auto tentacle = []() -> EnemyDefinition {
-            return {assets::TextureId::Tentacle, 9, {assets::TextureId::Bullet_Tentacle, 1, bullet::fly_towards_direction}, kTentacleBehaviour};
+
+        struct EnemyDefinition {
+            assets::TextureId texture;
+            uint32_t amount_frames;
+            bullet::BulletDefinition bullet;
+            UpdateFunction behaviour;
+            float health;
+            raylib::Vector2 collision_center_offset;
+            float collision_radius;
         };
-        constexpr auto mosquito = []() -> EnemyDefinition {
-            return {assets::TextureId::Mosquito, 11, {assets::TextureId::Bullet_Mosquito, 6, bullet::fly_towards_direction}, kMosquitoBehaviour};
+
+        static constexpr auto tentacle_definition = []() -> EnemyDefinition {
+            return {
+                    assets::TextureId::Tentacle,
+                    9,
+                    {assets::TextureId::Bullet_Tentacle, 1, bullet::fly_towards_direction},
+                    tentacle_update_function,
+                    40,
+                    raylib::Vector2{8.0f, 8.0f},
+                    8.0f};
+        };
+        static constexpr auto mosquito_definition = []() -> EnemyDefinition {
+            return {
+                    assets::TextureId::Mosquito,
+                    11,
+                    {assets::TextureId::Bullet_Mosquito, 6, bullet::fly_towards_direction},
+                    mosquito_update_function,
+                    60,
+                    raylib::Vector2{8.0f, 8.0f},
+                    8.0f};
         };
 
     }// namespace enemy
