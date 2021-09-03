@@ -10,6 +10,16 @@
 namespace behaviours {
 
     namespace bullet {
+        using EnemyBulletUpdateFunction =
+        std::function<void(
+                const double,
+                TWorld &,
+                components::Sprite &,
+                components::Movement &,
+                TWorld::BulletStateComponent &,
+                components::TimeCounter &,
+                components::Collision &,
+                components::Damage &)>;
 
         static constexpr auto bullet_sprite_update = [](components::Sprite &sprite) {
             sprite.frame_counter++;
@@ -40,7 +50,6 @@ namespace behaviours {
             bullet_sprite_update(sprite);
         };
 
-        using EnemyBulletUpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, TWorld::BulletStateComponent &, components::TimeCounter &, components::Collision &, components::Damage &)>;
         struct BulletDefinition {
             assets::TextureId texture;
             uint32_t amount_frames;
@@ -49,7 +58,18 @@ namespace behaviours {
     }// namespace bullet
 
     namespace enemy {
-        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::Activation &, components::TimeCounter &, components::Emission &, components::Collision &, components::Health &)>;
+        using UpdateFunction =
+                std::function<void(
+                        const double,
+                        TWorld &,
+                        components::Sprite &,
+                        components::Movement &,
+                        components::Activation &,
+                        components::TimeCounter &,
+                        components::Emission &,
+                        components::Collision &,
+                        components::Health &,
+                        TWorld::EnemyStateComponent &)>;
 
         static constexpr auto frame_update = [](components::Sprite &sprite) {
             sprite.frame_counter++;
@@ -64,7 +84,7 @@ namespace behaviours {
             }
         };
 
-        static constexpr auto tentacle_update_function = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health) {
+        static constexpr auto tentacle_update_function = [] (const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health, TWorld::EnemyStateComponent &state) {
             static constexpr auto tentacle_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::EnemyBulletUpdateFunction &bullet_function) {
                 const auto &player = world.player.get();
                 const auto player_movement = get<components::Movement>(player->components);
@@ -100,17 +120,29 @@ namespace behaviours {
                 }
                 emitter.last_emission += time;
             };
+            static constexpr auto tentacle_state_handling = [](auto &state, auto &time_counter, auto &activation) {
+                /* State handling */
+
+                if (state.state_machine.is(state::kInitState)) {
+                    if (time_counter.elapsed_time > activation.activate_after_time) {
+                        activation.is_active = true;
+                        state.state_machine.process_event(state::ArrivalEvent());
+                    }
+                }
+                else if (state.state_machine.is(state::kArrivalState)) {
+                    state.state_machine.process_event(state::StartEvent());
+                }
+            };
             frame_update(sprite);
             time_counter.elapsed_time += time;
-            if (time_counter.elapsed_time > activation.activate_after_time) {
-                activation.is_active = true;
-            }
+
+            tentacle_state_handling(state, time_counter, activation);
             if (activation.is_active) {
                 tentacle_shoot_behaviour(world, emitter, movement, time, bullet::fly_towards_direction);
             }
         };
 
-        static constexpr auto mosquito_update_function = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health) {
+        static constexpr auto mosquito_update_function = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health, TWorld::EnemyStateComponent &state) {
             static constexpr auto mosquito_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::EnemyBulletUpdateFunction &bullet_function) {
                 const auto &player = world.player.get();
                 constexpr auto emit_every_seconds = 1.0;
@@ -149,11 +181,23 @@ namespace behaviours {
                 }
                 emitter.last_emission += time;
             };
+            static constexpr auto mosquito_state_handling = [](auto &state, auto &time_counter, auto &activation) {
+                /* State handling */
+
+                if (state.state_machine.is(state::kInitState)) {
+                    if (time_counter.elapsed_time > activation.activate_after_time) {
+                        activation.is_active = true;
+                        state.state_machine.process_event(state::ArrivalEvent());
+                    }
+                }
+                else if (state.state_machine.is(state::kArrivalState)) {
+                    state.state_machine.process_event(state::StartEvent());
+                }
+            };
             frame_update(sprite);
             time_counter.elapsed_time += time;
-            if (time_counter.elapsed_time > activation.activate_after_time) {
-                activation.is_active = true;
-            }
+
+            mosquito_state_handling(state, time_counter, activation);
             if (activation.is_active) {
                 mosquito_shoot_behaviour(world, emitter, movement, time, bullet::fly_and_rotate);
             }

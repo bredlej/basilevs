@@ -101,7 +101,7 @@ namespace basilevs {
     }// namespace initialization
 
     namespace game_state {
-        static constexpr auto update_world = [](auto duration, auto &world) {
+        static constexpr auto update_world = [](auto duration, TWorld &world) {
             world.background->update(duration.count(), world);
             world.player->update(duration.count(), world);
             world.enemies->update(duration.count(), world);
@@ -116,13 +116,10 @@ namespace basilevs {
                 auto player = world.player.get();
                 auto sprite_component = std::get<components::Sprite>(player->components);
                 auto movement_component = std::get<components::Movement>(player->components);
-                auto collision_component = std::get<components::Collision>(player->components);
 
                 auto texture = textures[static_cast<int>(sprite_component.texture)];
 
                 DrawTextureRec(texture, sprite_component.frame_rect, movement_component.position, WHITE);
-                auto collision_position = movement_component.position.Add(collision_component.bounds.center);
-                DrawCircle(collision_position.x, collision_position.y, collision_component.bounds.radius, BLUE);
             };
 
             static constexpr auto render_enemy_sprites = [](raylib::RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures) {
@@ -130,12 +127,9 @@ namespace basilevs {
                 auto sprites = std::get<std::vector<components::Sprite>>(enemy_components);
                 auto activations = std::get<std::vector<components::Activation>>(enemy_components);
                 auto movement = std::get<std::vector<components::Movement>>(enemy_components);
-                auto collision = std::get<std::vector<components::Collision>>(enemy_components);
 
                 for (size_t i = 0; i < sprites.size(); i++) {
                     if (activations[i].is_active) {
-                        auto collision_position = movement[i].position.Add(collision[i].bounds.center);
-                        DrawCircle(collision_position.x, collision_position.y, collision[i].bounds.radius, LIME);
                         DrawTextureRec(textures[static_cast<int>(sprites[i].texture)], sprites[i].frame_rect, movement[i].position, WHITE);
                     }
                 }
@@ -145,23 +139,17 @@ namespace basilevs {
                 auto enemy_components = world.enemy_bullets.components;
                 auto enemy_bullet_sprites = std::get<std::vector<components::Sprite>>(enemy_components);
                 auto enemy_bullet_movements = std::get<std::vector<components::Movement>>(enemy_components);
-                auto enemy_bullet_collision = std::get<std::vector<components::Collision>>(enemy_components);
 
                 auto player_components = world.player_bullets.components;
                 auto player_bullet_sprites = std::get<std::vector<components::Sprite>>(player_components);
                 auto player_bullet_movements = std::get<std::vector<components::Movement>>(player_components);
-                auto player_bullet_collisions = std::get<std::vector<components::Collision>>(player_components);
 
                 for (std::size_t i = 0; i < world.enemy_bullets.first_available_index; i++) {
                     const auto bullet_position = enemy_bullet_movements[i].position;
-                    auto collision_center = enemy_bullet_movements[i].position.Add(enemy_bullet_collision[i].bounds.center);
-                    DrawCircle(collision_center.x, collision_center.y, enemy_bullet_collision[i].bounds.radius, GREEN);
                     DrawTextureRec(textures[static_cast<int>(enemy_bullet_sprites[i].texture)], enemy_bullet_sprites[i].frame_rect, bullet_position, WHITE);
                 }
                 for (std::size_t i = 0; i < world.player_bullets.first_available_index; i++) {
                     const auto bullet_position = player_bullet_movements[i].position;
-                    auto collision_center = player_bullet_movements[i].position.Add(player_bullet_collisions[i].bounds.center);
-                    DrawCircle(collision_center.x, collision_center.y, player_bullet_collisions[i].bounds.radius, ORANGE);
                     DrawTextureEx(textures[static_cast<int>(player_bullet_sprites[i].texture)], bullet_position, player_bullet_sprites[i].rotation, 1.0f, WHITE);
                 }
             };

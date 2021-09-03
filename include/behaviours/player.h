@@ -67,7 +67,7 @@ namespace behaviours {
             }
         };
 
-        static constexpr auto kPlayerNormalBehaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Emission &emission, components::Collision &collision, components::Health &health) {
+        static constexpr auto kPlayerNormalBehaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Emission &emission, components::Collision &collision, components::Health &health, TWorld::PlayerStateComponent &state) {
             static constexpr auto move = [] (const double time, TWorld &world, components::Movement &movement) {
                 if (world.player_input[input::PlayerInput::Left]) {
                     movement.position.x -= movement.speed * time;
@@ -91,7 +91,16 @@ namespace behaviours {
             move(time, world, movement);
             shoot(time, world, sprite, movement, emission);
         };
-        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::Emission &, components::Collision &, components::Health &)>;
+        using UpdateFunction =
+                std::function<void(
+                        const double,
+                        TWorld &,
+                        components::Sprite &,
+                        components::Movement &,
+                        components::Emission &,
+                        components::Collision &,
+                        components::Health &,
+                        TWorld::PlayerStateComponent &)>;
     }// namespace player
 }
 #endif//BASILEVS_PLAYER_H

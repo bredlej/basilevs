@@ -19,10 +19,47 @@ namespace state {
     struct DestroyEvent {};
     struct StatefulObject {};
 
+    constexpr auto kShootState = "shoot"_s;
+    constexpr auto kAliveState = "alive"_s;
+    constexpr auto kTakingDamageState = "taking_damage"_s;
+    constexpr auto kDeadState = "dead"_s;
+    constexpr auto kInitState = "init"_s;
+    constexpr auto kArrivalState = "arrival"_s;
+
     struct BulletState {
         auto operator()() const {
             return make_transition_table(
-                    *"shoot"_s + event<DestroyEvent> = X);
+                    *kShootState + event<DestroyEvent> = X);
+        }
+    };
+
+    struct DamageEvent {};
+    struct RecoverEvent {};
+    struct KillEvent {};
+    struct PlayerState {
+        auto operator()() const {
+            return make_transition_table(
+                    *kAliveState + event<DamageEvent> = kTakingDamageState,
+                    kTakingDamageState + event<RecoverEvent> = kAliveState,
+                    kTakingDamageState + event<KillEvent> = kDeadState,
+                    kDeadState + event<DestroyEvent> = X,
+                    kAliveState + event<DestroyEvent> = X);
+        }
+    };
+
+    struct ArrivalEvent {};
+    struct StartEvent {};
+    struct EnemyState {
+        auto operator()() const {
+            return make_transition_table(
+                    *kInitState + event<ArrivalEvent> = kArrivalState,
+                    kArrivalState + event<StartEvent> = kAliveState,
+                    kArrivalState + event<DamageEvent> = kTakingDamageState,
+                    kAliveState + event<DamageEvent> = kTakingDamageState,
+                    kTakingDamageState + event<RecoverEvent> = kAliveState,
+                    kTakingDamageState + event<KillEvent> = kDeadState,
+                    kDeadState + event<DestroyEvent> = X,
+                    kAliveState + event<DestroyEvent> = X);
         }
     };
 }// namespace state
@@ -42,13 +79,17 @@ namespace state {
  */
 struct TWorld {
     using Background = std::shared_ptr<Blueprint<components::Sprite, components::Movement>>;
+
+    using PlayerStateComponent = components::StateMachine<state::EnemyState, state::StatefulObject>;
     using PlayerType = Blueprint<
             components::Sprite,
             components::Movement,
             components::Emission,
             components::Collision,
-            components::Health>;
+            components::Health,
+            PlayerStateComponent>;
 
+    using EnemyStateComponent = components::StateMachine<state::EnemyState, state::StatefulObject>;
     using EnemyListType = BlueprintsInMemory<
             components::Sprite,
             components::Movement,
@@ -56,7 +97,8 @@ struct TWorld {
             components::TimeCounter,
             components::Emission,
             components::Collision,
-            components::Health>;
+            components::Health,
+            EnemyStateComponent>;
 
     using BulletStateComponent = components::StateMachine<state::BulletState, state::StatefulObject>;
     using BulletPool = BlueprintsInPool<
