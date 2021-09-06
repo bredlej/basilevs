@@ -6,7 +6,7 @@
 namespace basilevs {
     void Game::run(raylib::Window &window, raylib::AudioDevice &audio) {
         using namespace sml;
-        using namespace state;
+        using namespace state_handling;
 
         GameDefinition().run(window, audio);
     }
@@ -19,12 +19,12 @@ void GameDefinition::initialize_world_() {
 }
 
 void GameDefinition::initialize() {
-    sm.process_event(state::events::Init{});
+    sm.process_event(state_handling::events::Init{});
     textures_ = assets::load_textures_level_1();
     sounds_ = assets::load_sounds();
     initialize_world_();
     SetTargetFPS(60);
-    sm.process_event(state::events::Run{});
+    sm.process_event(state_handling::events::Run{});
 }
 
 void GameDefinition::loop_(std::chrono::duration<double> duration) {

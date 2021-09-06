@@ -356,7 +356,7 @@ TEST_F(BlueprintsInPoolTest, UpdatesManyBlueprintsInPool) {
 
 TEST_F(StateComponentTest, DoesStateComponentTransitionBetweenStates) {
     using namespace sml;
-    using namespace state;
+    using namespace state_handling;
     struct InitEvent {};
     struct RunEvent {};
     struct StopEvent {};
@@ -403,7 +403,7 @@ TEST_F(StateComponentTest, DoesStateComponentTransitionBetweenStates) {
 
 TEST_F(StateComponentTest, DoStatesChangeAfterSpecificTime) {
     using namespace sml;
-    using namespace state;
+    using namespace state_handling;
     struct InitEvent {};
     struct RunEvent {};
     struct StopEvent {};
@@ -426,8 +426,8 @@ TEST_F(StateComponentTest, DoStatesChangeAfterSpecificTime) {
     };
 
     static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::TimeCounter &timeCounter, components::Activation activation, components::StateMachine<StateMachineDeclaration, StatefulObjectT> &stateComponent) -> void {
-        timeCounter.elapsed_time += time;
-        if (stateComponent.state_machine.is("entry"_s) && timeCounter.elapsed_time >= activation.activate_after_time) {
+        timeCounter.elapsed_seconds += time;
+        if (stateComponent.state_machine.is("entry"_s) && timeCounter.elapsed_seconds >= activation.activate_after_seconds) {
             stateComponent.state_machine.process_event(InitEvent{});
             stateComponent.state_machine.process_event(RunEvent());
         }
@@ -438,10 +438,10 @@ TEST_F(StateComponentTest, DoStatesChangeAfterSpecificTime) {
     auto bp_activate_after_2s = Blueprint<components::TimeCounter, components::Activation, components::StateMachine<StateMachineDeclaration, StatefulObjectT>>(kUpdateFunction);
 
     auto &bp1_activation = get<components::Activation>(bp_activate_after_1s);
-    bp1_activation.activate_after_time = 1.0;
+    bp1_activation.activate_after_seconds = 1.0;
 
     auto &bp2_activation = get<components::Activation>(bp_activate_after_2s);
-    bp2_activation.activate_after_time = 2.0;
+    bp2_activation.activate_after_seconds = 2.0;
 
     auto memory = BlueprintsInMemory(bp_activate_after_1s, bp_activate_after_2s);
 

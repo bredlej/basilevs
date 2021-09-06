@@ -10,8 +10,11 @@
 class TWorld;
 namespace behaviours {
     namespace background {
-
         using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
+        /*
+         * Describes how to animate the background in Level 1.
+         * This is a simple upwards scroll of the visible frame to give the illusion that the player is flying up in the skies
+         */
         constexpr auto level1_background_update = [](const double time, TWorld &, components::Sprite &sprite, components::Movement &) {
           sprite.fps_counter += 1;
           if (sprite.frame_rect.y > 0) {
