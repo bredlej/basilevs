@@ -6,18 +6,33 @@
 #define BASILEVS_PLAYER_H
 #include <world.h>
 #include <config.h>
+
+/*
+ * Describes how to update the player object and its bullets
+ */
 namespace behaviours {
     namespace bullet {
-        static constexpr auto player_bullet_1 = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::StateMachine<state::BulletState, state::StatefulObject> &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &) {
+        static constexpr auto player_bullet_1 = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject> &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &) {
           movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
           movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
         };
-        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::StateMachine<state::BulletState, state::StatefulObject> &, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &)>;
+        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject> &, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &)>;
     }// namespace bullet
 
     namespace player {
 
-        static constexpr auto shoot_1 = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::UpdateFunction &bullet_function) {
+        using UpdateFunction =
+                std::function<void(
+                        const double,
+                        TWorld &,
+                        components::Sprite &,
+                        components::Movement &,
+                        components::Emission &,
+                        components::Collision &,
+                        components::Health &,
+                        TWorld::PlayerStateComponent &)>;
+
+        static constexpr auto shoot_quadruple = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::UpdateFunction &bullet_function) {
           const auto &player = world.player.get();
           constexpr auto emit_every_seconds = 0.2;
           constexpr auto speed = 100;
@@ -44,14 +59,14 @@ namespace behaviours {
               world.player_bullets.add(bullet_blueprint);
           };
 
-          if (emitter.last_emission > emit_every_seconds) {
-              emitter.last_emission = 0.0;
+          if (emitter.last_emission_seconds > emit_every_seconds) {
+              emitter.last_emission_seconds = 0.0;
               emit (world, bullet_function, movement, raylib::Vector2{8.0, -4.0}, raylib::Vector2{0.0, -1.0}, raylib::Vector2{0.0f, 0.0f});
               emit (world, bullet_function, movement, raylib::Vector2{16.0, -4.0}, raylib::Vector2{0.0, -1.0}, raylib::Vector2{0.0f, 0.0f});
               emit (world, bullet_function, movement, raylib::Vector2{0.0, -4.0}, raylib::Vector2{-0.3, -1.0}, raylib::Vector2{1.0f, -0.3f});
               emit (world, bullet_function, movement, raylib::Vector2{24.0, -4.0}, raylib::Vector2{0.3, -1.0}, raylib::Vector2{1.0f, 0.3f});
           }
-          emitter.last_emission += time;
+          emitter.last_emission_seconds += time;
         };
 
         static constexpr auto frame_update = [](components::Sprite &sprite) {
@@ -67,7 +82,7 @@ namespace behaviours {
             }
         };
 
-        static constexpr auto kPlayerNormalBehaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Emission &emission, components::Collision &collision, components::Health &health, TWorld::PlayerStateComponent &state) {
+        static constexpr auto default_behaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Emission &emission, components::Collision &collision, components::Health &health, TWorld::PlayerStateComponent &state) {
             static constexpr auto move = [] (const double time, TWorld &world, components::Movement &movement) {
                 if (world.player_input[input::PlayerInput::Left]) {
                     movement.position.x -= movement.speed * time;
@@ -84,23 +99,14 @@ namespace behaviours {
             };
             static constexpr auto shoot = [] (const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Emission &emission) {
                 if (world.player_input[input::PlayerInput::Shoot]) {
-                    shoot_1(world, emission, movement, time, bullet::player_bullet_1);
+                    shoot_quadruple(world, emission, movement, time, bullet::player_bullet_1);
                 }
             };
             frame_update(sprite);
             move(time, world, movement);
             shoot(time, world, sprite, movement, emission);
         };
-        using UpdateFunction =
-                std::function<void(
-                        const double,
-                        TWorld &,
-                        components::Sprite &,
-                        components::Movement &,
-                        components::Emission &,
-                        components::Collision &,
-                        components::Health &,
-                        TWorld::PlayerStateComponent &)>;
+
     }// namespace player
 }
 #endif//BASILEVS_PLAYER_H

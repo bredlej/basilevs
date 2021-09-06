@@ -17,7 +17,7 @@ struct GameStateMachine{
     bool is_initialized{false};
 };
 
-namespace state {
+namespace state_handling {
     namespace events {
         struct Init {};
         struct Run {};
@@ -48,7 +48,7 @@ namespace basilevs {
     struct GameState {
         auto operator()() const {
             using namespace sml;
-            using namespace state;
+            using namespace state_handling;
             return make_transition_table(
                     *"entry"_s + event<events::Init> / actions::initialize = "init"_s,
                     "init"_s + event<events::Run>[guards::is_initialized] / actions::run_action = "running"_s,

@@ -43,7 +43,7 @@ namespace basilevs {
                 sprite_component.fps_speed = 12;
                 sprite_component.frame_rect = {0.0f, 0.0f, static_cast<float>(texture_width) / static_cast<float>(sprite_component.amount_frames), static_cast<float>(texture_height)};
             };
-            auto player = Blueprint(behaviours::player::UpdateFunction(behaviours::player::kPlayerNormalBehaviour));
+            auto player = Blueprint(behaviours::player::UpdateFunction(behaviours::player::default_behaviour));
             setup_player_sprite(get<components::Sprite>(player), textures, assets::TextureId::Player, 7);
             auto &movement_component = get<components::Movement>(player);
             movement_component.position = raylib::Vector2{70, 100};
@@ -91,10 +91,10 @@ namespace basilevs {
             auto enemy = Blueprint(behaviours::enemy::UpdateFunction(enemy_definition.behaviour));
             setup_sprite_component(get<components::Sprite>(enemy), textures, enemy_definition);
             get<components::Movement>(enemy).position = position;
-            get<components::TimeCounter>(enemy).elapsed_time = 0.0;
-            get<components::Emission>(enemy).last_emission = 0.0f;
+            get<components::TimeCounter>(enemy).elapsed_seconds = 0.0;
+            get<components::Emission>(enemy).last_emission_seconds = 0.0f;
             auto &activation_component = get<components::Activation>(enemy);
-            activation_component.activate_after_time = time;
+            activation_component.activate_after_seconds = time;
             activation_component.is_active = false;
             auto &collision_component = get<components::Collision>(enemy);
             collision_component.bounds.radius = enemy_definition.collision_radius;
@@ -110,11 +110,11 @@ namespace basilevs {
          */
         static constexpr auto create_blueprints_of_enemies = [](const std::vector<Texture2D> &textures) {
             auto enemies_in_memory = BlueprintsInMemory(
-                    spawn_enemy_after_seconds(1.1, textures, {0, 20}, behaviours::enemy::tentacle_definition()),
-                    spawn_enemy_after_seconds(2.2, textures, {35, 50}, behaviours::enemy::mosquito_definition()),
-                    spawn_enemy_after_seconds(3.3, textures, {70, 40}, behaviours::enemy::tentacle_definition()),
-                    spawn_enemy_after_seconds(4.4, textures, {105, 50}, behaviours::enemy::mosquito_definition()),
-                    spawn_enemy_after_seconds(5.5, textures, {130, 30}, behaviours::enemy::tentacle_definition()));
+                    spawn_enemy_after_seconds(1.1, textures, {0, 20}, behaviours::enemy::tentacle::definition()),
+                    spawn_enemy_after_seconds(2.2, textures, {35, 50}, behaviours::enemy::mosquito::definition()),
+                    spawn_enemy_after_seconds(3.3, textures, {70, 40}, behaviours::enemy::tentacle::definition()),
+                    spawn_enemy_after_seconds(4.4, textures, {105, 50}, behaviours::enemy::mosquito::definition()),
+                    spawn_enemy_after_seconds(5.5, textures, {130, 30}, behaviours::enemy::tentacle::definition()));
             return std::make_shared<decltype(enemies_in_memory)>(enemies_in_memory);
         };
     }// namespace initialization
@@ -297,8 +297,8 @@ namespace basilevs {
                         }
                         const auto enemy_collision_center = enemy_bullets.movements[j].position.Add(enemy_bullets.collisions[j].bounds.center);
                         if (CheckCollisionCircles(player_collision_center, player_bullets.collisions[i].bounds.radius, enemy_collision_center, enemy_bullets.collisions[j].bounds.radius)) {
-                            player_bullets.states[i].state_machine.process_event(state::DestroyEvent());
-                            enemy_bullets.states[j].state_machine.process_event(state::DestroyEvent());
+                            player_bullets.states[i].state_machine.process_event(state_handling::events::DestroyEvent());
+                            enemy_bullets.states[j].state_machine.process_event(state_handling::events::DestroyEvent());
                         }
                     }
                 }
@@ -319,7 +319,7 @@ namespace basilevs {
                     const auto bullet_position = enemy_bullets.movements[i].position;
                     const auto collision_center = bullet_position.Add(enemy_bullets.collisions[i].bounds.center);
                     if (CheckCollisionCircles(collision_center, enemy_bullets.collisions[i].bounds.radius, player_collision_center, player_collision.bounds.radius)) {
-                        enemy_bullets.states[i].state_machine.process_event(state::DestroyEvent());
+                        enemy_bullets.states[i].state_machine.process_event(state_handling::events::DestroyEvent());
                         player_health.hp -= enemy_bullets.damages[i].value;
                     }
                 }
@@ -350,7 +350,7 @@ namespace basilevs {
                                  .CheckCollision(world.frame_bounds)) {
                         std::get<std::vector<TWorld::BulletStateComponent>>(pool.components)[index - 1]
                                 .state_machine
-                                .process_event(state::DestroyEvent());
+                                .process_event(state_handling::events::DestroyEvent());
                     }
                 }
             };

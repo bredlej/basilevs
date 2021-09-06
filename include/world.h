@@ -12,56 +12,66 @@
 /* Forward declarations */
 struct BlueprintBase;
 struct MemoryBase;
-namespace state {
-    using namespace boost::sml;
-    using namespace state;
 
-    struct DestroyEvent {};
+namespace state_handling {
+    using namespace boost::sml;
+
     struct StatefulObject {};
 
-    constexpr auto kShootState = "shoot"_s;
-    constexpr auto kAliveState = "alive"_s;
-    constexpr auto kTakingDamageState = "taking_damage"_s;
-    constexpr auto kDeadState = "dead"_s;
-    constexpr auto kInitState = "init"_s;
-    constexpr auto kArrivalState = "arrival"_s;
+    namespace events {
+        struct DestroyEvent {};
+        struct DamageEvent {};
+        struct RecoverEvent {};
+        struct ArrivalEvent {};
+        struct StartEvent {};
+        struct KillEvent {};
+    }
 
-    struct BulletState {
-        auto operator()() const {
-            return make_transition_table(
-                    *kShootState + event<DestroyEvent> = X);
-        }
-    };
+    namespace declarations {
+        constexpr auto kShootState = "shoot"_s;
+        constexpr auto kAliveState = "alive"_s;
+        constexpr auto kTakingDamageState = "taking_damage"_s;
+        constexpr auto kDeadState = "dead"_s;
+        constexpr auto kInitState = "init"_s;
+        constexpr auto kArrivalState = "arrival"_s;
+    }
 
-    struct DamageEvent {};
-    struct RecoverEvent {};
-    struct KillEvent {};
-    struct PlayerState {
-        auto operator()() const {
-            return make_transition_table(
-                    *kAliveState + event<DamageEvent> = kTakingDamageState,
-                    kTakingDamageState + event<RecoverEvent> = kAliveState,
-                    kTakingDamageState + event<KillEvent> = kDeadState,
-                    kDeadState + event<DestroyEvent> = X,
-                    kAliveState + event<DestroyEvent> = X);
-        }
-    };
+    namespace transitions {
+        using namespace declarations;
+        using namespace events;
+        struct BulletPossibleStates {
+            auto operator()() const {
+                return make_transition_table(
+                        *kShootState + event<DestroyEvent> = X);
+            }
+        };
 
-    struct ArrivalEvent {};
-    struct StartEvent {};
-    struct EnemyState {
-        auto operator()() const {
-            return make_transition_table(
-                    *kInitState + event<ArrivalEvent> = kArrivalState,
-                    kArrivalState + event<StartEvent> = kAliveState,
-                    kArrivalState + event<DamageEvent> = kTakingDamageState,
-                    kAliveState + event<DamageEvent> = kTakingDamageState,
-                    kTakingDamageState + event<RecoverEvent> = kAliveState,
-                    kTakingDamageState + event<KillEvent> = kDeadState,
-                    kDeadState + event<DestroyEvent> = X,
-                    kAliveState + event<DestroyEvent> = X);
-        }
-    };
+        struct PlayerPossibleStates {
+            auto operator()() const {
+                return make_transition_table(
+                        *kAliveState + event<DamageEvent> = kTakingDamageState,
+                        kTakingDamageState + event<RecoverEvent> = kAliveState,
+                        kTakingDamageState + event<KillEvent> = kDeadState,
+                        kDeadState + event<DestroyEvent> = X,
+                        kAliveState + event<DestroyEvent> = X);
+            }
+        };
+
+        struct EnemyPossibleStates {
+            auto operator()() const {
+                return make_transition_table(
+                        *kInitState + event<ArrivalEvent> = kArrivalState,
+                        kArrivalState + event<StartEvent> = kAliveState,
+                        kArrivalState + event<DamageEvent> = kTakingDamageState,
+                        kAliveState + event<DamageEvent> = kTakingDamageState,
+                        kTakingDamageState + event<RecoverEvent> = kAliveState,
+                        kTakingDamageState + event<KillEvent> = kDeadState,
+                        kDeadState + event<DestroyEvent> = X,
+                        kAliveState + event<DestroyEvent> = X);
+            }
+        };
+    }
+
 }// namespace state
 /**
  * Describes a structure representing the game environment.
@@ -80,7 +90,10 @@ namespace state {
 struct TWorld {
     using Background = std::shared_ptr<Blueprint<components::Sprite, components::Movement>>;
 
-    using PlayerStateComponent = components::StateMachine<state::EnemyState, state::StatefulObject>;
+    using PlayerStateComponent = components::StateMachine<state_handling::transitions::PlayerPossibleStates, state_handling::StatefulObject>;
+    /*
+     * Describes the components a player object consists of
+     */
     using PlayerType = Blueprint<
             components::Sprite,
             components::Movement,
@@ -89,7 +102,10 @@ struct TWorld {
             components::Health,
             PlayerStateComponent>;
 
-    using EnemyStateComponent = components::StateMachine<state::EnemyState, state::StatefulObject>;
+    using EnemyStateComponent = components::StateMachine<state_handling::transitions::EnemyPossibleStates, state_handling::StatefulObject>;
+    /*
+     * Describes the components which all enemies consist of
+     */
     using EnemyListType = BlueprintsInMemory<
             components::Sprite,
             components::Movement,
@@ -100,7 +116,10 @@ struct TWorld {
             components::Health,
             EnemyStateComponent>;
 
-    using BulletStateComponent = components::StateMachine<state::BulletState, state::StatefulObject>;
+    using BulletStateComponent = components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject>;
+    /*
+     * Describes the components which all bullets consist of
+     */
     using BulletPool = BlueprintsInPool<
             components::Sprite,
             components::Movement,
