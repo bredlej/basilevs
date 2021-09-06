@@ -20,6 +20,10 @@ template<typename ...T>
 concept is_many_components = (is_a_component<T> && ...);
 
 namespace components {
+
+    /*
+     * Allows an object to be moved from its current position towards a direction with a given speed.
+     */
     struct Movement : ComponentBase{
     public:
         raylib::Vector2 position;
@@ -27,18 +31,49 @@ namespace components {
         float speed{0.0f};
     };
 
+    /*
+     * Defines how to render the object on screen.
+     */
     struct Sprite : ComponentBase {
+        /*
+         * Id of the texture representing this object. Must correspond to a specific texture declared in assets.h
+         */
         assets::TextureId texture{assets::TextureId::Player};
-        int texture_width{1};
-        int texture_height{1};
-        float rotation{0.0};
+        int texture_width_px{1};
+        int texture_height_px{1};
+        float rotation_degrees{0.0};
+        /*
+         * Defines a rectangular area representing the part of a texture that will be rendered on screen.
+         */
         Rectangle frame_rect{0,0,1,1};
+        /*
+         * Defines how much single frames the animation of this object consists of.
+         */
         uint32_t amount_frames{1};
-        uint32_t current_frame{0};
-        uint32_t frame_counter{0};
+        /*
+         * Defines which animation frame is currently active. Indexed from 0 to amount_frames - 1
+         */
+        uint32_t current_visible_frame{0};
+        /*
+         * Used for counting since how much clock ticks the current frame is visible
+         */
+        uint32_t fps_counter{0};
+        /*
+         * Defines the speed with which the animation changes its frame per seconds. Higher values result in faster animations.
+         */
+        float fps_speed{1.0f};
+        /*
+         * Declares the offset of this sprite relative to the 0,0 position (top-left). Used for example when bullets are shot by enemies,
+         * to declare their initial position in an exact place relative to the enemy's sprite.
+         * The actual position where the sprite is rendered is usually defined in the Movement components `position` value, so this is more of a helper attribute.
+         * TODO check if this is a necessary sprite attribute or can be refactored somehow
+         */
         raylib::Vector2 offset{0.0f, 0.0f};
+        /*
+         * Size of the sprite represented by a distance from 0,0. Used for bound checking if sprite is outside the frame by a given margin.
+         * TODO maybe remove this and use Collision component instead
+         */
         raylib::Vector2 bounds{8, 8};
-        float frame_speed{1.0f};
     };
 
     struct Collision : ComponentBase {

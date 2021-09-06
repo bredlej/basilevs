@@ -32,7 +32,7 @@ namespace behaviours {
               auto &bullet_movement = get<components::Movement>(bullet_blueprint);
               bullet_movement.speed = speed;
               bullet_movement.position = movement_component.position;
-              sprite_component.rotation = raylib::Vector2(0.0f, 0.0f).Angle(rotation);
+              sprite_component.rotation_degrees = raylib::Vector2(0.0f, 0.0f).Angle(rotation);
               bullet_movement.position = bullet_movement.position.Add(position);
               bullet_movement.direction = direction;
 
@@ -55,15 +55,15 @@ namespace behaviours {
         };
 
         static constexpr auto frame_update = [](components::Sprite &sprite) {
-            sprite.frame_counter++;
+            sprite.fps_counter++;
 
-            if (sprite.frame_counter >= (60 / sprite.frame_speed)) {
-                sprite.frame_counter = 0;
-                sprite.current_frame++;
+            if (sprite.fps_counter >= (60 / sprite.fps_speed)) {
+                sprite.fps_counter = 0;
+                sprite.current_visible_frame++;
 
-                if (sprite.current_frame > sprite.amount_frames - 1) sprite.current_frame = 0;
+                if (sprite.current_visible_frame > sprite.amount_frames - 1) sprite.current_visible_frame = 0;
 
-                sprite.frame_rect.x = static_cast<float>(sprite.current_frame) * static_cast<float>(sprite.texture_width) / static_cast<float>(sprite.amount_frames);
+                sprite.frame_rect.x = static_cast<float>(sprite.current_visible_frame) * static_cast<float>(sprite.texture_width_px) / static_cast<float>(sprite.amount_frames);
             }
         };
 
