@@ -10,7 +10,17 @@
 class TWorld;
 namespace behaviours {
     namespace background {
-        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &)>;
+
+        /*
+         * Declares components used when updating the background.
+         * Components must be the same as declared in the alias
+         */
+        using UpdateFunction =
+                std::function<void(
+                        const double,
+                        TWorld &,
+                        components::Sprite &,
+                        components::Movement &)>;
         /*
          * Describes how to animate the background in Level 1.
          * This is a simple upwards scroll of the visible frame to give the illusion that the player is flying up in the skies

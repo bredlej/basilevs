@@ -15,7 +15,8 @@ namespace behaviours {
 
     namespace bullet {
         /*
-         * Declares a function which updates a single enemy bullet
+         * Declares a function which updates a single enemy bullet.
+         * The components used in this function must be same as in the alias BulletPool in world.h
          */
         using EnemyBulletUpdateFunction =
                 std::function<void(
@@ -28,7 +29,7 @@ namespace behaviours {
                         components::Collision &,
                         components::Damage &)>;
 
-        static constexpr auto bullet_sprite_update = [](components::Sprite &sprite) {
+        static constexpr auto bullet_animation_update = [](components::Sprite &sprite) {
             sprite.fps_counter++;
             if (sprite.fps_counter >= (60 / sprite.fps_speed)) {
                 sprite.fps_counter = 0;
@@ -42,7 +43,7 @@ namespace behaviours {
         constexpr auto fly_towards_direction = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &damage) {
             movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
             movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
-            bullet_sprite_update(sprite);
+            bullet_animation_update(sprite);
         };
 
         constexpr auto fly_and_rotate = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &damage) {
@@ -54,7 +55,7 @@ namespace behaviours {
                 movement.speed += 5.0f;
                 time_counter.elapsed_seconds = 0;
             }
-            bullet_sprite_update(sprite);
+            bullet_animation_update(sprite);
         };
 
         struct BulletDefinition {
@@ -91,7 +92,7 @@ namespace behaviours {
             float collision_radius;
         };
 
-        static constexpr auto frame_update = [](components::Sprite &sprite) {
+        static constexpr auto animation_update = [](components::Sprite &sprite) {
             sprite.fps_counter++;
 
             if (sprite.fps_counter >= (60 / sprite.fps_speed)) {
@@ -156,7 +157,7 @@ namespace behaviours {
                         state.state_machine.process_event(state_handling::events::StartEvent());
                     }
                 };
-                frame_update(sprite);
+                animation_update(sprite);
                 time_counter.elapsed_seconds += time;
 
                 tentacle_state_handling(state, time_counter, activation);
@@ -232,7 +233,7 @@ namespace behaviours {
                         state.state_machine.process_event(state_handling::events::StartEvent());
                     }
                 };
-                frame_update(sprite);
+                animation_update(sprite);
                 time_counter.elapsed_seconds += time;
 
                 mosquito_state_handling(state, time_counter, activation);
