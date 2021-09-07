@@ -32,7 +32,7 @@ struct TWorld {
 
     using PlayerStateComponent = components::StateMachine<state_handling::transitions::PlayerPossibleStates, state_handling::StatefulObject>;
     /*
-     * Describes the components a player object consists of
+     * Describes the components a player object consists of (player::UpdateFunction in ./behaviours/player.h must have same components declared)
      */
     using PlayerType = Blueprint<
             components::Sprite,
@@ -43,12 +43,14 @@ struct TWorld {
             PlayerStateComponent>;
 
     using EnemyStateComponent = components::StateMachine<state_handling::transitions::EnemyPossibleStates, state_handling::StatefulObject>;
+
     /*
-     * Describes the components which all enemies consist of
+     * Describes the components which all enemies consist of (enemy::UpdateFunction in ./behaviours/enemy.h must have same components declared)
      */
     using EnemyListType = BlueprintsInMemory<
             components::Sprite,
             components::Movement,
+            components::MovementPath,
             components::Activation,
             components::TimeCounter,
             components::Emission,
@@ -57,8 +59,9 @@ struct TWorld {
             EnemyStateComponent>;
 
     using BulletStateComponent = components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject>;
+
     /*
-     * Describes the components which all bullets consist of
+     * Describes the components which all bullets consist of (bullet::UpdateFunction in ./behaviours/enemy.h must have same components declared)
      */
     using BulletPool = BlueprintsInPool<
             components::Sprite,

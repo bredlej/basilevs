@@ -30,7 +30,8 @@ concept is_a_blueprint = std::is_base_of_v<BlueprintBase, T>;
  * @return reference to the component if present in the Blueprint.
  */
 template<is_a_component T>
-auto &get(is_a_blueprint auto &blueprint) {
+auto &get(is_a_blueprint auto &blueprint)
+{
     return std::get<T>(blueprint.components);
 }
 
@@ -44,7 +45,8 @@ template<typename T>
 concept is_a_memory = std::is_base_of_v<MemoryBase, T>;
 
 template<is_a_component T>
-auto &get(is_a_memory auto &memory) {
+auto &get(is_a_memory auto &memory)
+{
     return std::get<std::vector<T>>(memory.components);
 }
 /*
@@ -90,7 +92,8 @@ public:
 };
 
 template<is_many_components... Ts>
-void Blueprint<Ts...>::update(double time, TWorld &world) {
+void Blueprint<Ts...>::update(double time, TWorld &world)
+{
     update_function(time, world, std::get<Ts>(components)...);
 }
 
@@ -160,7 +163,10 @@ public:
     static constexpr BlueprintUpdateFunction unpack_function(is_a_blueprint auto &blueprint) { return std::move(blueprint.update_function); }
 
     template<is_a_component T, is_a_blueprint... Blueprint>
-    static constexpr std::vector<T> unpack_components(Blueprint const &...blueprint_pack) { return {std::move(std::get<T>(blueprint_pack.components))...}; }
+    static constexpr std::vector<T> unpack_components(Blueprint const &...blueprint_pack)
+    {
+        return {std::move(std::get<T>(blueprint_pack.components))...};
+    }
 
     template<is_a_blueprint... Blueprints>
     explicit BlueprintsInMemory(Blueprints const &...blueprint_pack)
@@ -172,7 +178,8 @@ public:
 };
 
 template<is_many_components... Ts>
-void BlueprintsInMemory<Ts...>::update(double time, TWorld &world) {
+void BlueprintsInMemory<Ts...>::update(double time, TWorld &world)
+{
     for (typename VectorOfUpdateFunctions::size_type i = 0; i < functions.size(); i++) {
         auto blueprint_update_function = functions[i];
         blueprint_update_function(time, world, std::get<std::vector<Ts>>(components)[i]...);
@@ -281,23 +288,27 @@ public:
 
 private:
     template<is_a_component T>
-    constexpr void insert_component_at_index(size_t index, T component) {
+    constexpr void insert_component_at_index(size_t index, T component)
+    {
         std::get<std::vector<T>>(components)[index] = component;
     }
     template<is_a_component T>
-    constexpr void swap_components_at_index(size_t index1, size_t index2) {
+    constexpr void swap_components_at_index(size_t index1, size_t index2)
+    {
         std::get<std::vector<T>>(components)[index1] = std::get<std::vector<T>>(components)[index2];
     }
 };
 
 template<is_many_components... Ts>
-void BlueprintsInPool<Ts...>::update(double time, TWorld &world) {
+void BlueprintsInPool<Ts...>::update(double time, TWorld &world)
+{
     for (typename ComponentFunctionVector::size_type i = 0; i < first_available_index; i++) {
         functions[i](time, world, std::get<std::vector<Ts>>(components)[i]...);
     }
 }
 template<is_many_components... Ts>
-void BlueprintsInPool<Ts...>::add(is_a_blueprint auto &blueprint) {
+void BlueprintsInPool<Ts...>::add(is_a_blueprint auto &blueprint)
+{
     if (first_available_index < size) {
         (insert_component_at_index(first_available_index, get<Ts>(blueprint)), ...);
         functions[first_available_index] = blueprint.update_function;
@@ -305,7 +316,8 @@ void BlueprintsInPool<Ts...>::add(is_a_blueprint auto &blueprint) {
     }
 }
 template<is_many_components... Ts>
-void BlueprintsInPool<Ts...>::remove_at(typename ComponentFunctionVector::size_type index) {
+void BlueprintsInPool<Ts...>::remove_at(typename ComponentFunctionVector::size_type index)
+{
     if (index <= size && index <= first_available_index) {
         for (typename ComponentFunctionVector::size_type i = index; i < first_available_index - 1; i++) {
             (swap_components_at_index<Ts>(i, i + 1), ...);

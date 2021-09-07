@@ -11,14 +11,16 @@
  * This header implements the behaviours of specific in-game enemies and bullets they shoot
  * Since enemies and their bullets must have a world they reside in, the components inside their respective UpdateFunctions must be the same as declared in the blueprint aliases (EnemyListType, BulletPool) in world.h
  */
-namespace behaviours {
+namespace behaviours
+{
 
-    namespace bullet {
+    namespace bullet
+    {
         /*
          * Declares a function which updates a single enemy bullet.
          * The components used in this function must be same as in the alias BulletPool in world.h
          */
-        using EnemyBulletUpdateFunction =
+        using UpdateFunction =
                 std::function<void(
                         const double,
                         TWorld &,
@@ -29,7 +31,8 @@ namespace behaviours {
                         components::Collision &,
                         components::Damage &)>;
 
-        static constexpr auto bullet_animation_update = [](components::Sprite &sprite) {
+        static constexpr auto bullet_animation_update = [](components::Sprite &sprite)
+        {
             sprite.fps_counter++;
             if (sprite.fps_counter >= (60 / sprite.fps_speed)) {
                 sprite.fps_counter = 0;
@@ -40,13 +43,15 @@ namespace behaviours {
             }
         };
 
-        constexpr auto fly_towards_direction = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &damage) {
+        constexpr auto fly_towards_direction = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &damage)
+        {
             movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
             movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
             bullet_animation_update(sprite);
         };
 
-        constexpr auto fly_and_rotate = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &damage) {
+        constexpr auto fly_and_rotate = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &damage)
+        {
             movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
             movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
             time_counter.elapsed_seconds += time;
@@ -61,11 +66,12 @@ namespace behaviours {
         struct BulletDefinition {
             assets::TextureId texture;
             uint32_t amount_frames;
-            EnemyBulletUpdateFunction update_function;
+            UpdateFunction update_function;
         };
     }// namespace bullet
 
-    namespace enemy {
+    namespace enemy
+    {
         /*
          * Declares a function which updates a single enemy object
          */
@@ -75,6 +81,7 @@ namespace behaviours {
                         TWorld &,
                         components::Sprite &,
                         components::Movement &,
+                        components::MovementPath &,
                         components::Activation &,
                         components::TimeCounter &,
                         components::Emission &,
@@ -92,7 +99,8 @@ namespace behaviours {
             float collision_radius;
         };
 
-        static constexpr auto animation_update = [](components::Sprite &sprite) {
+        static constexpr auto animation_update = [](components::Sprite &sprite)
+        {
             sprite.fps_counter++;
 
             if (sprite.fps_counter >= (60 / sprite.fps_speed)) {
@@ -108,16 +116,31 @@ namespace behaviours {
         /*
          *                  --- TENTACLE ---
          */
-        namespace tentacle {
-            static constexpr auto update_function = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health, TWorld::EnemyStateComponent &state) {
-                static constexpr auto tentacle_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::EnemyBulletUpdateFunction &bullet_function) {
+        namespace tentacle
+        {
+            static constexpr auto update_function =
+                    [](
+                            const double time,
+                            TWorld &world,
+                            components::Sprite &sprite,
+                            components::Movement &movement,
+                            components::MovementPath &movementPath,
+                            components::Activation &activation,
+                            components::TimeCounter &time_counter,
+                            components::Emission &emitter,
+                            components::Collision &collision,
+                            components::Health &health,
+                            TWorld::EnemyStateComponent &state)
+            {
+                static constexpr auto tentacle_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::UpdateFunction &bullet_function)
+                {
                     const auto &player = world.player.get();
                     const auto player_movement = get<components::Movement>(player->components);
                     constexpr auto emit_every_seconds = 1.0;
                     if (emitter.last_emission_seconds > emit_every_seconds) {
 
                         emitter.last_emission_seconds = 0.0;
-                        auto bullet_blueprint = Blueprint(bullet::EnemyBulletUpdateFunction(bullet_function));
+                        auto bullet_blueprint = Blueprint(bullet::UpdateFunction(bullet_function));
                         auto &bullet_sprite = get<components::Sprite>(bullet_blueprint);
                         bullet_sprite.offset = raylib::Vector2{0.0f, 8.0f};
                         bullet_sprite.texture = assets::TextureId::Bullet_Tentacle;
@@ -145,7 +168,8 @@ namespace behaviours {
                     }
                     emitter.last_emission_seconds += time;
                 };
-                static constexpr auto tentacle_state_handling = [](auto &state, auto &time_counter, auto &activation) {
+                static constexpr auto tentacle_state_handling = [](auto &state, auto &time_counter, auto &activation)
+                {
                     /* State handling */
 
                     if (state.state_machine.is(state_handling::declarations::kInitState)) {
@@ -166,7 +190,8 @@ namespace behaviours {
                 }
             };
 
-            static constexpr auto definition = []() -> EnemyDefinition {
+            static constexpr auto definition = []() -> EnemyDefinition
+            {
                 return {
                         assets::TextureId::Tentacle,
                         9,
@@ -181,16 +206,31 @@ namespace behaviours {
         /*
          *                  --- MOSQUITO ---
          */
-        namespace mosquito {
-            static constexpr auto update_function = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Activation &activation, components::TimeCounter &time_counter, components::Emission &emitter, components::Collision &collision, components::Health &health, TWorld::EnemyStateComponent &state) {
-                static constexpr auto mosquito_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::EnemyBulletUpdateFunction &bullet_function) {
+        namespace mosquito
+        {
+            static constexpr auto update_function =
+                    [](
+                            const double time,
+                            TWorld &world,
+                            components::Sprite &sprite,
+                            components::Movement &movement,
+                            components::MovementPath &movementPath,
+                            components::Activation &activation,
+                            components::TimeCounter &time_counter,
+                            components::Emission &emitter,
+                            components::Collision &collision,
+                            components::Health &health,
+                            TWorld::EnemyStateComponent &state)
+            {
+                static constexpr auto mosquito_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::UpdateFunction &bullet_function)
+                {
                     const auto &player = world.player.get();
                     constexpr auto emit_every_seconds = 1.0;
                     if (emitter.last_emission_seconds > emit_every_seconds) {
 
                         emitter.last_emission_seconds = 0.0;
                         for (int i = 1; i <= 12; i++) {
-                            auto bullet_blueprint = Blueprint(bullet::EnemyBulletUpdateFunction(bullet_function));
+                            auto bullet_blueprint = Blueprint(bullet::UpdateFunction(bullet_function));
                             auto &bullet_sprite = get<components::Sprite>(bullet_blueprint);
                             bullet_sprite.offset = raylib::Vector2{4.0f, 4.0f};
                             bullet_sprite.texture = assets::TextureId::Bullet_Mosquito;
@@ -221,7 +261,8 @@ namespace behaviours {
                     }
                     emitter.last_emission_seconds += time;
                 };
-                static constexpr auto mosquito_state_handling = [](auto &state, auto &time_counter, auto &activation) {
+                static constexpr auto mosquito_state_handling = [](auto &state, auto &time_counter, auto &activation)
+                {
                     /* State handling */
 
                     if (state.state_machine.is(state_handling::declarations::kInitState)) {
@@ -242,7 +283,8 @@ namespace behaviours {
                 }
             };
 
-            static constexpr auto definition = []() -> EnemyDefinition {
+            static constexpr auto definition = []() -> EnemyDefinition
+            {
                 return {
                         assets::TextureId::Mosquito,
                         11,

@@ -30,8 +30,10 @@ protected:
     StateComponentTest() = default;
 };
 
-TEST_F(BlueprintTest, RunsComponentFunctionWithOneComponent) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component) -> void {
+TEST_F(BlueprintTest, RunsComponentFunctionWithOneComponent)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component) -> void
+    {
         movement_component.position.x += time;
         movement_component.position.y += time;
     };
@@ -48,8 +50,10 @@ TEST_F(BlueprintTest, RunsComponentFunctionWithOneComponent) {
     EXPECT_TRUE(movement_component.position.y == 2);
 }
 
-TEST_F(BlueprintTest, RunsComponentFunctionWithManyComponents) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &activeComponent) -> void {
+TEST_F(BlueprintTest, RunsComponentFunctionWithManyComponents)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &activeComponent) -> void
+    {
         movement_component.position.x += time;
         movement_component.position.y += time;
         activeComponent.is_active = true;
@@ -70,8 +74,10 @@ TEST_F(BlueprintTest, RunsComponentFunctionWithManyComponents) {
     EXPECT_TRUE(movement_component.position.y == 2);
 }
 
-TEST_F(BlueprintsInMemoryTest, CreatesMemoryFromOneBlueprint) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &activeComponent) -> void {
+TEST_F(BlueprintsInMemoryTest, CreatesMemoryFromOneBlueprint)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &activeComponent) -> void
+    {
         movement_component.position.x += time;
         movement_component.position.y += time;
         activeComponent.is_active = true;
@@ -83,8 +89,10 @@ TEST_F(BlueprintsInMemoryTest, CreatesMemoryFromOneBlueprint) {
     EXPECT_EQ(1, get<components::Activation>(memory).size());
 }
 
-TEST_F(BlueprintsInMemoryTest, CreatesMemoryFromManyBlueprints) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &activeComponent) -> void {
+TEST_F(BlueprintsInMemoryTest, CreatesMemoryFromManyBlueprints)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &activeComponent) -> void
+    {
         movement_component.position.x += time;
         movement_component.position.y += time;
         activeComponent.is_active = true;
@@ -102,8 +110,10 @@ TEST_F(BlueprintsInMemoryTest, CreatesMemoryFromManyBlueprints) {
     EXPECT_EQ(10, first_movement_component_in_memory.position.x);
 }
 
-TEST_F(BlueprintsInMemoryTest, UpdatesAllBlueprintsInMemory) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &activeComponent) -> void {
+TEST_F(BlueprintsInMemoryTest, UpdatesAllBlueprintsInMemory)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &activeComponent) -> void
+    {
         movement_component.position.x += time;
         movement_component.position.y += time;
         activeComponent.is_active = true;
@@ -130,17 +140,20 @@ TEST_F(BlueprintsInMemoryTest, UpdatesAllBlueprintsInMemory) {
     }
 }
 
-TEST_F(BlueprintsInPoolTest, CreatesPoolWithGivenSize) {
+TEST_F(BlueprintsInPoolTest, CreatesPoolWithGivenSize)
+{
     auto pool = BlueprintsInPool<components::Movement>(2);
     ASSERT_EQ(2, pool.size);
     ASSERT_EQ(2, get<components::Movement>(pool).size());
     ASSERT_EQ(0, pool.first_available_index);
 }
 
-TEST_F(BlueprintsInPoolTest, AddsBlueprintToPool) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
-      movement_component.position.x += time;
-      movement_component.position.y += time;
+TEST_F(BlueprintsInPoolTest, AddsBlueprintToPool)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void
+    {
+        movement_component.position.x += time;
+        movement_component.position.y += time;
     };
     auto w = TWorld{};
     auto blueprint = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
@@ -156,10 +169,12 @@ TEST_F(BlueprintsInPoolTest, AddsBlueprintToPool) {
     ASSERT_EQ(0.0f, get<components::Movement>(pool)[1].position.y);
 }
 
-TEST_F(BlueprintsInPoolTest, AddsManyBlueprintsToPool) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
-      movement_component.position.x += time;
-      movement_component.position.y += time;
+TEST_F(BlueprintsInPoolTest, AddsManyBlueprintsToPool)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void
+    {
+        movement_component.position.x += time;
+        movement_component.position.y += time;
     };
     auto w = TWorld{};
     auto blueprint = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
@@ -187,8 +202,10 @@ TEST_F(BlueprintsInPoolTest, AddsManyBlueprintsToPool) {
     ASSERT_EQ(1000.0f, get<components::Movement>(pool)[2].position.y);
 }
 
-TEST_F(BlueprintsInPoolTest, BlueprintPoolDoesNotOverflow) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
+TEST_F(BlueprintsInPoolTest, BlueprintPoolDoesNotOverflow)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void
+    {
         movement_component.position.x += time;
         movement_component.position.y += time;
     };
@@ -203,10 +220,12 @@ TEST_F(BlueprintsInPoolTest, BlueprintPoolDoesNotOverflow) {
     ASSERT_EQ(2, pool.first_available_index);
 }
 
-TEST_F(BlueprintsInPoolTest, RemovesFirstBlueprintFromPool) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
-      movement_component.position.x += time;
-      movement_component.position.y += time;
+TEST_F(BlueprintsInPoolTest, RemovesFirstBlueprintFromPool)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void
+    {
+        movement_component.position.x += time;
+        movement_component.position.y += time;
     };
     auto w = TWorld{};
     auto blueprint = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
@@ -228,10 +247,12 @@ TEST_F(BlueprintsInPoolTest, RemovesFirstBlueprintFromPool) {
     ASSERT_EQ(100.0f, get<components::Movement>(pool)[1].position.y);
 }
 
-TEST_F(BlueprintsInPoolTest, RemovesLastBlueprintFromPool) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
-      movement_component.position.x += time;
-      movement_component.position.y += time;
+TEST_F(BlueprintsInPoolTest, RemovesLastBlueprintFromPool)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void
+    {
+        movement_component.position.x += time;
+        movement_component.position.y += time;
     };
     auto w = TWorld{};
     auto blueprint = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
@@ -253,8 +274,10 @@ TEST_F(BlueprintsInPoolTest, RemovesLastBlueprintFromPool) {
     ASSERT_EQ(100.0f, get<components::Movement>(pool)[1].position.y);
 }
 
-TEST_F(BlueprintsInPoolTest, RemovesAllBlueprintsFromPool) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
+TEST_F(BlueprintsInPoolTest, RemovesAllBlueprintsFromPool)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void
+    {
         movement_component.position.x += time;
         movement_component.position.y += time;
     };
@@ -270,10 +293,12 @@ TEST_F(BlueprintsInPoolTest, RemovesAllBlueprintsFromPool) {
     ASSERT_EQ(0, pool.first_available_index);
 }
 
-TEST_F(BlueprintsInPoolTest, RemovesMiddleBlueprintFromPool) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
-      movement_component.position.x += time;
-      movement_component.position.y += time;
+TEST_F(BlueprintsInPoolTest, RemovesMiddleBlueprintFromPool)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void
+    {
+        movement_component.position.x += time;
+        movement_component.position.y += time;
     };
     auto w = TWorld{};
     auto blueprint = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
@@ -301,10 +326,12 @@ TEST_F(BlueprintsInPoolTest, RemovesMiddleBlueprintFromPool) {
 }
 
 
-TEST_F(BlueprintsInPoolTest, UpdatesOneBlueprintInPool) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
-      movement_component.position.x += time;
-      movement_component.position.y += time;
+TEST_F(BlueprintsInPoolTest, UpdatesOneBlueprintInPool)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void
+    {
+        movement_component.position.x += time;
+        movement_component.position.y += time;
     };
     auto w = TWorld{};
     auto blueprint = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
@@ -325,10 +352,12 @@ TEST_F(BlueprintsInPoolTest, UpdatesOneBlueprintInPool) {
     ASSERT_EQ(0.0f, get<components::Movement>(pool)[1].position.y);
 }
 
-TEST_F(BlueprintsInPoolTest, UpdatesManyBlueprintsInPool) {
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void {
-      movement_component.position.x += time;
-      movement_component.position.y += time;
+TEST_F(BlueprintsInPoolTest, UpdatesManyBlueprintsInPool)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &) -> void
+    {
+        movement_component.position.x += time;
+        movement_component.position.y += time;
     };
     auto w = TWorld{};
     auto blueprint = Blueprint<components::Movement, components::Activation>{kUpdateFunction};
@@ -354,17 +383,23 @@ TEST_F(BlueprintsInPoolTest, UpdatesManyBlueprintsInPool) {
     ASSERT_EQ(101.0f, get<components::Movement>(pool)[1].position.y);
 }
 
-TEST_F(StateComponentTest, DoesStateComponentTransitionBetweenStates) {
+TEST_F(StateComponentTest, DoesStateComponentTransitionBetweenStates)
+{
     using namespace sml;
     using namespace state_handling;
-    struct InitEvent {};
-    struct RunEvent {};
-    struct StopEvent {};
+    struct InitEvent {
+    };
+    struct RunEvent {
+    };
+    struct StopEvent {
+    };
 
-    struct StatefulObject {};
+    struct StatefulObject {
+    };
 
     struct StateMachineDeclaration {
-        auto operator()() const {
+        auto operator()() const
+        {
             return make_transition_table(
                     *"entry"_s + event<InitEvent> = "init"_s,
                     "init"_s + event<RunEvent> = "running"_s,
@@ -372,7 +407,8 @@ TEST_F(StateComponentTest, DoesStateComponentTransitionBetweenStates) {
         }
     };
 
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::StateMachine<StateMachineDeclaration, StatefulObject> &stateComponent) -> void {
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::StateMachine<StateMachineDeclaration, StatefulObject> &stateComponent) -> void
+    {
         if (time == 1) {
             stateComponent.state_machine.process_event(InitEvent{});
         } else if (time == 2) {
@@ -401,23 +437,29 @@ TEST_F(StateComponentTest, DoesStateComponentTransitionBetweenStates) {
     EXPECT_TRUE(state_component.state_machine.is(X));
 }
 
-TEST_F(StateComponentTest, DoStatesChangeAfterSpecificTime) {
+TEST_F(StateComponentTest, DoStatesChangeAfterSpecificTime)
+{
     using namespace sml;
     using namespace state_handling;
-    struct InitEvent {};
-    struct RunEvent {};
-    struct StopEvent {};
+    struct InitEvent {
+    };
+    struct RunEvent {
+    };
+    struct StopEvent {
+    };
 
     struct StatefulObjectT {
         int i = 0;
     };
 
-    static constexpr auto initialize = [&](const auto &event, StatefulObjectT &stateful_object) {
+    static constexpr auto initialize = [&](const auto &event, StatefulObjectT &stateful_object)
+    {
         stateful_object.i = 10;
     };
 
     struct StateMachineDeclaration {
-        auto operator()() const {
+        auto operator()() const
+        {
             return make_transition_table(
                     *"entry"_s + event<InitEvent> / initialize = "init"_s,
                     "init"_s + event<RunEvent> = "running"_s,
@@ -425,7 +467,8 @@ TEST_F(StateComponentTest, DoStatesChangeAfterSpecificTime) {
         }
     };
 
-    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::TimeCounter &timeCounter, components::Activation activation, components::StateMachine<StateMachineDeclaration, StatefulObjectT> &stateComponent) -> void {
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::TimeCounter &timeCounter, components::Activation activation, components::StateMachine<StateMachineDeclaration, StatefulObjectT> &stateComponent) -> void
+    {
         timeCounter.elapsed_seconds += time;
         if (stateComponent.state_machine.is("entry"_s) && timeCounter.elapsed_seconds >= activation.activate_after_seconds) {
             stateComponent.state_machine.process_event(InitEvent{});
@@ -460,7 +503,8 @@ TEST_F(StateComponentTest, DoStatesChangeAfterSpecificTime) {
     ASSERT_TRUE(states[1].state_machine.is("running"_s));
 }
 
-int main(int ac, char *av[]) {
+int main(int ac, char *av[])
+{
     testing::InitGoogleTest(&ac, av);
     return RUN_ALL_TESTS();
 }

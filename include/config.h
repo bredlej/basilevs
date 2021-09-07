@@ -4,7 +4,8 @@
 
 #ifndef BASILEVS_CONFIG_H
 #define BASILEVS_CONFIG_H
-namespace config {
+namespace config
+{
     constexpr auto kFrameWidth = 160;
     constexpr auto kFrameHeight = 144;
     constexpr auto kFrameBoundLeft = -64;
@@ -16,7 +17,8 @@ namespace config {
     constexpr auto kEnemyBulletPoolSize = 200;
     constexpr auto kPlayerBulletPoolSize = 100;
     constexpr auto kSoundQueueSize = 16;
-    namespace colors {
+    namespace colors
+    {
         auto const kForeground = raylib::Color{240, 246, 240};
         auto const kBackground = raylib::Color{34, 35, 35};
     };// namespace colors

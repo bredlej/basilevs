@@ -9,26 +9,35 @@
 #include <concepts>
 #include <functional>
 #include <iostream>
-struct ComponentBase{};
+struct ComponentBase {
+};
 struct TWorld;
 
 enum class TextureId;
 
 template<typename T>
 concept is_a_component = std::is_base_of_v<ComponentBase, T>;
-template<typename ...T>
+template<typename... T>
 concept is_many_components = (is_a_component<T> && ...);
 
-namespace components {
+namespace components
+{
 
     /*
      * Allows an object to be moved from its current position towards a direction with a given speed.
      */
-    struct Movement : ComponentBase{
+    struct Movement : ComponentBase {
     public:
         raylib::Vector2 position;
         raylib::Vector2 direction;
         float speed{0.0f};
+    };
+
+    /*
+     * Describes a path which the object can move along
+     */
+    struct MovementPath : ComponentBase {
+        std::vector<raylib::Vector2> points;
     };
 
     /*
@@ -45,7 +54,7 @@ namespace components {
         /*
          * Defines a rectangular area representing the part of a texture that will be rendered on screen.
          */
-        Rectangle frame_rect{0,0,1,1};
+        Rectangle frame_rect{0, 0, 1, 1};
         /*
          * Defines how much single frames the animation of this object consists of.
          */
@@ -139,6 +148,7 @@ namespace components {
     template<typename StateTransitions, typename StatefulObject>
     struct StateMachine : ComponentBase {
         StatefulObject obj;
+
     public:
         explicit StateMachine(StatefulObject stateful_object) : state_machine{stateful_object} {};
         explicit StateMachine() : state_machine{obj} {};
@@ -158,7 +168,7 @@ namespace components {
     struct Health : ComponentBase {
         double hp{100.0};
     };
-}
+}// namespace components
 
 
 #endif//BASILEVS_COMPONENTS_H

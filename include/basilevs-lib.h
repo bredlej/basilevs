@@ -12,41 +12,55 @@
 
 namespace sml = boost::sml;
 
-struct GameStateMachine{
+struct GameStateMachine {
     bool is_running{false};
     bool is_initialized{false};
 };
 
-namespace state_handling {
-    namespace events {
-        struct Init {};
-        struct Run {};
-        struct Stop {};
+namespace state_handling
+{
+    namespace events
+    {
+        struct Init {
+        };
+        struct Run {
+        };
+        struct Stop {
+        };
     }// namespace events
 
-    namespace guards {
-        constexpr auto is_initialized = [](const auto &event, const GameStateMachine &game) { return game.is_initialized; };
-        constexpr auto should_stop = [](const auto &event, const GameStateMachine &game) { return game.is_running; };
+    namespace guards
+    {
+        constexpr auto is_initialized = [](const auto &event, const GameStateMachine &game)
+        { return game.is_initialized; };
+        constexpr auto should_stop = [](const auto &event, const GameStateMachine &game)
+        { return game.is_running; };
     }// namespace guards
 
-    namespace actions {
-        constexpr auto initialize = [](const auto &event, GameStateMachine &game) {
+    namespace actions
+    {
+        constexpr auto initialize = [](const auto &event, GameStateMachine &game)
+        {
             game.is_initialized = true;
         };
 
-        constexpr auto run_action = [](const auto &event, GameStateMachine &game) {
+        constexpr auto run_action = [](const auto &event, GameStateMachine &game)
+        {
             game.is_running = true;
         };
 
-        constexpr auto stop_action = [](const auto &event, GameStateMachine &game) {
+        constexpr auto stop_action = [](const auto &event, GameStateMachine &game)
+        {
             game.is_running = false;
         };
     }// namespace actions
-}// namespace state
+}// namespace state_handling
 
-namespace basilevs {
+namespace basilevs
+{
     struct GameState {
-        auto operator()() const {
+        auto operator()() const
+        {
             using namespace sml;
             using namespace state_handling;
             return make_transition_table(
@@ -71,6 +85,7 @@ public:
     void run(raylib::Window &window, raylib::AudioDevice &audio);
 
     ~GameDefinition();
+
 private:
     std::vector<Texture2D> textures_;
     std::vector<Sound> sounds_;
