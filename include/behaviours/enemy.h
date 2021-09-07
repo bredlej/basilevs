@@ -204,7 +204,7 @@ namespace behaviours
                 }
             };
 
-            static constexpr auto definition = [](std::initializer_list<raylib::Vector2> movement_path) -> EnemyDefinition
+            static constexpr auto definition = [](std::initializer_list<raylib::Vector2> &&movement_path) -> EnemyDefinition
             {
                 return {
                         assets::TextureId::Tentacle,
@@ -298,7 +298,7 @@ namespace behaviours
                 }
             };
 
-            static constexpr auto definition = [](std::initializer_list<raylib::Vector2> movement_path) -> EnemyDefinition
+            static constexpr auto definition = [](std::initializer_list<raylib::Vector2> &&movement_path) -> EnemyDefinition
             {
                 return {
                         assets::TextureId::Mosquito,
