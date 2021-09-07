@@ -97,6 +97,7 @@ namespace behaviours
             float health;
             raylib::Vector2 collision_center_offset;
             float collision_radius;
+            std::deque<raylib::Vector2> path;
         };
 
         static constexpr auto animation_update = [](components::Sprite &sprite)
@@ -124,7 +125,7 @@ namespace behaviours
                             TWorld &world,
                             components::Sprite &sprite,
                             components::Movement &movement,
-                            components::MovementPath &movementPath,
+                            components::MovementPath &movement_path,
                             components::Activation &activation,
                             components::TimeCounter &time_counter,
                             components::Emission &emitter,
@@ -168,7 +169,17 @@ namespace behaviours
                     }
                     emitter.last_emission_seconds += time;
                 };
-                static constexpr auto tentacle_state_handling = [](auto &state, auto &time_counter, auto &activation)
+                static constexpr auto move_towards_path = [](const double time, components::Movement &movement, components::MovementPath &movementPath)
+                {
+                    if (!movementPath.points.empty()) {
+                        auto nextPoint = movementPath.points.at(0);
+                        movement.position = movement.position.MoveTowards(nextPoint, 0.5);
+                        if (nextPoint.Distance(movement.position) < 1.1) {
+                            movementPath.points.pop_front();
+                        }
+                    }
+                };
+                static constexpr auto tentacle_state_handling = [](auto &state, auto &time_counter, const auto time, components::Movement &movement, components::MovementPath &movement_path, auto &activation)
                 {
                     /* State handling */
 
@@ -178,19 +189,22 @@ namespace behaviours
                             state.state_machine.process_event(state_handling::events::ArrivalEvent());
                         }
                     } else if (state.state_machine.is(state_handling::declarations::kArrivalState)) {
-                        state.state_machine.process_event(state_handling::events::StartEvent());
+                        move_towards_path(time, movement, movement_path);
+                        if (movement_path.points.empty()) {
+                            state.state_machine.process_event(state_handling::events::StartEvent());
+                        }
                     }
                 };
                 animation_update(sprite);
                 time_counter.elapsed_seconds += time;
 
-                tentacle_state_handling(state, time_counter, activation);
+                tentacle_state_handling(state, time_counter, time, movement, movement_path, activation);
                 if (activation.is_active) {
                     tentacle_shoot_behaviour(world, emitter, movement, time, bullet::fly_towards_direction);
                 }
             };
 
-            static constexpr auto definition = []() -> EnemyDefinition
+            static constexpr auto definition = [](std::initializer_list<raylib::Vector2> movement_path) -> EnemyDefinition
             {
                 return {
                         assets::TextureId::Tentacle,
@@ -199,7 +213,8 @@ namespace behaviours
                         update_function,
                         40,
                         raylib::Vector2{8.0f, 8.0f},
-                        8.0f};
+                        8.0f,
+                        movement_path};
             };
         }// namespace tentacle
 
@@ -283,7 +298,7 @@ namespace behaviours
                 }
             };
 
-            static constexpr auto definition = []() -> EnemyDefinition
+            static constexpr auto definition = [](std::initializer_list<raylib::Vector2> movement_path) -> EnemyDefinition
             {
                 return {
                         assets::TextureId::Mosquito,
@@ -292,7 +307,8 @@ namespace behaviours
                         update_function,
                         60,
                         raylib::Vector2{8.0f, 8.0f},
-                        8.0f};
+                        8.0f,
+                        movement_path};
             };
         }// namespace mosquito
     }    // namespace enemy

@@ -9,6 +9,7 @@
 #include <concepts>
 #include <functional>
 #include <iostream>
+#include <deque>
 struct ComponentBase {
 };
 struct TWorld;
@@ -37,7 +38,7 @@ namespace components
      * Describes a path which the object can move along
      */
     struct MovementPath : ComponentBase {
-        std::vector<raylib::Vector2> points;
+        std::deque<raylib::Vector2> points;
     };
 
     /*

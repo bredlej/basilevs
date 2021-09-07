@@ -85,6 +85,7 @@ namespace basilevs
             get<components::Movement>(enemy).position = position;
             get<components::TimeCounter>(enemy).elapsed_seconds = 0.0;
             get<components::Emission>(enemy).last_emission_seconds = 0.0f;
+            get<components::MovementPath>(enemy).points = enemy_definition.path;
             auto &activation_component = get<components::Activation>(enemy);
             activation_component.activate_after_seconds = time;
             activation_component.is_active = false;
@@ -104,11 +105,11 @@ namespace basilevs
         static constexpr auto create_blueprints_of_enemies = [](const std::vector<Texture2D> &textures)
         {
             auto enemies_in_memory = BlueprintsInMemory(
-                    spawn_enemy_after_seconds(1.1, textures, {0, 20}, behaviours::enemy::tentacle::definition()),
-                    spawn_enemy_after_seconds(2.2, textures, {35, 50}, behaviours::enemy::mosquito::definition()),
-                    spawn_enemy_after_seconds(3.3, textures, {70, 40}, behaviours::enemy::tentacle::definition()),
-                    spawn_enemy_after_seconds(4.4, textures, {105, 50}, behaviours::enemy::mosquito::definition()),
-                    spawn_enemy_after_seconds(5.5, textures, {130, 30}, behaviours::enemy::tentacle::definition()));
+                    spawn_enemy_after_seconds(1.1, textures, {60, -20}, behaviours::enemy::tentacle::definition({raylib::Vector2{10,100}, raylib::Vector2{100,10}, raylib::Vector2{50,120}})),
+                    spawn_enemy_after_seconds(2.2, textures, {35, 50}, behaviours::enemy::mosquito::definition({})),
+                    spawn_enemy_after_seconds(3.3, textures, {10, -20}, behaviours::enemy::tentacle::definition({raylib::Vector2{130,20}, raylib::Vector2{20,130}, raylib::Vector2{80,10}})),
+                    spawn_enemy_after_seconds(4.4, textures, {105, 50}, behaviours::enemy::mosquito::definition({})),
+                    spawn_enemy_after_seconds(5.5, textures, {100, -20}, behaviours::enemy::tentacle::definition({raylib::Vector2{50,70}, raylib::Vector2{10,10}, raylib::Vector2{120,40}})));
             return std::make_shared<decltype(enemies_in_memory)>(enemies_in_memory);
         };
 
