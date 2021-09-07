@@ -47,7 +47,7 @@ template<is_a_component T>
 auto &get(is_a_memory auto &memory) {
     return std::get<std::vector<T>>(memory.components);
 }
-/**
+/*
  * Describes a structure defined by a set of components and a function which acts upon them and provides a reference to a TWorld object.
  * Components are used to describe the properties and behaviour of a Blueprint.
  * For example a blueprint defined as:
@@ -102,7 +102,7 @@ void Blueprint<Ts...>::update(double time, TWorld &world) {
 template<is_a_component... Cs>
 Blueprint(std::function<void(const double, TWorld &, Cs &...)>) -> Blueprint<Cs...>;
 
-/**
+/*
  * BlueprintsInMemory is a utility class which given a collection of Blueprint objects, takes them apart and stores their components and functions in vectors.
  * The class stores copies of the original objects, so it's best to discard them after BlueprintsInMemory is created.
  * As an example how it works let's say there are the following blueprints:
@@ -185,7 +185,7 @@ void BlueprintsInMemory<Ts...>::update(double time, TWorld &world) {
 template<is_a_component... Cs, is_a_blueprint... Bs>
 BlueprintsInMemory(Blueprint<Cs...>, Bs...) -> BlueprintsInMemory<Cs...>;
 
-/**
+/*
  * BlueprintsInPool is another utility class for handling collections of Blueprint objects.
  * Its main difference to BlueprintsInMemory is that it creates a pool of N (set with the `amount` variable in the constructor) "empty" components & functions.
  * It uses an internal `first_available_index` to maintain available slots of data in its storage.

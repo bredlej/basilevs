@@ -55,20 +55,6 @@ namespace basilevs {
             return std::make_shared<decltype(player)>(player);
         };
 
-        static constexpr auto create_blueprint_of_background = [](const std::vector<Texture2D> &textures) {
-            auto background = Blueprint(behaviours::background::UpdateFunction(behaviours::background::level1_background_update));
-            auto &background_sprite = get<components::Sprite>(background);
-            auto texture = textures[static_cast<int>(assets::TextureId::Background_Level_1)];
-            background_sprite.texture = assets::TextureId::Background_Level_1;
-            background_sprite.amount_frames = 6;
-            background_sprite.texture_width_px = texture.width;
-            background_sprite.texture_height_px = texture.height;
-            background_sprite.fps_speed = 12;
-            background_sprite.frame_rect = {0.0, static_cast<float>(texture.height) - (static_cast<float>(texture.height) / static_cast<float>(background_sprite.amount_frames)), static_cast<float>(texture.width), static_cast<float>(texture.height) / static_cast<float>(background_sprite.amount_frames)};
-
-            return std::make_shared<decltype(background)>(background);
-        };
-
         /*
          *                  ---  Enemy blueprint definition ---
          */
@@ -104,6 +90,7 @@ namespace basilevs {
             return enemy;
         };
 
+
         /*
          * Prepares a list of enemies that will appear in-game.
          * All enemy object are created at once, but individual objects will be activated after a given time (in seconds) has passed and at specific frame positions.
@@ -116,6 +103,24 @@ namespace basilevs {
                     spawn_enemy_after_seconds(4.4, textures, {105, 50}, behaviours::enemy::mosquito::definition()),
                     spawn_enemy_after_seconds(5.5, textures, {130, 30}, behaviours::enemy::tentacle::definition()));
             return std::make_shared<decltype(enemies_in_memory)>(enemies_in_memory);
+        };
+
+        /*
+         *                  ---  Background blueprint definition ---
+         */
+
+        static constexpr auto create_blueprint_of_background = [](const std::vector<Texture2D> &textures) {
+            auto background = Blueprint(behaviours::background::UpdateFunction(behaviours::background::level1_background_update));
+            auto &background_sprite = get<components::Sprite>(background);
+            auto texture = textures[static_cast<int>(assets::TextureId::Background_Level_1)];
+            background_sprite.texture = assets::TextureId::Background_Level_1;
+            background_sprite.amount_frames = 6;
+            background_sprite.texture_width_px = texture.width;
+            background_sprite.texture_height_px = texture.height;
+            background_sprite.fps_speed = 12;
+            background_sprite.frame_rect = {0.0, static_cast<float>(texture.height) - (static_cast<float>(texture.height) / static_cast<float>(background_sprite.amount_frames)), static_cast<float>(texture.width), static_cast<float>(texture.height) / static_cast<float>(background_sprite.amount_frames)};
+
+            return std::make_shared<decltype(background)>(background);
         };
     }// namespace initialization
 
@@ -131,7 +136,7 @@ namespace basilevs {
             world.enemy_bullets.update(time_since_last_update.count(), world);
             world.player_bullets.update(time_since_last_update.count(), world);
         };
-    }
+    }// namespace game_state
 
     namespace rendering {
         /*
@@ -215,7 +220,7 @@ namespace basilevs {
             EndTextureMode();
         };
 
-        /**
+        /*
          * This function renders the games current frame upscaled to actual screen dimensions, along with some UI elements
          */
         static constexpr auto render_to_screen = [](raylib::RenderTexture &render_target, const TWorld &world) {
@@ -338,7 +343,6 @@ namespace basilevs {
          * Does some reindexing of inactive bullets to make room for new ones
          */
         static constexpr auto cleanup_bullet_pools = [](auto &world) {
-
             /*
              * Deactivates bullets which are outside the visible frame by a given margin.
              * Those bullets go into a "destroyed" state.
@@ -373,7 +377,7 @@ namespace basilevs {
             remove_destroyed_pool_objects(world.enemy_bullets);
             remove_destroyed_pool_objects(world.player_bullets);
         };
-    }
+    }// namespace memory
 
     namespace io {
         static constexpr auto handle_player_input = [](TWorld &world) {

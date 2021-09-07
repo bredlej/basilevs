@@ -9,6 +9,7 @@
 
 /*
  * This header implements the behaviours of specific in-game enemies and bullets they shoot
+ * Since enemies and their bullets must have a world they reside in, the components inside their respective UpdateFunctions must be the same as declared in the blueprint aliases (EnemyListType, BulletPool) in world.h
  */
 namespace behaviours {
 

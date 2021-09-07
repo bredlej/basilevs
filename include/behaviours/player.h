@@ -9,6 +9,7 @@
 
 /*
  * Describes how to update the player object and its bullets
+ * Since the player and its bullets must have a world they reside in, the components inside their respective UpdateFunctions must be the same as declared in the blueprint aliases (PlayerType, BulletPool) in world.h
  */
 namespace behaviours {
     namespace bullet {
@@ -16,11 +17,29 @@ namespace behaviours {
           movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
           movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
         };
-        using UpdateFunction = std::function<void(const double, TWorld &, components::Sprite &, components::Movement &, components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject> &, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &)>;
+
+        /*
+         * Update function of a single bullet shot by the player.
+         * Components used here must be the same as declared in the alias BulletPool in world.h.
+         */
+        using UpdateFunction =
+                std::function<void(
+                        const double,
+                        TWorld &,
+                        components::Sprite &,
+                        components::Movement &,
+                        components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject> &,
+                        components::TimeCounter &time_counter,
+                        components::Collision &collision,
+                        components::Damage &)>;
     }// namespace bullet
 
     namespace player {
 
+        /*
+         * Describes components used when updating the player.
+         * Components must be same as declared in the alias PlayerType in world.h.
+         */
         using UpdateFunction =
                 std::function<void(
                         const double,
@@ -32,10 +51,16 @@ namespace behaviours {
                         components::Health &,
                         TWorld::PlayerStateComponent &)>;
 
+        /*
+         * Shoots four bullets in a `\||/` pattern
+         */
         static constexpr auto shoot_quadruple = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::UpdateFunction &bullet_function) {
           const auto &player = world.player.get();
           constexpr auto emit_every_seconds = 0.2;
           constexpr auto speed = 100;
+          /*
+           * Helper function for shooting a single bullet
+           */
           static constexpr auto emit = [&](auto &world, const bullet::UpdateFunction &bullet_function, const auto movement_component, const auto position, const auto direction, const auto rotation)
           {
               auto bullet_blueprint = Blueprint(bullet::UpdateFunction(bullet_function));
@@ -69,7 +94,7 @@ namespace behaviours {
           emitter.last_emission_seconds += time;
         };
 
-        static constexpr auto frame_update = [](components::Sprite &sprite) {
+        static constexpr auto animation_update = [](components::Sprite &sprite) {
             sprite.fps_counter++;
 
             if (sprite.fps_counter >= (60 / sprite.fps_speed)) {
@@ -102,7 +127,7 @@ namespace behaviours {
                     shoot_quadruple(world, emission, movement, time, bullet::player_bullet_1);
                 }
             };
-            frame_update(sprite);
+            animation_update(sprite);
             move(time, world, movement);
             shoot(time, world, sprite, movement, emission);
         };
