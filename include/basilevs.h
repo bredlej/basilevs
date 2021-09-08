@@ -83,6 +83,7 @@ namespace basilevs
             auto enemy = Blueprint(behaviours::enemy::UpdateFunction(enemy_definition.behaviour));
             setup_sprite_component(get<components::Sprite>(enemy), textures, enemy_definition);
             get<components::Movement>(enemy).position = position;
+            get<components::Movement>(enemy).speed = enemy_definition.speed;
             get<components::TimeCounter>(enemy).elapsed_seconds = 0.0;
             get<components::Emission>(enemy).last_emission_seconds = 0.0f;
             get<components::MovementPath>(enemy).points = enemy_definition.path;
@@ -135,7 +136,6 @@ namespace basilevs
 
     namespace game_state
     {
-
         /*
          * Changes the state of objects inside the world based on how much time has elapsed since the last update was done
          */
@@ -225,7 +225,7 @@ namespace basilevs
                 auto sprite_component = std::get<components::Sprite>(background->components);
                 auto texture = textures[static_cast<int>(sprite_component.texture)];
 
-                DrawTextureRec(texture, sprite_component.frame_rect, {0, 0}, WHITE);
+                DrawTextureRec(texture, sprite_component.frame_rect, {0, 0}, GRAY);
             };
 
             BeginTextureMode(render_target);

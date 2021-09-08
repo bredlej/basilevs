@@ -98,6 +98,7 @@ namespace behaviours
             raylib::Vector2 collision_center_offset;
             float collision_radius;
             std::deque<raylib::Vector2> path;
+            float speed;
         };
 
         static constexpr auto animation_update = [](components::Sprite &sprite)
@@ -173,7 +174,7 @@ namespace behaviours
                 {
                     if (!movementPath.points.empty()) {
                         auto nextPoint = movementPath.points.at(0);
-                        movement.position = movement.position.MoveTowards(nextPoint, 0.5);
+                        movement.position = movement.position.MoveTowards(nextPoint, movement.speed * time);
                         if (nextPoint.Distance(movement.position) < 1.1) {
                             movementPath.points.pop_front();
                         }
@@ -214,7 +215,8 @@ namespace behaviours
                         40,
                         raylib::Vector2{8.0f, 8.0f},
                         8.0f,
-                        movement_path};
+                        movement_path,
+                10.0f};
             };
         }// namespace tentacle
 
@@ -308,7 +310,8 @@ namespace behaviours
                         60,
                         raylib::Vector2{8.0f, 8.0f},
                         8.0f,
-                        movement_path};
+                        movement_path,
+                        10.0f};
             };
         }// namespace mosquito
     }    // namespace enemy
