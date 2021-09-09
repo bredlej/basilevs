@@ -7,9 +7,9 @@
 #include "assets.h"
 #include <boost/sml/sml.hpp>
 #include <concepts>
+#include <deque>
 #include <functional>
 #include <iostream>
-#include <deque>
 struct ComponentBase {
 };
 struct TWorld;
@@ -42,6 +42,30 @@ namespace components
     };
 
     /*
+     * Defines an animation
+     */
+    struct animation {
+        /*
+         * Index of the frame (counting from 0) where the animation begins
+         */
+        uint32_t begin_frame;
+        /*
+         * Index of the frame (counting from 0) where the animation ends
+         */
+        uint32_t end_frame;
+        /*
+         * This flag is true when an animation has reached its end (when not repeating)
+         */
+        bool has_ended;
+        /*
+         * Tells if an animation should run in a loop, or be displayed only once
+         */
+        bool is_repeating;
+    };
+    enum StateEnum {
+        IDLE, DESTROYED
+    };
+    /*
      * Defines how to render the object on screen.
      */
     struct Sprite : ComponentBase {
@@ -64,6 +88,8 @@ namespace components
          * Defines which animation frame is currently active. Indexed from 0 to amount_frames - 1
          */
         uint32_t current_visible_frame{0};
+        StateEnum current_state;
+        std::unordered_map<StateEnum, animation> state_animations;
         /*
          * Used for counting since how much clock ticks the current frame is visible
          */

@@ -37,7 +37,7 @@ namespace assets
                 texture_of_image(raylib::LoadImage("assets/enemy.png")),
                 texture_of_image(raylib::LoadImage("assets/bullet8.png")),
                 texture_of_image(raylib::LoadImage("assets/bullet8-002.png")),
-                texture_of_image(raylib::LoadImage("assets/tentacle-0001.png")),
+                texture_of_image(raylib::LoadImage("assets/tentacle-0002.png")),
                 texture_of_image(raylib::LoadImage("assets/mosquito-0001.png")),
                 texture_of_image(raylib::LoadImage("assets/bullet8-003.png"))};
     };

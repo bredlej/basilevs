@@ -79,6 +79,8 @@ namespace basilevs
                 sprite_component.texture_height_px = texture_height;
                 sprite_component.fps_speed = 12;
                 sprite_component.frame_rect = {0.0f, 0.0f, static_cast<float>(texture_width) / static_cast<float>(sprite_component.amount_frames), static_cast<float>(texture_height)};
+                sprite_component.current_state = components::StateEnum::IDLE;
+                sprite_component.state_animations = enemy_definition.animations;
             };
             auto enemy = Blueprint(behaviours::enemy::UpdateFunction(enemy_definition.behaviour));
             setup_sprite_component(get<components::Sprite>(enemy), textures, enemy_definition);
@@ -184,9 +186,11 @@ namespace basilevs
                 auto sprites = std::get<std::vector<components::Sprite>>(enemy_components);
                 auto activations = std::get<std::vector<components::Activation>>(enemy_components);
                 auto movement = std::get<std::vector<components::Movement>>(enemy_components);
+                auto states = std::get<std::vector<TWorld::EnemyStateComponent>>(enemy_components);
 
                 for (size_t i = 0; i < sprites.size(); i++) {
-                    if (activations[i].is_active) {
+                    if (!states[i].state_machine.is(boost::sml::X)) {
+                        raylib::DrawText(std::to_string(sprites[i].current_state), movement[i].position.x -5, movement[i].position.y -5, 8, ORANGE);
                         DrawTextureRec(textures[static_cast<int>(sprites[i].texture)], sprites[i].frame_rect, movement[i].position, WHITE);
                     }
                 }
@@ -290,18 +294,18 @@ namespace basilevs
                 auto &enemy_movement = std::get<std::vector<components::Movement>>(enemy_components);
                 auto &enemy_health = std::get<std::vector<components::Health>>(enemy_components);
                 auto &enemy_activation = std::get<std::vector<components::Activation>>(enemy_components);
+                auto &enemy_sprite = std::get<std::vector<components::Sprite>>(enemy_components);
+                auto &enemy_states = std::get<std::vector<TWorld::EnemyStateComponent>>(enemy_components);
 
-                for (std::size_t i = 0; i < world.player_bullets.first_available_index; i++) {
-                    const auto player_bullet_position = player_bullets.movements[i].position;
-                    const auto player_collision_center = player_bullet_position.Add(player_bullets.collisions[i].bounds.center);
-                    for (std::size_t j = 0; j < enemy_activation.size(); j++) {
-                        if (enemy_activation[j].is_active) {
-                            const auto enemy_collision_center = enemy_movement[j].position.Add(enemy_collision[j].bounds.center);
-                            if (CheckCollisionCircles(player_collision_center, player_bullets.collisions[i].bounds.radius, enemy_collision_center, enemy_collision[j].bounds.radius)) {
-                                enemy_health[j].hp -= player_bullets.damages[i].value;
-                                if (enemy_health[j].hp <= 0) {
-                                    enemy_activation[j].is_active = false;
-                                }
+                for (std::size_t player_bullet_idx = 0; player_bullet_idx < world.player_bullets.first_available_index; player_bullet_idx++) {
+                    const auto player_bullet_position = player_bullets.movements[player_bullet_idx].position;
+                    const auto player_collision_center = player_bullet_position.Add(player_bullets.collisions[player_bullet_idx].bounds.center);
+                    for (std::size_t enemy_idx = 0; enemy_idx < enemy_activation.size(); enemy_idx++) {
+                        if (enemy_activation[enemy_idx].is_active) {
+                            const auto enemy_collision_center = enemy_movement[enemy_idx].position.Add(enemy_collision[enemy_idx].bounds.center);
+                            if (CheckCollisionCircles(player_collision_center, player_bullets.collisions[player_bullet_idx].bounds.radius, enemy_collision_center, enemy_collision[enemy_idx].bounds.radius)) {
+                                enemy_states[enemy_idx].state_machine.process_event(state_handling::events::DamageEvent());
+                                player_bullets.states[player_bullet_idx].state_machine.process_event(state_handling::events::DestroyEvent());
                             }
                         }
                     }

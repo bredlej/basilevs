@@ -4,6 +4,7 @@
 
 #ifndef BASILEVS_ENEMY_H
 #define BASILEVS_ENEMY_H
+
 #include <boost/sml/sml.hpp>
 #include <world.h>
 
@@ -72,6 +73,45 @@ namespace behaviours
 
     namespace enemy
     {
+        static constexpr auto move_towards_path = [](const double time, components::Movement &movement, components::MovementPath &movementPath)
+        {
+            if (!movementPath.points.empty()) {
+                auto nextPoint = movementPath.points.at(0);
+                movement.position = movement.position.MoveTowards(nextPoint, movement.speed * time);
+                if (nextPoint.Distance(movement.position) < 1.1) {
+                    movementPath.points.pop_front();
+                }
+            }
+        };
+
+        static constexpr auto common_state_handling = [](auto &state, auto &time_counter, const auto time, components::Movement &movement, components::MovementPath &movement_path, auto &activation, components::Sprite &sprite)
+        {
+            /* State handling */
+
+            if (state.state_machine.is(state_handling::declarations::kInitState)) {
+                if (time_counter.elapsed_seconds > activation.activate_after_seconds) {
+                    activation.is_active = true;
+                    state.state_machine.process_event(state_handling::events::ArrivalEvent());
+                }
+            } else if (state.state_machine.is(state_handling::declarations::kArrivalState)) {
+                move_towards_path(time, movement, movement_path);
+                if (movement_path.points.empty()) {
+                    state.state_machine.process_event(state_handling::events::StartEvent());
+                }
+            } else if (state.state_machine.is(state_handling::declarations::kArrivalState)) {
+
+            } else if (state.state_machine.is(state_handling::declarations::kTakingDamageState)) {
+                sprite.current_state = components::StateEnum::DESTROYED;
+                sprite.current_visible_frame = sprite.state_animations[components::StateEnum::DESTROYED].begin_frame;
+                state.state_machine.process_event(state_handling::events::KillEvent());
+                activation.is_active = false;
+            } else if (state.state_machine.is(state_handling::declarations::kDeadState)) {
+                if (sprite.state_animations[sprite.current_state].has_ended) {
+                    state.state_machine.process_event(state_handling::events::DestroyEvent());
+                }
+            }
+        };
+
         /*
          * Declares a function which updates a single enemy object
          */
@@ -99,17 +139,24 @@ namespace behaviours
             float collision_radius;
             std::deque<raylib::Vector2> path;
             float speed;
+            std::unordered_map<components::StateEnum, components::animation> animations;
         };
 
-        static constexpr auto animation_update = [](components::Sprite &sprite)
+        static constexpr auto animate_state = [](components::Sprite &sprite)
         {
             sprite.fps_counter++;
 
             if (sprite.fps_counter >= (60 / sprite.fps_speed)) {
                 sprite.fps_counter = 0;
                 sprite.current_visible_frame++;
-
-                if (sprite.current_visible_frame > sprite.amount_frames - 1) sprite.current_visible_frame = 0;
+                auto &current_animation = sprite.state_animations[sprite.current_state];
+                if (sprite.current_visible_frame > current_animation.end_frame - 1) {
+                    if (current_animation.is_repeating) {
+                        sprite.current_visible_frame = current_animation.begin_frame;
+                    } else {
+                        current_animation.has_ended = true;
+                    }
+                }
 
                 sprite.frame_rect.x = static_cast<float>(sprite.current_visible_frame) * static_cast<float>(sprite.texture_width_px) / static_cast<float>(sprite.amount_frames);
             }
@@ -170,36 +217,12 @@ namespace behaviours
                     }
                     emitter.last_emission_seconds += time;
                 };
-                static constexpr auto move_towards_path = [](const double time, components::Movement &movement, components::MovementPath &movementPath)
-                {
-                    if (!movementPath.points.empty()) {
-                        auto nextPoint = movementPath.points.at(0);
-                        movement.position = movement.position.MoveTowards(nextPoint, movement.speed * time);
-                        if (nextPoint.Distance(movement.position) < 1.1) {
-                            movementPath.points.pop_front();
-                        }
-                    }
-                };
-                static constexpr auto tentacle_state_handling = [](auto &state, auto &time_counter, const auto time, components::Movement &movement, components::MovementPath &movement_path, auto &activation)
-                {
-                    /* State handling */
 
-                    if (state.state_machine.is(state_handling::declarations::kInitState)) {
-                        if (time_counter.elapsed_seconds > activation.activate_after_seconds) {
-                            activation.is_active = true;
-                            state.state_machine.process_event(state_handling::events::ArrivalEvent());
-                        }
-                    } else if (state.state_machine.is(state_handling::declarations::kArrivalState)) {
-                        move_towards_path(time, movement, movement_path);
-                        if (movement_path.points.empty()) {
-                            state.state_machine.process_event(state_handling::events::StartEvent());
-                        }
-                    }
-                };
-                animation_update(sprite);
+                animate_state(sprite);
+
                 time_counter.elapsed_seconds += time;
 
-                tentacle_state_handling(state, time_counter, time, movement, movement_path, activation);
+                common_state_handling(state, time_counter, time, movement, movement_path, activation, sprite);
                 if (activation.is_active) {
                     tentacle_shoot_behaviour(world, emitter, movement, time, bullet::fly_towards_direction);
                 }
@@ -209,14 +232,18 @@ namespace behaviours
             {
                 return {
                         assets::TextureId::Tentacle,
-                        9,
+                        18,
                         {assets::TextureId::Bullet_Tentacle, 1, bullet::fly_towards_direction},
                         update_function,
                         40,
                         raylib::Vector2{8.0f, 8.0f},
                         8.0f,
                         movement_path,
-                10.0f};
+                        10.0f,
+                        {
+                                {components::StateEnum::IDLE, components::animation{0, 8, false, true}},
+                                {components::StateEnum::DESTROYED, components::animation{9, 17, false, false}},
+                        }};
             };
         }// namespace tentacle
 
@@ -231,7 +258,7 @@ namespace behaviours
                             TWorld &world,
                             components::Sprite &sprite,
                             components::Movement &movement,
-                            components::MovementPath &movementPath,
+                            components::MovementPath &movement_path,
                             components::Activation &activation,
                             components::TimeCounter &time_counter,
                             components::Emission &emitter,
@@ -278,23 +305,11 @@ namespace behaviours
                     }
                     emitter.last_emission_seconds += time;
                 };
-                static constexpr auto mosquito_state_handling = [](auto &state, auto &time_counter, auto &activation)
-                {
-                    /* State handling */
 
-                    if (state.state_machine.is(state_handling::declarations::kInitState)) {
-                        if (time_counter.elapsed_seconds > activation.activate_after_seconds) {
-                            activation.is_active = true;
-                            state.state_machine.process_event(state_handling::events::ArrivalEvent());
-                        }
-                    } else if (state.state_machine.is(state_handling::declarations::kArrivalState)) {
-                        state.state_machine.process_event(state_handling::events::StartEvent());
-                    }
-                };
-                animation_update(sprite);
+                animate_state(sprite);
                 time_counter.elapsed_seconds += time;
 
-                mosquito_state_handling(state, time_counter, activation);
+                common_state_handling(state, time_counter, time, movement, movement_path, activation, sprite);
                 if (activation.is_active) {
                     mosquito_shoot_behaviour(world, emitter, movement, time, bullet::fly_and_rotate);
                 }
@@ -304,14 +319,18 @@ namespace behaviours
             {
                 return {
                         assets::TextureId::Mosquito,
-                        11,
+                        17,
                         {assets::TextureId::Bullet_Mosquito, 6, bullet::fly_towards_direction},
                         update_function,
                         60,
                         raylib::Vector2{8.0f, 8.0f},
                         8.0f,
                         movement_path,
-                        10.0f};
+                        10.0f,
+                        {
+                                {components::StateEnum::IDLE, {0, 10, false, true}},
+                                {components::StateEnum::DESTROYED, {11, 16, false, false}},
+                        }};
             };
         }// namespace mosquito
     }    // namespace enemy
