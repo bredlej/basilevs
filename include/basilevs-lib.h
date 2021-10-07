@@ -7,8 +7,9 @@
 
 #include <boost/sml/sml.hpp>
 #include <iostream>
-
+#include <assets.h>
 #include <basilevs.h>
+#include "level-loader.h"
 
 namespace sml = boost::sml;
 
@@ -94,4 +95,6 @@ private:
     void loop_(std::chrono::duration<double> duration);
     void render_();
 };
+
+
 #endif//BASILEVS_BASILEVS_LIB_H

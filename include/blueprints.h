@@ -6,10 +6,12 @@
 #define BASILEVS_BLUEPRINTS_H
 
 #include <Vector2.hpp>
+#include <algorithm>
 #include <components.h>
 #include <concepts>
 #include <functional>
 #include <iostream>
+#include <ranges>
 #include <type_traits>
 
 /* Forward declaration */
@@ -160,18 +162,44 @@ public:
     Components components;
     VectorOfUpdateFunctions functions;
 
-    static constexpr BlueprintUpdateFunction unpack_function(is_a_blueprint auto &blueprint) { return std::move(blueprint.update_function); }
+    static constexpr auto unpack_function = [](is_a_blueprint auto &blueprint) { return std::move(blueprint.update_function); };
 
+    template<is_a_blueprint B>
+    static constexpr VectorOfUpdateFunctions unpack_functions(const std::vector<B> &blueprints)
+    {
+        VectorOfUpdateFunctions vectorOfUpdateFunctions;
+
+        std::ranges::transform(blueprints,
+                               std::back_inserter(vectorOfUpdateFunctions),
+                               unpack_function);
+        return vectorOfUpdateFunctions;
+    }
+    
     template<is_a_component T, is_a_blueprint... Blueprint>
     static constexpr std::vector<T> unpack_components(Blueprint const &...blueprint_pack)
     {
         return {std::move(std::get<T>(blueprint_pack.components))...};
     }
 
+    template<is_a_component T>
+    static constexpr std::vector<T> unpack_components(const std::vector<Blueprint<Ts...>> blueprints)
+    {
+        std::vector<T> components;
+        std::ranges::transform(blueprints,
+                               std::back_inserter(components),
+                               [](const auto &blueprint)
+                               { return std::get<T>(blueprint.components); });
+        return components;
+    }
+
     template<is_a_blueprint... Blueprints>
     explicit BlueprintsInMemory(Blueprints const &...blueprint_pack)
         : components{unpack_components<Ts>(blueprint_pack...)...},
           functions{unpack_function(blueprint_pack)...} {};
+
+    explicit BlueprintsInMemory(std::vector<Blueprint<Ts...>> &blueprints)
+        : components{unpack_components<Ts>(blueprints)...},
+          functions{unpack_functions<Blueprint<Ts...>>(blueprints)} {};
 
     ~BlueprintsInMemory() override = default;
     void update(double time, TWorld &world) override;

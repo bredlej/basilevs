@@ -45,18 +45,15 @@ struct TWorld {
     using EnemyStateComponent = components::StateMachine<state_handling::transitions::EnemyPossibleStates, state_handling::StatefulObject>;
 
     /*
+     * TODO Maybe instead of define a solution like https://stackoverflow.com/questions/39242178/create-alias-for-a-list-of-types-and-passing-it-as-a-template-parameter would be better?
+     */
+
+
+
+    /*
      * Describes the components which all enemies consist of (enemy::UpdateFunction in ./behaviours/enemy.h must have same components declared)
      */
-    using EnemyListType = BlueprintsInMemory<
-            components::Sprite,
-            components::Movement,
-            components::MovementPath,
-            components::Activation,
-            components::TimeCounter,
-            components::Emission,
-            components::Collision,
-            components::Health,
-            EnemyStateComponent>;
+    using EnemyType = Blueprint<ENEMY_COMPONENTS>;
 
     using BulletStateComponent = components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject>;
 
@@ -79,7 +76,7 @@ struct TWorld {
 
 public:
     std::shared_ptr<PlayerType> player = nullptr;
-    std::shared_ptr<EnemyListType> enemies = nullptr;
+    std::shared_ptr<BlueprintsInMemory<ENEMY_COMPONENTS>> enemies = nullptr;
     std::shared_ptr<BackgroundType> background = nullptr;
     BulletPool player_bullets{config::kPlayerBulletPoolSize};
     BulletPool enemy_bullets{config::kEnemyBulletPoolSize};

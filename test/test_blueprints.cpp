@@ -110,6 +110,31 @@ TEST_F(BlueprintsInMemoryTest, CreatesMemoryFromManyBlueprints)
     EXPECT_EQ(10, first_movement_component_in_memory.position.x);
 }
 
+TEST_F(BlueprintsInMemoryTest, CreatesMemoryFromManyBlueprintsInVector)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &activeComponent) -> void
+    {
+        movement_component.position.x += time;
+        movement_component.position.y += time;
+        activeComponent.is_active = true;
+    };
+    auto world = TWorld{};
+    auto blueprint1 = Blueprint<components::Movement, components::Activation>(kUpdateFunction);
+    auto &blueprint1_movement_component = get<components::Movement>(blueprint1);
+    blueprint1_movement_component.position.x = 10;
+    auto blueprint2 = Blueprint<components::Movement, components::Activation>(kUpdateFunction);
+    auto blueprint3 = Blueprint<components::Movement, components::Activation>(kUpdateFunction);
+
+    std::vector<Blueprint<components::Movement, components::Activation>> blueprints = {blueprint1, blueprint2, blueprint3};
+    auto memory = BlueprintsInMemory(blueprints);
+
+    EXPECT_EQ(3, get<components::Movement>(memory).size());
+    EXPECT_EQ(3, get<components::Activation>(memory).size());
+    auto first_movement_component_in_memory = get<components::Movement>(memory)[0];
+    EXPECT_EQ(10, first_movement_component_in_memory.position.x);
+
+}
+
 TEST_F(BlueprintsInMemoryTest, UpdatesAllBlueprintsInMemory)
 {
     static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &activeComponent) -> void
@@ -123,6 +148,37 @@ TEST_F(BlueprintsInMemoryTest, UpdatesAllBlueprintsInMemory)
     auto blueprint2 = Blueprint<components::Movement, components::Activation>(kUpdateFunction);
     auto blueprint3 = Blueprint<components::Movement, components::Activation>(kUpdateFunction);
     auto memory = BlueprintsInMemory(blueprint1, blueprint2, blueprint3);
+    for (int i = 0; i < 3; i++) {
+        auto &movement_component = get<components::Movement>(memory)[i];
+        auto &active_component = get<components::Activation>(memory)[i];
+        EXPECT_EQ(0, movement_component.position.x);
+        EXPECT_EQ(0, movement_component.position.y);
+        EXPECT_FALSE(active_component.is_active);
+    }
+    memory.update(1, world);
+    for (int i = 0; i < 3; i++) {
+        auto &movement_component = get<components::Movement>(memory)[i];
+        auto &active_component = get<components::Activation>(memory)[i];
+        EXPECT_EQ(1, movement_component.position.x);
+        EXPECT_EQ(1, movement_component.position.y);
+        EXPECT_TRUE(active_component.is_active);
+    }
+}
+
+TEST_F(BlueprintsInMemoryTest, UpdatesAllBlueprintsInMemoryFromVector)
+{
+    static constexpr auto kUpdateFunction = [](const double time, TWorld &, components::Movement &movement_component, components::Activation &activeComponent) -> void
+            {
+        movement_component.position.x += time;
+        movement_component.position.y += time;
+        activeComponent.is_active = true;
+            };
+    auto world = TWorld{};
+    auto blueprint1 = Blueprint<components::Movement, components::Activation>(kUpdateFunction);
+    auto blueprint2 = Blueprint<components::Movement, components::Activation>(kUpdateFunction);
+    auto blueprint3 = Blueprint<components::Movement, components::Activation>(kUpdateFunction);
+    std::vector<Blueprint<components::Movement, components::Activation>> blueprints = {blueprint1, blueprint2, blueprint3};
+    auto memory = BlueprintsInMemory(blueprints);
     for (int i = 0; i < 3; i++) {
         auto &movement_component = get<components::Movement>(memory)[i];
         auto &active_component = get<components::Activation>(memory)[i];

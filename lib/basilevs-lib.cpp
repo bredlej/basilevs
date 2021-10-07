@@ -1,7 +1,6 @@
 //
 // Created by geoco on 21.04.2021.
 //
-#include <assets.h>
 #include <basilevs-lib.h>
 namespace basilevs
 {
@@ -18,7 +17,9 @@ void GameDefinition::initialize_world_()
 {
     world.background = basilevs::initialization::create_blueprint_of_background(textures_);
     world.player = basilevs::initialization::create_blueprint_of_player(textures_);
-    world.enemies = basilevs::initialization::create_blueprints_of_enemies(textures_);
+    auto level_loader = LevelLoader("assets/json/level1.json");
+    world.enemies = level_loader.get_enemy_spawns(textures_);
+
 }
 
 void GameDefinition::initialize()
@@ -73,3 +74,5 @@ GameDefinition::~GameDefinition()
         UnloadSound(sound);
     }
 }
+
+

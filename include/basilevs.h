@@ -4,6 +4,9 @@
 
 #ifndef BASILEVS_CORE_H
 #define BASILEVS_CORE_H
+
+#define ENEMY_COMPONENTS components::Sprite, components::Movement, components::MovementPath, components::Activation, components::TimeCounter, components::Emission, components::Collision, components::Health, components::StateMachine<state_handling::transitions::EnemyPossibleStates, state_handling::StatefulObject>
+
 #include <behaviours/background.h>
 #include <behaviours/enemy.h>
 #include <behaviours/player.h>
@@ -63,27 +66,27 @@ namespace basilevs
          *                  ---  Enemy blueprint definition ---
          */
 
+        static constexpr auto setup_sprite_component = [](components::Sprite &sprite_component, const std::vector<Texture2D> &textures, const behaviours::enemy::EnemyDefinition &enemy_definition)
+        {
+            sprite_component.current_visible_frame = std::rand() % enemy_definition.amount_frames;
+            sprite_component.texture = enemy_definition.texture;
+            sprite_component.amount_frames = enemy_definition.amount_frames;
+            auto texture_width = textures[static_cast<int>(sprite_component.texture)].width;
+            auto texture_height = textures[static_cast<int>(sprite_component.texture)].height;
+            sprite_component.texture_width_px = texture_width;
+            sprite_component.texture_height_px = texture_height;
+            sprite_component.fps_speed = 12;
+            sprite_component.frame_rect = {0.0f, 0.0f, static_cast<float>(texture_width) / static_cast<float>(sprite_component.amount_frames), static_cast<float>(texture_height)};
+            sprite_component.current_state = components::StateEnum::IDLE;
+            sprite_component.state_animations = enemy_definition.animations;
+        };
+
         /*
          * Prepares an enemy object ready to appear in-game after a given time has passed.
          */
-        static constexpr auto spawn_enemy_after_seconds = [](const double time, const std::vector<Texture2D> &textures, const Vector2 &&position, const behaviours::enemy::EnemyDefinition &enemy_definition)
-        {
-            static constexpr auto setup_sprite_component = [](components::Sprite &sprite_component, const std::vector<Texture2D> &textures, const behaviours::enemy::EnemyDefinition enemy_definition)
-            {
-                sprite_component.current_visible_frame = std::rand() % enemy_definition.amount_frames;
-                sprite_component.texture = enemy_definition.texture;
-                sprite_component.amount_frames = enemy_definition.amount_frames;
-                auto texture_width = textures[static_cast<int>(sprite_component.texture)].width;
-                auto texture_height = textures[static_cast<int>(sprite_component.texture)].height;
-                sprite_component.texture_width_px = texture_width;
-                sprite_component.texture_height_px = texture_height;
-                sprite_component.fps_speed = 12;
-                sprite_component.frame_rect = {0.0f, 0.0f, static_cast<float>(texture_width) / static_cast<float>(sprite_component.amount_frames), static_cast<float>(texture_height)};
-                sprite_component.current_state = components::StateEnum::IDLE;
-                sprite_component.state_animations = enemy_definition.animations;
-            };
+        static constexpr auto spawn_enemy_after_seconds = [](const double time, const Vector2 &position, const behaviours::enemy::EnemyDefinition &enemy_definition)
+                {
             auto enemy = Blueprint(behaviours::enemy::UpdateFunction(enemy_definition.behaviour));
-            setup_sprite_component(get<components::Sprite>(enemy), textures, enemy_definition);
             get<components::Movement>(enemy).position = position;
             get<components::Movement>(enemy).speed = enemy_definition.speed;
             get<components::TimeCounter>(enemy).elapsed_seconds = 0.0;
@@ -98,6 +101,16 @@ namespace basilevs
             collision_component.is_collidable = true;
             get<components::Health>(enemy).hp = enemy_definition.health;
             return enemy;
+                };
+
+        /*
+         * Prepares an enemy object ready to appear in-game after a given time has passed.
+         */
+        static constexpr auto spawn_enemy_after_seconds_with_sprites = [](const double time, const std::vector<Texture2D> &textures, const Vector2 &position, const behaviours::enemy::EnemyDefinition &enemy_definition)
+        {
+            auto enemy = spawn_enemy_after_seconds(time, position, enemy_definition);
+            setup_sprite_component(get<components::Sprite>(enemy), textures, enemy_definition);
+            return enemy;
         };
 
 
@@ -108,11 +121,11 @@ namespace basilevs
         static constexpr auto create_blueprints_of_enemies = [](const std::vector<Texture2D> &textures)
         {
             auto enemies_in_memory = BlueprintsInMemory(
-                    spawn_enemy_after_seconds(1.1, textures, {60, -20}, behaviours::enemy::tentacle::definition({raylib::Vector2{10,100}, raylib::Vector2{100,10}, raylib::Vector2{50,120}})),
-                    spawn_enemy_after_seconds(2.2, textures, {35, 50}, behaviours::enemy::mosquito::definition({})),
-                    spawn_enemy_after_seconds(3.3, textures, {10, -20}, behaviours::enemy::tentacle::definition({raylib::Vector2{130,20}, raylib::Vector2{20,130}, raylib::Vector2{80,10}})),
-                    spawn_enemy_after_seconds(4.4, textures, {105, 50}, behaviours::enemy::mosquito::definition({})),
-                    spawn_enemy_after_seconds(5.5, textures, {100, -20}, behaviours::enemy::tentacle::definition({raylib::Vector2{50,70}, raylib::Vector2{10,10}, raylib::Vector2{120,40}})));
+                    spawn_enemy_after_seconds_with_sprites(1.1, textures, {60, -20}, behaviours::enemy::tentacle::definition({raylib::Vector2{10, 100}, raylib::Vector2{100, 10}, raylib::Vector2{50, 120}})),
+                    spawn_enemy_after_seconds_with_sprites(2.2, textures, {35, 50}, behaviours::enemy::mosquito::definition({})),
+                    spawn_enemy_after_seconds_with_sprites(3.3, textures, {10, -20}, behaviours::enemy::tentacle::definition({raylib::Vector2{130, 20}, raylib::Vector2{20, 130}, raylib::Vector2{80, 10}})),
+                    spawn_enemy_after_seconds_with_sprites(4.4, textures, {105, 50}, behaviours::enemy::mosquito::definition({})),
+                    spawn_enemy_after_seconds_with_sprites(5.5, textures, {100, -20}, behaviours::enemy::tentacle::definition({raylib::Vector2{50, 70}, raylib::Vector2{10, 10}, raylib::Vector2{120, 40}})));
             return std::make_shared<decltype(enemies_in_memory)>(enemies_in_memory);
         };
 
@@ -190,7 +203,7 @@ namespace basilevs
 
                 for (size_t i = 0; i < sprites.size(); i++) {
                     if (!states[i].state_machine.is(boost::sml::X)) {
-                        raylib::DrawText(std::to_string(sprites[i].current_state), movement[i].position.x -5, movement[i].position.y -5, 8, ORANGE);
+                        raylib::DrawText(std::to_string(sprites[i].current_state), movement[i].position.x - 5, movement[i].position.y - 5, 8, ORANGE);
                         DrawTextureRec(textures[static_cast<int>(sprites[i].texture)], sprites[i].frame_rect, movement[i].position, WHITE);
                     }
                 }
