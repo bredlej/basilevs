@@ -19,7 +19,8 @@ void GameDefinition::initialize_world_()
     world.player = basilevs::initialization::create_blueprint_of_player(textures_);
     auto level_loader = LevelLoader("assets/json/level1.json");
     world.enemies = level_loader.get_enemy_spawns(textures_);
-
+    world.player_bullets.first_available_index = 0;
+    world.enemy_bullets.first_available_index = 0;
 }
 
 void GameDefinition::initialize()
@@ -34,6 +35,7 @@ void GameDefinition::initialize()
 
 void GameDefinition::loop_(std::chrono::duration<double> duration)
 {
+    handle_game_input();
     basilevs::io::handle_player_input(world);
     basilevs::game_state::update_world(duration, world);
     basilevs::collision_checking::collision_checks(world);
@@ -74,5 +76,25 @@ GameDefinition::~GameDefinition()
         UnloadSound(sound);
     }
 }
+void GameDefinition::handle_game_input()
+{
+    static constexpr auto register_input = [](const std::initializer_list<int32_t> keys, const auto action, auto &game_input)
+    {
+        bool is_key_down = false;
+        bool is_key_up = false;
+        for (auto key : keys) {
+            is_key_down |= IsKeyDown(key);
+            is_key_up |= IsKeyUp(key);
+        }
+        if (is_key_down) {
+            game_input.set(action);
+        } else if (is_key_up) {
+            game_input.set(action, false);
+        }
+    };
+    register_input({KEY_F10}, input::GameInput::Restart, game_input);
 
-
+    if (game_input[input::GameInput::Restart]) {
+        initialize_world_();
+    }
+}

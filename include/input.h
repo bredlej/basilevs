@@ -17,6 +17,12 @@ namespace input
         size
     };
 
+    enum class GameInput : std::uint8_t
+    {
+        Restart,
+        size
+    };
+
     template<typename T>
     concept InputType = requires
     {

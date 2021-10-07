@@ -2,7 +2,7 @@
   "definitions" : [],
   "spawns" : [
     {
-      "time" : 1.1,
+      "time" : 1,
       "position" : [60, -20],
       "enemy" : {
         "type": "TENTACLE",
@@ -10,7 +10,7 @@
       }
     },
     {
-      "time" : 1.5,
+      "time" : 2,
       "position" : [10, -20],
       "enemy" : {
         "type": "MOSQUITO",
