@@ -25,8 +25,8 @@ namespace json {
 struct LevelLoader {
 public:
     explicit LevelLoader(const std::string &file_name) : data{load(file_name)} {};
-    std::shared_ptr<BlueprintsInMemory<ENEMY_COMPONENTS>> get_enemy_spawns();
-    std::shared_ptr<BlueprintsInMemory<ENEMY_COMPONENTS>> get_enemy_spawns(std::vector<Texture2D> &textures);
+    std::shared_ptr<TWorld::EnemiesInMemory> get_enemy_spawns();
+    std::shared_ptr<TWorld::EnemiesInMemory> get_enemy_spawns(std::vector<Texture2D> &textures);
 private:
     [[nodiscard]] nlohmann::json load(const std::string &file_name) const;
     nlohmann::json data;

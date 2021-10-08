@@ -13,7 +13,7 @@ nlohmann::json LevelLoader::load(const std::string &file_name) const
     return level_data;
 }
 
-std::shared_ptr<BlueprintsInMemory<ENEMY_COMPONENTS>> LevelLoader::get_enemy_spawns()
+std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns()
 {
     static constexpr auto get_vector = [](const auto &coordinates)
     { return raylib::Vector2{coordinates[0], coordinates[1]}; };
@@ -23,7 +23,7 @@ std::shared_ptr<BlueprintsInMemory<ENEMY_COMPONENTS>> LevelLoader::get_enemy_spa
         std::ranges::transform(enemy_data[json::kMovement], std::back_inserter(movements), get_vector);
         return movements;
     };
-    static constexpr auto get_enemy = [](const auto &spawn_data) -> Blueprint<ENEMY_COMPONENTS>
+    static constexpr auto get_enemy = [](const auto &spawn_data) -> TWorld::EnemyType
     {
         const auto time = static_cast<double>(spawn_data[json::kTime]);
         const auto position = get_vector(spawn_data[json::kPosition]);
@@ -36,13 +36,13 @@ std::shared_ptr<BlueprintsInMemory<ENEMY_COMPONENTS>> LevelLoader::get_enemy_spa
 
     assert(!data[json::kSpawns].is_null());
 
-    std::vector<Blueprint<ENEMY_COMPONENTS>> enemies;
+    std::vector<TWorld::EnemyType> enemies;
     std::ranges::transform(data[json::kSpawns], std::back_inserter(enemies), get_enemy);
 
-    return std::make_shared<BlueprintsInMemory<ENEMY_COMPONENTS>>(BlueprintsInMemory(enemies));
+    return std::make_shared<TWorld::EnemiesInMemory>(BlueprintsInMemory(enemies));
 }
 
-std::shared_ptr<BlueprintsInMemory<ENEMY_COMPONENTS>> LevelLoader::get_enemy_spawns(std::vector<Texture2D> &textures)
+std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns(std::vector<Texture2D> &textures)
 {
     static constexpr auto get_vector = [](const auto &coordinates)
     { return raylib::Vector2{coordinates[0], coordinates[1]}; };
@@ -53,7 +53,7 @@ std::shared_ptr<BlueprintsInMemory<ENEMY_COMPONENTS>> LevelLoader::get_enemy_spa
         return movements;
     };
 
-    static constexpr auto get_enemy = [](const auto &spawn_data, std::vector<Texture2D> textures) -> Blueprint<ENEMY_COMPONENTS>
+    static constexpr auto get_enemy = [](const auto &spawn_data, std::vector<Texture2D> textures) -> TWorld::EnemyType
     {
         const auto time = static_cast<double>(spawn_data[json::kTime]);
         const auto position = get_vector(spawn_data[json::kPosition]);
@@ -66,8 +66,8 @@ std::shared_ptr<BlueprintsInMemory<ENEMY_COMPONENTS>> LevelLoader::get_enemy_spa
 
     assert(!data[json::kSpawns].is_null());
 
-    std::vector<Blueprint<ENEMY_COMPONENTS>> enemies;
+    std::vector<TWorld::EnemyType> enemies;
     std::ranges::transform(data[json::kSpawns], std::back_inserter(enemies), [&](const auto enemy) { return get_enemy(enemy, textures);});
 
-    return std::make_shared<BlueprintsInMemory<ENEMY_COMPONENTS>>(BlueprintsInMemory(enemies));
+    return std::make_shared<TWorld::EnemiesInMemory>(BlueprintsInMemory(enemies));
 }

@@ -10,6 +10,14 @@
       }
     },
     {
+      "time" : 3.1,
+      "position" : [60, 20],
+      "enemy" : {
+        "type": "TENTACLE",
+        "movement" : [[10, 100], [100, 10], [50,120]]
+      }
+    },
+    {
       "time" : 1.5,
       "position" : [10, -20],
       "enemy" : {
