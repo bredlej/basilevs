@@ -10,7 +10,7 @@ include(CTest)
 enable_testing()
 add_subdirectory(test)
 add_executable(basilevs main.cpp)
-set(BUILD_RAYLIB_CPP_EXAMPLES 0)
+set(BUILD_RAYLIB_CPP_EXAMPLES ON)
 
 FetchContent_Declare(
         googletest

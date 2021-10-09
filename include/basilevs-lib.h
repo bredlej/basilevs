@@ -7,8 +7,9 @@
 
 #include <boost/sml/sml.hpp>
 #include <iostream>
-
+#include <assets.h>
 #include <basilevs.h>
+#include "level-loader.h"
 
 namespace sml = boost::sml;
 
@@ -81,6 +82,7 @@ public:
     TWorld world;
     GameStateMachine state;
     boost::sml::sm<basilevs::GameState> sm{state};
+
     void initialize();
     void run(raylib::Window &window, raylib::AudioDevice &audio);
 
@@ -90,8 +92,12 @@ private:
     std::vector<Texture2D> textures_;
     std::vector<Sound> sounds_;
     raylib::RenderTexture2D render_target_{config::kFrameWidth, config::kFrameHeight};
+    input::UserInput<input::GameInput> game_input;
     void initialize_world_();
     void loop_(std::chrono::duration<double> duration);
     void render_();
+    void handle_game_input();
 };
+
+
 #endif//BASILEVS_BASILEVS_LIB_H

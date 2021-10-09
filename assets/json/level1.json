@@ -1,0 +1,29 @@
+{
+  "definitions" : [],
+  "spawns" : [
+    {
+      "time" : 1.1,
+      "position" : [60, -20],
+      "enemy" : {
+        "type": "TENTACLE",
+        "movement" : [[10, 100], [100, 10], [50,120]]
+      }
+    },
+    {
+      "time" : 3.1,
+      "position" : [60, 20],
+      "enemy" : {
+        "type": "TENTACLE",
+        "movement" : [[10, 100], [100, 10], [50,120]]
+      }
+    },
+    {
+      "time" : 1.5,
+      "position" : [10, -20],
+      "enemy" : {
+        "type": "MOSQUITO",
+        "movement" : [[50, 50], [100, 100], [30,70]]
+      }
+    }
+  ]
+}

@@ -30,56 +30,52 @@ struct MemoryBase;
  */
 struct TWorld {
 
+#define ENEMY_COMPONENTS      \
+    components::Sprite,       \
+    components::Movement,     \
+    components::MovementPath, \
+    components::Activation,   \
+    components::TimeCounter,  \
+    components::Emission,     \
+    components::Collision,    \
+    components::Health,       \
+    components::StateMachine<state_handling::transitions::EnemyPossibleStates, state_handling::StatefulObject>
+
+#define PLAYER_COMPONENTS  \
+    components::Sprite,    \
+    components::Movement,  \
+    components::Emission,  \
+    components::Collision, \
+    components::Health,    \
+    components::StateMachine<state_handling::transitions::PlayerPossibleStates, state_handling::StatefulObject>
+
+#define BULLET_COMPONENTS                                                                                        \
+    components::Sprite,                                                                                          \
+    components::Movement,                                                                                        \
+    components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject>, \
+    components::TimeCounter,                                                                                     \
+    components::Collision,                                                                                       \
+    components::Damage
+
+#define BACKGROUND_COMPONENTS \
+    components::Sprite, \
+    components::Movement
+
+    using PlayerType = Blueprint<PLAYER_COMPONENTS>;
+    using EnemyType = Blueprint<ENEMY_COMPONENTS>;
+    using EnemiesInMemory = BlueprintsInMemory<ENEMY_COMPONENTS>;
+    using BulletPool = BlueprintsInPool<BULLET_COMPONENTS>;
+    using BackgroundType = Blueprint<BACKGROUND_COMPONENTS>;
+
     using PlayerStateComponent = components::StateMachine<state_handling::transitions::PlayerPossibleStates, state_handling::StatefulObject>;
-    /*
-     * Describes the components a player object consists of (player::UpdateFunction in ./behaviours/player.h must have same components declared)
-     */
-    using PlayerType = Blueprint<
-            components::Sprite,
-            components::Movement,
-            components::Emission,
-            components::Collision,
-            components::Health,
-            PlayerStateComponent>;
-
     using EnemyStateComponent = components::StateMachine<state_handling::transitions::EnemyPossibleStates, state_handling::StatefulObject>;
-
-    /*
-     * Describes the components which all enemies consist of (enemy::UpdateFunction in ./behaviours/enemy.h must have same components declared)
-     */
-    using EnemyListType = BlueprintsInMemory<
-            components::Sprite,
-            components::Movement,
-            components::MovementPath,
-            components::Activation,
-            components::TimeCounter,
-            components::Emission,
-            components::Collision,
-            components::Health,
-            EnemyStateComponent>;
-
     using BulletStateComponent = components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject>;
-
-    /*
-     * Describes the components which all bullets consist of (bullet::UpdateFunction in ./behaviours/enemy.h must have same components declared)
-     */
-    using BulletPool = BlueprintsInPool<
-            components::Sprite,
-            components::Movement,
-            BulletStateComponent,
-            components::TimeCounter,
-            components::Collision,
-            components::Damage>;
-
-    using BackgroundType = Blueprint<
-            components::Sprite,
-            components::Movement>;
 
     explicit TWorld() = default;
 
 public:
     std::shared_ptr<PlayerType> player = nullptr;
-    std::shared_ptr<EnemyListType> enemies = nullptr;
+    std::shared_ptr<EnemiesInMemory> enemies = nullptr;
     std::shared_ptr<BackgroundType> background = nullptr;
     BulletPool player_bullets{config::kPlayerBulletPoolSize};
     BulletPool enemy_bullets{config::kEnemyBulletPoolSize};

@@ -228,7 +228,7 @@ namespace behaviours
                 }
             };
 
-            static constexpr auto definition = [](std::initializer_list<raylib::Vector2> &&movement_path) -> EnemyDefinition
+            static constexpr auto definition = [](std::deque<raylib::Vector2> &&movement_path) -> EnemyDefinition
             {
                 return {
                         assets::TextureId::Tentacle,
@@ -315,7 +315,7 @@ namespace behaviours
                 }
             };
 
-            static constexpr auto definition = [](std::initializer_list<raylib::Vector2> &&movement_path) -> EnemyDefinition
+            static constexpr auto definition = [](std::deque<raylib::Vector2> &&movement_path) -> EnemyDefinition
             {
                 return {
                         assets::TextureId::Mosquito,
@@ -333,6 +333,9 @@ namespace behaviours
                         }};
             };
         }// namespace mosquito
-    }    // namespace enemy
+        static std::unordered_map<std::string, std::function<EnemyDefinition(std::deque<raylib::Vector2>)>> const definitions = {
+                {"MOSQUITO", mosquito::definition},
+                {"TENTACLE", tentacle::definition}};
+    }// namespace enemy
 }// namespace behaviours
 #endif//BASILEVS_ENEMY_H
