@@ -184,7 +184,6 @@ namespace basilevs
                         return !state.state_machine.is(boost::sml::X) && !state.state_machine.is(state_handling::declarations::kInitState);
                     };
                     if (is_render_allowed_for_state(state)) {
-                        raylib::DrawText(std::to_string(sprite.current_state), movement.position.x - 5, movement.position.y - 5, 8, ORANGE);
                         DrawTextureRec(textures[static_cast<int>(sprite.texture)], sprite.frame_rect, movement.position, WHITE);
                     }
                 };
@@ -249,9 +248,9 @@ namespace basilevs
         {
             DrawTexturePro(render_target.texture, Rectangle{0.0f, 0.0f, (float) render_target.texture.width, (float) -render_target.texture.height},
                            raylib::Rectangle{0.0f, 0.0f, static_cast<float>(config::kScreenWidth), static_cast<float>(config::kScreenHeight)}, Vector2{0, 0}, 0.0f, WHITE);
-            raylib::DrawText(std::to_string(world.enemy_bullets.first_available_index), config::kScreenWidth - 60, 60, 30, ORANGE);
-            raylib::DrawText(std::to_string(world.player_bullets.first_available_index), config::kScreenWidth - 60, 95, 30, ORANGE);
-            raylib::DrawText(std::to_string(get<components::Health>(world.player.get()->components).hp), config::kScreenWidth - 60, 125, 30, ORANGE);
+            //raylib::DrawText(std::to_string(world.enemy_bullets.first_available_index), config::kScreenWidth - 60, 60, 30, ORANGE);
+            //raylib::DrawText(std::to_string(world.player_bullets.first_available_index), config::kScreenWidth - 60, 95, 30, ORANGE);
+            //raylib::DrawText(std::to_string(get<components::Health>(world.player.get()->components).hp), config::kScreenWidth - 60, 125, 30, ORANGE);
 
             DrawFPS(5, 5);
         };

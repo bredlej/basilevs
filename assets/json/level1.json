@@ -3,23 +3,63 @@
   "spawns" : [
     {
       "time" : 1.1,
-      "position" : [60, -20],
+      "position" : [0, -20],
       "enemy" : {
         "type": "TENTACLE",
-        "movement" : [[10, 100], [100, 10], [50,120]]
+        "movement" : [[15, 15]]
       }
     },
     {
-      "time" : 3.1,
-      "position" : [60, 20],
+      "time" : 1.1,
+      "position" : [140, -20],
       "enemy" : {
         "type": "TENTACLE",
-        "movement" : [[10, 100], [100, 10], [50,120]]
+        "movement" : [[100, 15]]
       }
     },
     {
-      "time" : 1.5,
-      "position" : [10, -20],
+      "time" : 5.5,
+      "position" : [70, -20],
+      "enemy" : {
+        "type": "MOSQUITO",
+        "movement" : [[50, 50], [100, 100], [30,70]]
+      }
+    },
+    {
+      "time" : 11.1,
+      "position" : [-10, -20],
+      "enemy" : {
+        "type": "TENTACLE",
+        "movement" : [[20, 35]]
+      }
+    },
+    {
+      "time" : 11.1,
+      "position" : [35, -20],
+      "enemy" : {
+        "type": "TENTACLE",
+        "movement" : [[45, 35]]
+      }
+    },
+    {
+      "time" : 11.1,
+      "position" : [70, -20],
+      "enemy" : {
+        "type": "TENTACLE",
+        "movement" : [[85, 35]]
+      }
+    },
+    {
+      "time" : 11.1,
+      "position" : [150, -20],
+      "enemy" : {
+        "type": "TENTACLE",
+        "movement" : [[120, 35]]
+      }
+    },
+    {
+      "time" : 15.5,
+      "position" : [70, -20],
       "enemy" : {
         "type": "MOSQUITO",
         "movement" : [[50, 50], [100, 100], [30,70]]
