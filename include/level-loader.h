@@ -8,6 +8,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include "basilevs.h"
+#include <initialization.h>
 #include <components.h>
 #include <state_handling.h>
 #include <blueprints.h>

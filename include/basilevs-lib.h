@@ -9,6 +9,7 @@
 #include <iostream>
 #include <assets.h>
 #include <basilevs.h>
+#include <initialization.h>
 #include <level-loader.h>
 
 namespace sml = boost::sml;

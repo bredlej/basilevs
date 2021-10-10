@@ -10,6 +10,7 @@
 #include <list>
 #include <memory>
 #include <utility>
+#include <config.h>
 /* Forward declarations */
 struct BlueprintBase;
 struct MemoryBase;

@@ -15,8 +15,9 @@ namespace basilevs
 
 void GameDefinition::initialize_world_()
 {
-    world.background = std::make_shared<TWorld::BackgroundType>(basilevs::initialization::create_background(textures_));
-    world.player = std::make_shared<TWorld::PlayerType>(basilevs::initialization::create_player(textures_));
+    // TODO move initialization of background of player into level-loader
+    world.background = std::make_shared<TWorld::BackgroundType>(initialization::create_background(textures_));
+    world.player = std::make_shared<TWorld::PlayerType>(initialization::create_player(textures_));
     auto level_loader = LevelLoader("assets/json/level1.json");
     world.enemies = level_loader.get_enemy_spawns(textures_);
     world.player_bullets.first_available_index = 0;
@@ -61,7 +62,6 @@ void GameDefinition::run(raylib::Window &window, raylib::AudioDevice &audio)
 void GameDefinition::render_()
 {
     BeginDrawing();
-    ClearBackground(config::colors::kBackground);
     basilevs::rendering::render_to_texture(render_target_, world, textures_);
     basilevs::rendering::render_to_screen(render_target_, world);
     EndDrawing();
