@@ -15,8 +15,8 @@ namespace basilevs
 
 void GameDefinition::initialize_world_()
 {
-    world.background = basilevs::initialization::create_blueprint_of_background(textures_);
-    world.player = basilevs::initialization::create_blueprint_of_player(textures_);
+    world.background = std::make_shared<TWorld::BackgroundType>(basilevs::initialization::create_background(textures_));
+    world.player = std::make_shared<TWorld::PlayerType>(basilevs::initialization::create_player(textures_));
     auto level_loader = LevelLoader("assets/json/level1.json");
     world.enemies = level_loader.get_enemy_spawns(textures_);
     world.player_bullets.first_available_index = 0;
@@ -78,20 +78,6 @@ GameDefinition::~GameDefinition()
 }
 void GameDefinition::handle_game_input()
 {
-    static constexpr auto register_input = [](const std::initializer_list<int32_t> keys, const auto action, auto &game_input)
-    {
-        bool is_key_down = false;
-        bool is_key_up = false;
-        for (auto key : keys) {
-            is_key_down |= IsKeyDown(key);
-            is_key_up |= IsKeyUp(key);
-        }
-        if (is_key_down) {
-            game_input.set(action);
-        } else if (is_key_up) {
-            game_input.set(action, false);
-        }
-    };
     register_input({KEY_F10}, input::GameInput::Restart, game_input);
 
     // TODO handle this with state machine

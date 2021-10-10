@@ -31,7 +31,7 @@ std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns()
         const auto movements = get_movements(spawn_data[json::kEnemy]);
         const auto definition_function = behaviours::enemy::definitions.find(type)->second;
         const auto definition = definition_function(movements);
-        return basilevs::initialization::spawn_enemy_after_seconds(time, position, definition);
+        return basilevs::initialization::create_enemy(time, position, definition);
     };
 
     assert(!data[json::kSpawns].is_null());
@@ -61,7 +61,7 @@ std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns(std::vect
         const auto movements = get_movements(spawn_data[json::kEnemy]);
         const auto definition_function = behaviours::enemy::definitions.find(type)->second;
         const auto definition = definition_function(movements);
-        return basilevs::initialization::spawn_enemy_after_seconds_with_sprites(time, textures, position, definition);
+        return basilevs::initialization::create_enemy_with_sprite(time, textures, position, definition);
     };
 
     assert(!data[json::kSpawns].is_null());
