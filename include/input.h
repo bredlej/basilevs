@@ -56,5 +56,20 @@ namespace input
         }
         std::bitset<underlying(T::size)> input_;
     };
+
+    void register_input (const std::initializer_list<int32_t> keys, const auto action, auto &input)
+    {
+        bool is_key_down = false;
+        bool is_key_up = false;
+        for (auto key : keys) {
+            is_key_down |= IsKeyDown(key);
+            is_key_up |= IsKeyUp(key);
+        }
+        if (is_key_down) {
+            input.set(action);
+        } else if (is_key_up) {
+            input.set(action, false);
+        }
+    };
 }// namespace input
 #endif//BASILEVS_INPUT_H

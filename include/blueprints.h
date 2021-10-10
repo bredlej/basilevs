@@ -5,7 +5,6 @@
 #ifndef BASILEVS_BLUEPRINTS_H
 #define BASILEVS_BLUEPRINTS_H
 
-#include <Vector2.hpp>
 #include <algorithm>
 #include <components.h>
 #include <concepts>
