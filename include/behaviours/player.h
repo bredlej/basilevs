@@ -66,7 +66,7 @@ namespace behaviours
             /*
            * Helper function for shooting a single bullet
            */
-            static constexpr auto emit = [&](auto &world, const bullet::UpdateFunction &bullet_function, const auto movement_component, const auto position, const auto direction, const auto rotation)
+            static constexpr auto emit = [](auto &world, const bullet::UpdateFunction &bullet_function, const auto movement_component, const auto position, const auto direction, const auto rotation)
             {
                 auto bullet_blueprint = Blueprint(bullet::UpdateFunction(bullet_function));
                 auto &sprite_component = get<components::Sprite>(bullet_blueprint);

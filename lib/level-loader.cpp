@@ -34,10 +34,10 @@ std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns()
         return initialization::create_enemy(time, position, definition);
     };
 
-    assert(!data[json::kSpawns].is_null());
+    assert(!data[0][json::kSpawns].is_null());
 
     std::vector<TWorld::EnemyType> enemies;
-    std::ranges::transform(data[json::kSpawns], std::back_inserter(enemies), get_enemy);
+    std::ranges::transform(data[0][json::kSpawns], std::back_inserter(enemies), get_enemy);
 
     return std::make_shared<TWorld::EnemiesInMemory>(BlueprintsInMemory(enemies));
 }
@@ -64,10 +64,10 @@ std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns(std::vect
         return initialization::create_enemy_with_sprite(time, textures, position, definition);
     };
 
-    assert(!data[json::kSpawns].is_null());
+    assert(!data[0][json::kSpawns].is_null());
 
     std::vector<TWorld::EnemyType> enemies;
-    std::ranges::transform(data[json::kSpawns], std::back_inserter(enemies), [&](const auto enemy) { return get_enemy(enemy, textures);});
+    std::ranges::transform(data[0][json::kSpawns], std::back_inserter(enemies), [&](const auto enemy) { return get_enemy(enemy, textures);});
 
     return std::make_shared<TWorld::EnemiesInMemory>(BlueprintsInMemory(enemies));
 }

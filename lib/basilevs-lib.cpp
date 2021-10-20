@@ -78,7 +78,7 @@ GameDefinition::~GameDefinition()
 }
 void GameDefinition::handle_game_input()
 {
-    register_input({KEY_F10}, input::GameInput::Restart, game_input);
+    register_input({KEY_F10, KEY_R}, input::GameInput::Restart, game_input);
 
     // TODO handle this with state machine
     if (game_input[input::GameInput::Restart]) {

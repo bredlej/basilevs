@@ -8,8 +8,13 @@ class LoaderTest : public testing::Test {
 protected:
     LoaderTest() = default;
     void SetUp() override {
-        auto json_loader = LevelLoader("../assets/json/test/test_level_loader.json");
-        enemies_ptr = json_loader.get_enemy_spawns();
+        try {
+            auto json_loader = LevelLoader("../assets/json/test/test_level_loader.json");
+            enemies_ptr = json_loader.get_enemy_spawns();
+        }
+        catch (const nlohmann::json::exception exception) {
+            std::cout << exception.what() << std::endl;
+        }
     }
 
     std::shared_ptr<BlueprintsInMemory<ENEMY_COMPONENTS>> enemies_ptr;
