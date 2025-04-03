@@ -1,53 +1,56 @@
 cmake_minimum_required(VERSION 3.16)
 project(basilevs)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_subdirectory(extern)
 add_subdirectory(lib)
 include(FetchContent)
 include(CTest)
+include(cmake/CPM.cmake)
+include(cmake/fetch-json.cmake)
+include(cmake/fetch-googletest.cmake)
+include(cmake/fetch-entt.cmake)
+
 enable_testing()
 add_subdirectory(test)
 add_executable(basilevs main.cpp)
 set(BUILD_RAYLIB_CPP_EXAMPLES ON)
-
-FetchContent_Declare(
-        googletest
-        GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG        release-1.10.0
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
-
-#FetchContent_Declare(
-#        gperftools
-#        GIT_REPOSITORY https://github.com/gperftools/gperftools
-#        GIT_TAG        gperftools-2.9.1
-#)
-#FetchContent_MakeAvailable(gperftools)
-
-if(WIN32)
-    # Windows: all libraries are built-in
-    add_compile_options(/DUNICODE) # Unicode app
-    if(NOT ${CUSTOM_FLAGS} MATCHES ".*PL_IMPL_STACKTRACE=0.*")
-        message("Palanteer feature 'stacktrace' enabled for testprogram")
-        add_definitions(-DPL_IMPL_STACKTRACE=1)
+set(RAYLIB_VERSION 5.5)
+find_package(raylib ${RAYLIB_VERSION} QUIET) # QUIET or REQUIRED
+if (NOT raylib_FOUND) # If there's none, fetch and build raylib
+    include(FetchContent)
+    FetchContent_Declare(
+            raylib
+            DOWNLOAD_EXTRACT_TIMESTAMP OFF
+            URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.tar.gz
+    )
+    FetchContent_GetProperties(raylib)
+    if (NOT raylib_POPULATED) # Have we downloaded raylib yet?
+        set(FETCHCONTENT_QUIET NO)
+        FetchContent_MakeAvailable(raylib)
+        set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # don't build the supplied examples
     endif()
-else(WIN32)
-    if(NOT CUSTOM_FLAGS MATCHES ".*PL_IMPL_STACKTRACE=0.*")
-        # Linux: if libunwind and libdw are present, the stacktrace feature is activated
-        find_package(LibUnwind)
-        find_package(LibDw)
-        if (LIBUNWIND_FOUND AND LIBDW_FOUND)
-            add_definitions(-DPL_IMPL_STACKTRACE=1)
-            message("Palanteer feature 'stacktrace' enabled for testprogram")
-            set(STACKTRACE_LIBS ${LIBUNWIND_LIBRARY} ${LIBDW_LIBRARY} )
-        endif()
-    endif()
-endif(WIN32)
+endif()
+
+set(IMGUI_SOURCES
+        extern/imgui/imgui.cpp
+        extern/imgui/imgui_demo.cpp
+        extern/imgui/imgui_draw.cpp
+        extern/imgui/imgui_widgets.cpp
+        extern/imgui/imgui_tables.cpp
+        extern/imgui/imgui.h
+        extern/imgui/imgui_internal.h
+        extern/imgui/misc/cpp/imgui_stdlib.cpp
+        extern/imgui/misc/cpp/imgui_stdlib.h)
+add_library(imgui ${IMGUI_SOURCES})
+target_include_directories(imgui PUBLIC extern/imgui)
+
+add_library(rlimgui extern/rlimgui/rlImGui.cpp extern/rlimgui/rlImGui.h)
+target_link_libraries(rlimgui PUBLIC imgui raylib)
+target_include_directories(rlimgui PUBLIC raylib/src/external/glfw/include)
+
+
 add_definitions(-DUSE_PL=0)
 # Multithreading is used (both client and server applications)
 set(THREADS_PREFER_PTHREAD_FLAG ON)

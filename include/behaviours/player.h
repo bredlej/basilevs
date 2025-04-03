@@ -66,23 +66,23 @@ namespace behaviours
             /*
            * Helper function for shooting a single bullet
            */
-            static constexpr auto emit = [&](auto &world, const bullet::UpdateFunction &bullet_function, const auto movement_component, const auto position, const auto direction, const auto rotation)
+            static auto emit = [&](auto &world, const bullet::UpdateFunction &bullet_function, const auto movement_component, const auto position, const auto direction, const auto rotation)
             {
                 auto bullet_blueprint = Blueprint(bullet::UpdateFunction(bullet_function));
                 auto &sprite_component = get<components::Sprite>(bullet_blueprint);
-                sprite_component.offset = raylib::Vector2{16.0f, 16.0f};
+                sprite_component.offset = Vector2{16.0f, 16.0f};
                 sprite_component.texture = assets::TextureId::Player_Bullet;
-                sprite_component.frame_rect = raylib::Rectangle(0, 0, 8, 8);
+                sprite_component.frame_rect = Rectangle(0, 0, 8, 8);
 
                 auto &bullet_movement = get<components::Movement>(bullet_blueprint);
                 bullet_movement.speed = speed;
                 bullet_movement.position = movement_component.position;
-                sprite_component.rotation_degrees = raylib::Vector2(0.0f, 0.0f).Angle(rotation);
-                bullet_movement.position = bullet_movement.position.Add(position);
+                sprite_component.rotation_degrees = Vector2Angle({0.0f, 0.0f}, rotation);
+                bullet_movement.position = Vector2Add(bullet_movement.position, position);
                 bullet_movement.direction = direction;
 
                 auto &bullet_collision = get<components::Collision>(bullet_blueprint);
-                bullet_collision.bounds.center = raylib::Vector2{5.0f, 5.0f};
+                bullet_collision.bounds.center = Vector2{5.0f, 5.0f};
                 bullet_collision.bounds.radius = 2.0f;
                 bullet_collision.is_collidable = false;
 
@@ -91,15 +91,15 @@ namespace behaviours
 
             if (emitter.last_emission_seconds > emit_every_seconds) {
                 emitter.last_emission_seconds = 0.0;
-                emit(world, bullet_function, movement, raylib::Vector2{8.0, -4.0}, raylib::Vector2{0.0, -1.0}, raylib::Vector2{0.0f, 0.0f});
-                emit(world, bullet_function, movement, raylib::Vector2{16.0, -4.0}, raylib::Vector2{0.0, -1.0}, raylib::Vector2{0.0f, 0.0f});
-                emit(world, bullet_function, movement, raylib::Vector2{0.0, -4.0}, raylib::Vector2{-0.3, -1.0}, raylib::Vector2{1.0f, -0.3f});
-                emit(world, bullet_function, movement, raylib::Vector2{24.0, -4.0}, raylib::Vector2{0.3, -1.0}, raylib::Vector2{1.0f, 0.3f});
+                emit(world, bullet_function, movement, Vector2{8.0, -4.0}, Vector2{0.0, -1.0}, Vector2{0.0f, 0.0f});
+                emit(world, bullet_function, movement, Vector2{16.0, -4.0}, Vector2{0.0, -1.0}, Vector2{0.0f, 0.0f});
+                emit(world, bullet_function, movement, Vector2{0.0, -4.0}, Vector2{-0.3, -1.0}, Vector2{1.0f, -0.3f});
+                emit(world, bullet_function, movement, Vector2{24.0, -4.0}, Vector2{0.3, -1.0}, Vector2{1.0f, 0.3f});
             }
             emitter.last_emission_seconds += time;
         };
 
-        static constexpr auto animation_update = [](components::Sprite &sprite)
+        static auto animation_update = [](components::Sprite &sprite)
         {
             sprite.fps_counter++;
 

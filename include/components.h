@@ -29,8 +29,8 @@ namespace components
      */
     struct Movement : ComponentBase {
     public:
-        raylib::Vector2 position;
-        raylib::Vector2 direction;
+        Vector2 position;
+        Vector2 direction;
         float speed{0.0f};
     };
 
@@ -38,7 +38,7 @@ namespace components
      * Describes a path which the object can move along
      */
     struct MovementPath : ComponentBase {
-        std::deque<raylib::Vector2> points;
+        std::deque<Vector2> points;
     };
 
     /*
@@ -104,12 +104,12 @@ namespace components
          * The actual position where the sprite is rendered is usually defined in the Movement components `position` value, so this is more of a helper attribute.
          * TODO check if this is a necessary sprite attribute or can be refactored somehow
          */
-        raylib::Vector2 offset{0.0f, 0.0f};
+        Vector2 offset{0.0f, 0.0f};
         /*
          * Size of the sprite represented by a distance from 0,0. Used for bound checking if sprite is outside the frame by a given margin.
          * TODO maybe remove this and use Collision component instead
          */
-        raylib::Vector2 bounds{8, 8};
+        Vector2 bounds{8, 8};
     };
 
     /*
@@ -124,7 +124,7 @@ namespace components
             /*
              * Center position of the circle used for collision checks
              */
-            raylib::Vector2 center{0.0f, 0.0f};
+            Vector2 center{0.0f, 0.0f};
             /*
              * The circle radius in pixels used for collision check
              */

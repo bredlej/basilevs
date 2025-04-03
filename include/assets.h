@@ -4,8 +4,9 @@
 
 #ifndef BASILEVS_ASSETS_H
 #define BASILEVS_ASSETS_H
-#include <raylib-cpp.hpp>
 #include <raylib.h>
+#include <cstdint>
+#include <vector>
 namespace assets
 {
     enum class TextureId
@@ -32,14 +33,14 @@ namespace assets
     };
     constexpr auto load_textures_level_1 = []() -> std::vector<Texture2D> {
         return {
-                texture_of_image(raylib::LoadImage("assets/player.png")),
-                texture_of_image(raylib::LoadImage("assets/basilevs_bg_001.png")),
-                texture_of_image(raylib::LoadImage("assets/enemy.png")),
-                texture_of_image(raylib::LoadImage("assets/bullet8.png")),
-                texture_of_image(raylib::LoadImage("assets/bullet8-002.png")),
-                texture_of_image(raylib::LoadImage("assets/tentacle-0002.png")),
-                texture_of_image(raylib::LoadImage("assets/mosquito-0001.png")),
-                texture_of_image(raylib::LoadImage("assets/bullet8-003.png"))};
+                texture_of_image(LoadImage("assets/player.png")),
+                texture_of_image(LoadImage("assets/basilevs_bg_001.png")),
+                texture_of_image(LoadImage("assets/enemy.png")),
+                texture_of_image(LoadImage("assets/bullet8.png")),
+                texture_of_image(LoadImage("assets/bullet8-002.png")),
+                texture_of_image(LoadImage("assets/tentacle-0002.png")),
+                texture_of_image(LoadImage("assets/mosquito-0001.png")),
+                texture_of_image(LoadImage("assets/bullet8-003.png"))};
     };
 
     constexpr auto load_sounds = []() -> std::vector<Sound> {

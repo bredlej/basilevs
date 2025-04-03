@@ -4,12 +4,15 @@
 #include <basilevs-lib.h>
 namespace basilevs
 {
-    void Game::run(raylib::Window &window, raylib::AudioDevice &audio)
+    void Game::run()
     {
         using namespace sml;
         using namespace state_handling;
-
-        GameDefinition().run(window, audio);
+        InitWindow(config::kScreenWidth, config::kScreenHeight, "Basilevs");
+        InitAudioDevice();
+        GameDefinition().run();
+        CloseWindow();
+        CloseAudioDevice();
     }
 }// namespace basilevs
 
@@ -45,13 +48,13 @@ void GameDefinition::loop_(std::chrono::duration<double> duration)
     render_();
 }
 
-void GameDefinition::run(raylib::Window &window, raylib::AudioDevice &audio)
+void GameDefinition::run()
 {
     if (!state.is_initialized) {
         initialize();
     }
     std::chrono::duration<double> loop_duration = std::chrono::steady_clock::now() - std::chrono::steady_clock::now();
-    while (!window.ShouldClose()) {
+    while (!WindowShouldClose()) {
         auto now = std::chrono::steady_clock::now();
         loop_(loop_duration);
         loop_duration = std::chrono::steady_clock::now() - now;

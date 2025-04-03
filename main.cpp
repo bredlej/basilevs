@@ -1,5 +1,3 @@
-#include <raylib-cpp.hpp>
-#include <raylib.hpp>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -13,11 +11,7 @@ extern "C" {
 
 int main() {
 
-    using namespace basilevs;
-    auto window = raylib::Window{config::kScreenWidth, config::kScreenHeight, "Basilevs"};
-    auto audio = raylib::AudioDevice();
-
-    basilevs::Game::run(window, audio);
+    basilevs::Game::run();
 
     return 0;
 }

@@ -5,6 +5,8 @@
 #ifndef BASILEVS_ENEMY_H
 #define BASILEVS_ENEMY_H
 
+#include "../../cmake-build-debug/_deps/raylib-build/raylib/include/raymath.h"
+
 #include <boost/sml/sml.hpp>
 #include <world.h>
 
@@ -57,7 +59,8 @@ namespace behaviours
             movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
             time_counter.elapsed_seconds += time;
             if (time_counter.elapsed_seconds > 0.5) {
-                movement.direction = movement.direction.Rotate(15).Normalize();
+                // TODO movement.direction = movement.direction.Rotate(15).Normalize();
+                Vector2Normalize(Vector2Rotate(movement.direction, 15));
                 movement.speed += 5.0f;
                 time_counter.elapsed_seconds = 0;
             }
@@ -77,8 +80,9 @@ namespace behaviours
         {
             if (!movementPath.points.empty()) {
                 auto nextPoint = movementPath.points.at(0);
-                movement.position = movement.position.MoveTowards(nextPoint, movement.speed * time);
-                if (nextPoint.Distance(movement.position) < 1.1) {
+
+                movement.position = Vector2MoveTowards(movement.position, nextPoint, movement.speed * time);
+                if (Vector2Distance(nextPoint, movement.position) < 1.1) {
                     movementPath.points.pop_front();
                 }
             }
@@ -135,9 +139,9 @@ namespace behaviours
             bullet::BulletDefinition bullet;
             UpdateFunction behaviour;
             float health;
-            raylib::Vector2 collision_center_offset;
+            Vector2 collision_center_offset;
             float collision_radius;
-            std::deque<raylib::Vector2> path;
+            std::deque<Vector2> path;
             float speed;
             std::unordered_map<components::StateEnum, components::animation> animations;
         };
@@ -191,21 +195,24 @@ namespace behaviours
                         emitter.last_emission_seconds = 0.0;
                         auto bullet_blueprint = Blueprint(bullet::UpdateFunction(bullet_function));
                         auto &bullet_sprite = get<components::Sprite>(bullet_blueprint);
-                        bullet_sprite.offset = raylib::Vector2{0.0f, 8.0f};
+                        bullet_sprite.offset = Vector2{0.0f, 8.0f};
                         bullet_sprite.texture = assets::TextureId::Bullet_Tentacle;
-                        bullet_sprite.frame_rect = raylib::Rectangle(0, 0, 8, 8);
+                        bullet_sprite.frame_rect = Rectangle(0, 0, 8, 8);
 
                         auto &bullet_movement = get<components::Movement>(bullet_blueprint);
                         bullet_movement.speed = 40.0;
                         bullet_movement.position = movement.position;
-                        bullet_movement.position = bullet_movement.position.Add(bullet_sprite.offset);
-                        bullet_movement.direction = player_movement.position.Subtract(bullet_movement.position.Add({6.0, 4.0})).Add({16.0, 16.0}).Normalize();
-                        bullet_sprite.rotation_degrees = player_movement.position.Add({16.0, 16.0}).Angle(bullet_movement.position.Add({4.0, 4.0}));
+                        bullet_movement.position = Vector2Add(bullet_movement.position, bullet_sprite.offset);
+
+                        bullet_movement.direction = Vector2Normalize(Vector2Add(player_movement.position, Vector2Add(player_movement.position, Vector2Subtract(player_movement.position, Vector2Add(bullet_movement.position, {6.0, 4.0})))));
+
+
+                        Vector2Angle(Vector2Add(player_movement.position, {16.0, 16.0}), Vector2Add(bullet_movement.position, {4.0, 4.0}));
 
                         auto &bullet_state = get<TWorld::BulletStateComponent>(bullet_blueprint);
 
                         auto &bullet_collision = get<components::Collision>(bullet_blueprint);
-                        bullet_collision.bounds.center = raylib::Vector2{4.5f, 4.5f};
+                        bullet_collision.bounds.center = Vector2{4.5f, 4.5f};
                         bullet_collision.bounds.radius = 4.0f;
                         bullet_collision.is_collidable = false;
 
@@ -228,7 +235,7 @@ namespace behaviours
                 }
             };
 
-            static constexpr auto definition = [](std::deque<raylib::Vector2> &&movement_path) -> EnemyDefinition
+            static constexpr auto definition = [](std::deque<Vector2> &&movement_path) -> EnemyDefinition
             {
                 return {
                         assets::TextureId::Tentacle,
@@ -236,7 +243,7 @@ namespace behaviours
                         {assets::TextureId::Bullet_Tentacle, 1, bullet::fly_towards_direction},
                         update_function,
                         40,
-                        raylib::Vector2{8.0f, 8.0f},
+                        Vector2{8.0f, 8.0f},
                         8.0f,
                         movement_path,
                         10.0f,
@@ -276,11 +283,11 @@ namespace behaviours
                         for (int i = 1; i <= 12; i++) {
                             auto bullet_blueprint = Blueprint(bullet::UpdateFunction(bullet_function));
                             auto &bullet_sprite = get<components::Sprite>(bullet_blueprint);
-                            bullet_sprite.offset = raylib::Vector2{4.0f, 4.0f};
+                            bullet_sprite.offset = Vector2{4.0f, 4.0f};
                             bullet_sprite.texture = assets::TextureId::Bullet_Mosquito;
                             bullet_sprite.current_visible_frame = 0;
                             bullet_sprite.amount_frames = 6;
-                            bullet_sprite.frame_rect = raylib::Rectangle(0, 0, 8, 8);
+                            bullet_sprite.frame_rect = Rectangle(0, 0, 8, 8);
                             bullet_sprite.fps_speed = 12.0f;
                             bullet_sprite.texture_width_px = 48;
                             bullet_sprite.texture_height_px = 8;
@@ -288,13 +295,16 @@ namespace behaviours
                             auto &bullet_movement = get<components::Movement>(bullet_blueprint);
                             bullet_movement.speed = 15.0;
                             bullet_movement.position = movement.position;
-                            bullet_movement.position = bullet_movement.position.Add(bullet_sprite.offset).Add(raylib::Vector2(0.0, 9.0).Rotate(180 / 3.14 * i));
-                            bullet_movement.direction = raylib::Vector2(0.0, 1.0).Rotate(180 / 3.14 * i).Normalize();
+                            // fix above with Vector2Add
+                            bullet_movement.position = Vector2Add(bullet_movement.position, bullet_sprite.offset);
+                            bullet_movement.position = Vector2Add(bullet_movement.position, Vector2{0.0f, 9.0f});
+                            bullet_movement.position = Vector2Rotate(bullet_movement.position, 180 / 3.14 * i);
 
+                            bullet_movement.direction = Vector2Normalize(Vector2Rotate(bullet_movement.direction, 180 / 3.14 * i));
                             auto &bullet_state = get<TWorld::BulletStateComponent>(bullet_blueprint);
 
                             auto &bullet_collision = get<components::Collision>(bullet_blueprint);
-                            bullet_collision.bounds.center = raylib::Vector2{5.0f, 5.0f};
+                            bullet_collision.bounds.center = Vector2{5.0f, 5.0f};
                             bullet_collision.bounds.radius = 2.0f;
                             bullet_collision.is_collidable = true;
 
@@ -315,7 +325,7 @@ namespace behaviours
                 }
             };
 
-            static constexpr auto definition = [](std::deque<raylib::Vector2> &&movement_path) -> EnemyDefinition
+            static constexpr auto definition = [](std::deque<Vector2> &&movement_path) -> EnemyDefinition
             {
                 return {
                         assets::TextureId::Mosquito,
@@ -323,7 +333,7 @@ namespace behaviours
                         {assets::TextureId::Bullet_Mosquito, 6, bullet::fly_towards_direction},
                         update_function,
                         60,
-                        raylib::Vector2{8.0f, 8.0f},
+                        Vector2{8.0f, 8.0f},
                         8.0f,
                         movement_path,
                         10.0f,
@@ -333,7 +343,7 @@ namespace behaviours
                         }};
             };
         }// namespace mosquito
-        static std::unordered_map<std::string, std::function<EnemyDefinition(std::deque<raylib::Vector2>)>> const definitions = {
+        static std::unordered_map<std::string, std::function<EnemyDefinition(std::deque<Vector2>)>> const definitions = {
                 {"MOSQUITO", mosquito::definition},
                 {"TENTACLE", tentacle::definition}};
     }// namespace enemy

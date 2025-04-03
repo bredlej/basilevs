@@ -16,10 +16,10 @@ nlohmann::json LevelLoader::load(const std::string &file_name) const
 std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns()
 {
     static constexpr auto get_vector = [](const auto &coordinates)
-    { return raylib::Vector2{coordinates[0], coordinates[1]}; };
-    static constexpr auto get_movements = [](nlohmann::json enemy_data) -> std::deque<raylib::Vector2>
+    { return Vector2{coordinates[0], coordinates[1]}; };
+    static constexpr auto get_movements = [](nlohmann::json enemy_data) -> std::deque<Vector2>
     {
-        std::deque<raylib::Vector2> movements;
+        std::deque<Vector2> movements;
         std::ranges::transform(enemy_data[json::kMovement], std::back_inserter(movements), get_vector);
         return movements;
     };
@@ -45,10 +45,10 @@ std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns()
 std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns(std::vector<Texture2D> &textures)
 {
     static constexpr auto get_vector = [](const auto &coordinates)
-    { return raylib::Vector2{coordinates[0], coordinates[1]}; };
-    static constexpr auto get_movements = [](nlohmann::json enemy_data) -> std::deque<raylib::Vector2>
+    { return Vector2{coordinates[0], coordinates[1]}; };
+    static constexpr auto get_movements = [](nlohmann::json enemy_data) -> std::deque<Vector2>
     {
-        std::deque<raylib::Vector2> movements;
+        std::deque<Vector2> movements;
         std::ranges::transform(enemy_data[json::kMovement], std::back_inserter(movements), get_vector);
         return movements;
     };

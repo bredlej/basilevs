@@ -81,6 +81,6 @@ public:
     BulletPool enemy_bullets{config::kEnemyBulletPoolSize};
     input::UserInput<input::PlayerInput> player_input;
     std::vector<assets::SoundId> sounds_queue{config::kSoundQueueSize};
-    const raylib::Rectangle frame_bounds{config::kFrameBoundLeft, config::kFrameBoundUp, 260, 260};
+    const Rectangle frame_bounds{config::kFrameBoundLeft, config::kFrameBoundUp, 260, 260};
 };
 #endif//BASILEVS_WORLD_H
