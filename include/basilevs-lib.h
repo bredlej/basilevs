@@ -8,6 +8,7 @@
 #include <boost/sml/sml.hpp>
 #include <basilevs.h>
 #include <level-loader.h>
+#include <core.hpp>
 
 namespace sml = boost::sml;
 
@@ -75,19 +76,18 @@ namespace basilevs
     };
 }// namespace basilevs
 
-struct GameDefinition {
+class GameDefinition {
 public:
     TWorld world;
     GameStateMachine state;
-    boost::sml::sm<basilevs::GameState> sm{state};
-
+    sml::sm<basilevs::GameState> sm{state};
     void initialize();
     void run();
 
     ~GameDefinition();
 
 private:
-    std::vector<Texture2D> textures_;
+    Core _core;
     std::vector<Sound> sounds_;
     RenderTexture render_target_ = LoadRenderTexture(config::kFrameWidth, config::kFrameHeight);
     input::UserInput<input::GameInput> game_input;

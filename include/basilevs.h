@@ -28,10 +28,12 @@ namespace basilevs
             Horizontal
         };
 
-        static void setup_sprite(Sprite &sprite_component, const std::vector<Texture2D> &textures, const assets::TextureId texture_id, const uint32_t amount_frames, const AnimationDirection animation_direction)
+        static void setup_sprite(Sprite &sprite_component, const Core::TextureCache &texture_cache, const assets::TextureId texture_id, const uint32_t amount_frames, const AnimationDirection animation_direction)
         {
-            int texture_width = textures[static_cast<int>(texture_id)].width;
-            int texture_height = textures[static_cast<int>(texture_id)].height;
+            const Texture2D texture = texture_cache[assets::texture_id_to_string[texture_id]];
+            const int texture_width = texture.width;
+            const int texture_height = texture.height;
+
             sprite_component.current_visible_frame = std::rand() % amount_frames;
             sprite_component.texture = texture_id;
             sprite_component.amount_frames = amount_frames;
@@ -45,9 +47,9 @@ namespace basilevs
             }
         }
 
-        static void setup_enemy_sprite(Sprite &sprite_component, const std::vector<Texture2D> &textures, const behaviours::enemy::EnemyDefinition &enemy_definition)
+        static void setup_enemy_sprite(Sprite &sprite_component, const Core::TextureCache &texture_cache, const behaviours::enemy::EnemyDefinition &enemy_definition)
         {
-            setup_sprite(sprite_component, textures, enemy_definition.texture, enemy_definition.amount_frames, AnimationDirection::Horizontal);
+            setup_sprite(sprite_component, texture_cache, enemy_definition.texture, enemy_definition.amount_frames, AnimationDirection::Horizontal);
             sprite_component.current_state = StateEnum::IDLE;
             sprite_component.state_animations = enemy_definition.animations;
         }
@@ -71,10 +73,10 @@ namespace basilevs
             collision.is_collidable = true;
         }
 
-        static TWorld::PlayerType create_player(const std::vector<Texture2D> &textures)
+        static TWorld::PlayerType create_player(const Core::TextureCache &texture_cache)
         {
-            TWorld::PlayerType player = Blueprint(behaviours::player::UpdateFunction(behaviours::player::default_behaviour));
-            setup_sprite(get<Sprite>(player), textures, assets::TextureId::Player, 7, AnimationDirection::Horizontal);
+            auto player = Blueprint(behaviours::player::UpdateFunction(behaviours::player::default_behaviour));
+            setup_sprite(get<Sprite>(player), texture_cache, assets::TextureId::Player, 7, AnimationDirection::Horizontal);
             setup_movement(get<Movement>(player), 70.0f, 100.0f, 50.0f);
             setup_collision(get<Collision>(player), 3.0f, Vector2{17.0f, 18.0f});
 
@@ -96,18 +98,18 @@ namespace basilevs
             return enemy;
         }
 
-        static TWorld::EnemyType create_enemy_with_sprite(const double seconds_until_spawns, const std::vector<Texture2D> &textures, const Vector2 &position, const behaviours::enemy::EnemyDefinition &enemy_definition)
+        static TWorld::EnemyType create_enemy_with_sprite(const double seconds_until_spawns, const Core::TextureCache &texture_cache, const Vector2 &position, const behaviours::enemy::EnemyDefinition &enemy_definition)
         {
             TWorld::EnemyType enemy = create_enemy(seconds_until_spawns, position, enemy_definition);
-            setup_enemy_sprite(get<Sprite>(enemy), textures, enemy_definition);
+            setup_enemy_sprite(get<Sprite>(enemy), texture_cache, enemy_definition);
 
             return enemy;
         }
 
-        static TWorld::BackgroundType create_background(const std::vector<Texture2D> &textures)
+        static TWorld::BackgroundType create_background(const Core::TextureCache &texture_cache)
         {
             TWorld::BackgroundType background = Blueprint(behaviours::background::UpdateFunction(behaviours::background::level1_background_update));
-            setup_sprite(get<Sprite>(background), textures, assets::TextureId::Background_Level_1, 6, AnimationDirection::Vertical);
+            setup_sprite(get<Sprite>(background), texture_cache, assets::TextureId::Background_Level_1, 6, AnimationDirection::Vertical);
 
             return background;
         }
@@ -127,13 +129,13 @@ namespace basilevs
 
     namespace rendering
     {
-        static void render_player(RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures)
+        static void render_player(RenderTexture &render_target, const TWorld &world, const Core::TextureCache &texture_cache)
         {
             const TWorld::PlayerType *player = world.player.get();
 
             const auto &sprite_component = std::get<Sprite>(player->components);
             const auto &movement_component = std::get<Movement>(player->components);
-            const Texture &texture = textures[static_cast<int>(sprite_component.texture)];
+            const Texture &texture = texture_cache[assets::texture_id_to_string[sprite_component.texture]];
 
             DrawTextureRec(texture, sprite_component.frame_rect, movement_component.position, WHITE);
         }
@@ -143,38 +145,38 @@ namespace basilevs
             return !state.state_machine.is(boost::sml::X) && !state.state_machine.is(state_handling::declarations::kInitState);
         }
 
-        static void render_enemy(const std::vector<Texture> &textures, const Sprite &sprite, const Movement &movement, const TWorld::EnemyStateComponent &state)
+        static void render_enemy(const Core::TextureCache &textures, const Sprite &sprite, const Movement &movement, const TWorld::EnemyStateComponent &state)
         {
             if (is_render_allowed_for_state(state)) {
-                DrawTextureRec(textures[static_cast<int>(sprite.texture)], sprite.frame_rect, movement.position, WHITE);
+                DrawTextureRec(textures[assets::texture_id_to_string[sprite.texture]], sprite.frame_rect, movement.position, WHITE);
             }
         }
 
-        static void render_enemies(RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures)
+        static void render_enemies(RenderTexture &render_target, const TWorld &world, const Core::TextureCache &texture_cache)
         {
             const auto &enemy_components = world.enemies->components;
             for (size_t enemy_idx = 0; enemy_idx < world.enemies->functions.size(); enemy_idx++) {
-                render_enemy(textures,
+                render_enemy(texture_cache,
                              std::get<std::vector<Sprite>>(enemy_components)[enemy_idx],
                              std::get<std::vector<Movement>>(enemy_components)[enemy_idx],
                              std::get<std::vector<TWorld::EnemyStateComponent>>(enemy_components)[enemy_idx]);
             }
         }
 
-        static void render_enemy_bullets(const TWorld &world, const std::vector<Texture> &textures, const std::vector<Movement> &movements, const std::vector<Sprite> &sprites)
+        static void render_enemy_bullets(const TWorld &world, const Core::TextureCache &texture_cache, const std::vector<Movement> &movements, const std::vector<Sprite> &sprites)
         {
             for (std::size_t i = 0; i < world.enemy_bullets.first_available_index; i++) {
-                DrawTextureRec(textures[static_cast<int>(sprites[i].texture)],
+                DrawTextureRec(texture_cache[assets::texture_id_to_string[sprites[i].texture]],
                                sprites[i].frame_rect,
                                movements[i].position,
                                WHITE);
             }
         }
 
-        static void render_player_bullets(const TWorld &world, const std::vector<Texture> &textures, const std::vector<Movement> &movements, const std::vector<Sprite> &sprites)
+        static void render_player_bullets(const TWorld &world, const Core::TextureCache &texture_cache, const std::vector<Movement> &movements, const std::vector<Sprite> &sprites)
         {
             for (std::size_t i = 0; i < world.player_bullets.first_available_index; i++) {
-                DrawTextureEx(textures[static_cast<int>(sprites[i].texture)],
+                DrawTextureEx(texture_cache[assets::texture_id_to_string[sprites[i].texture]],
                               movements[i].position,
                               sprites[i].rotation_degrees,
                               1.0f,
@@ -182,26 +184,26 @@ namespace basilevs
             }
         }
 
-        static void render_bullets(RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures)
+        static void render_bullets(RenderTexture &render_target, const TWorld &world, const Core::TextureCache &texture_cache)
         {
             const auto &enemy_components = world.enemy_bullets.components;
             render_enemy_bullets(world,
-                                 textures,
+                                 texture_cache,
                                  std::get<std::vector<Movement>>(enemy_components),
                                  std::get<std::vector<Sprite>>(enemy_components));
 
             const auto &player_components = world.player_bullets.components;
             render_player_bullets(world,
-                                  textures,
+                                  texture_cache,
                                   std::get<std::vector<Movement>>(player_components),
                                   std::get<std::vector<Sprite>>(player_components));
         }
 
-        static void render_background(RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures)
+        static void render_background(RenderTexture &render_target, const TWorld &world, const Core::TextureCache &texture_cache)
         {
             const TWorld::BackgroundType *background = world.background.get();
             const auto &sprite_component = std::get<Sprite>(background->components);
-            const auto &texture = textures[static_cast<int>(sprite_component.texture)];
+            const auto &texture = texture_cache[assets::texture_id_to_string[sprite_component.texture]];
 
             DrawTextureRec(texture, sprite_component.frame_rect, {0, 0}, GRAY);
         }
@@ -212,14 +214,14 @@ namespace basilevs
          * The textures dimension is declared in config.h, in this case something small like 160x144px.
          * After all contents are rendered, the texture itself will be rendered upscaled to the users screen dimensions in another function below.
          */
-        static void render_to_texture(RenderTexture &render_target, const TWorld &world, const std::vector<Texture2D> &textures)
+        static void render_to_texture(RenderTexture &render_target, const TWorld &world, const Core::TextureCache &texture_cache)
         {
             BeginTextureMode(render_target);
             ClearBackground(config::colors::kBackground);
-            render_background(render_target, world, textures);
-            render_player(render_target, world, textures);
-            render_enemies(render_target, world, textures);
-            render_bullets(render_target, world, textures);
+            render_background(render_target, world, texture_cache);
+            render_player(render_target, world, texture_cache);
+            render_enemies(render_target, world, texture_cache);
+            render_bullets(render_target, world, texture_cache);
             EndTextureMode();
         }
 
@@ -444,10 +446,10 @@ namespace basilevs
 
     namespace audio
     {
-        static void play_sounds(std::vector<assets::SoundId> &sounds_queue, const std::vector<Sound> &sounds)
+        static void play_sounds(std::vector<assets::SoundId> &sounds_queue, const Core::SoundCache &sounds)
         {
             for (assets::SoundId &sound : sounds_queue) {
-                PlaySound(sounds[static_cast<uint8_t>(sound)]);
+                PlaySound(sounds[assets::sound_id_to_string[sound]]);
             }
             sounds_queue.clear();
         }

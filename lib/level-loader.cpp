@@ -42,7 +42,7 @@ std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns()
     return std::make_shared<TWorld::EnemiesInMemory>(BlueprintsInMemory(enemies));
 }
 
-std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns(std::vector<Texture2D> &textures)
+std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns(const Core::TextureCache &texture_cache)
 {
     static constexpr auto get_vector = [](const auto &coordinates)
     { return Vector2{coordinates[0], coordinates[1]}; };
@@ -53,7 +53,7 @@ std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns(std::vect
         return movements;
     };
 
-    static constexpr auto get_enemy = [](const auto &spawn_data, std::vector<Texture2D> textures) -> TWorld::EnemyType
+    static constexpr auto get_enemy = [](const auto &spawn_data, const Core::TextureCache &texture_cache) -> TWorld::EnemyType
     {
         const auto time = static_cast<double>(spawn_data[json::kTime]);
         const auto position = get_vector(spawn_data[json::kPosition]);
@@ -61,13 +61,13 @@ std::shared_ptr<TWorld::EnemiesInMemory> LevelLoader::get_enemy_spawns(std::vect
         const auto movements = get_movements(spawn_data[json::kEnemy]);
         const auto definition_function = behaviours::enemy::definitions.find(type)->second;
         const auto definition = definition_function(movements);
-        return basilevs::initialization::create_enemy_with_sprite(time, textures, position, definition);
+        return basilevs::initialization::create_enemy_with_sprite(time, texture_cache, position, definition);
     };
 
     assert(!data[json::kSpawns].is_null());
 
     std::vector<TWorld::EnemyType> enemies;
-    std::ranges::transform(data[json::kSpawns], std::back_inserter(enemies), [&](const auto enemy) { return get_enemy(enemy, textures);});
+    std::ranges::transform(data[json::kSpawns], std::back_inserter(enemies), [&](const auto enemy) { return get_enemy(enemy, texture_cache);});
 
     return std::make_shared<TWorld::EnemiesInMemory>(BlueprintsInMemory(enemies));
 }
