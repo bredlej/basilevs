@@ -21,6 +21,7 @@ void GameDefinition::initialize_world_()
 {
     world.background = std::make_shared<TWorld::BackgroundType>(basilevs::initialization::create_background(_core.texture2d_cache));
     world.player = std::make_shared<TWorld::PlayerType>(basilevs::initialization::create_player(_core.texture2d_cache));
+    basilevs::initialization::create_player_entt(_core);
     auto level_loader = LevelLoader("assets/json/level1.json");
     world.enemies = level_loader.get_enemy_spawns(_core.texture2d_cache);
     world.player_bullets.first_available_index = 0;
@@ -32,6 +33,7 @@ void GameDefinition::initialize()
     sm.process_event(state_handling::events::Init{});
     assets::load_texture_cache(_core.texture2d_cache);
     assets::load_sound_cache(_core.sound_cache);
+    _core.registry.ctx().emplace<input::UserInput<input::PlayerInput>>();
     initialize_world_();
     SetTargetFPS(60);
     sm.process_event(state_handling::events::Run{});
@@ -40,8 +42,9 @@ void GameDefinition::initialize()
 void GameDefinition::loop_(std::chrono::duration<double> duration)
 {
     handle_game_input();
-    basilevs::io::handle_player_input(world);
+    basilevs::io::handle_player_input(_core);
     basilevs::game_state::update_world(duration, world);
+    basilevs::game_state::update(duration, _core);
     basilevs::collision_checking::collision_checks(world);
     basilevs::memory::cleanup_bullet_pools(world);
     basilevs::audio::play_sounds(world.sounds_queue, _core.sound_cache);
@@ -64,7 +67,7 @@ void GameDefinition::render_()
 {
     BeginDrawing();
     ClearBackground(config::colors::kBackground);
-    basilevs::rendering::render_to_texture(render_target_, world, _core.texture2d_cache);
+    basilevs::rendering::render_to_texture(render_target_, _core);
     basilevs::rendering::render_to_screen(render_target_, world);
     EndDrawing();
 }

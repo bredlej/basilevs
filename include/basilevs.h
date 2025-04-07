@@ -20,10 +20,10 @@
 namespace basilevs
 {
     using namespace components;
+
     namespace initialization
     {
-        enum class AnimationDirection
-        {
+        enum class AnimationDirection {
             Vertical,
             Horizontal
         };
@@ -40,11 +40,7 @@ namespace basilevs
             sprite_component.texture_width_px = texture_width;
             sprite_component.texture_height_px = texture_height;
             sprite_component.fps_speed = 12;
-            if (AnimationDirection::Horizontal == animation_direction) {
-                sprite_component.frame_rect = {0.0f, 0.0f, static_cast<float>(texture_width) / static_cast<float>(sprite_component.amount_frames), static_cast<float>(texture_height)};
-            } else {
-                sprite_component.frame_rect = {0.0, static_cast<float>(texture_height) - (static_cast<float>(texture_height) / static_cast<float>(amount_frames)), static_cast<float>(texture_width), static_cast<float>(texture_height) / static_cast<float>(amount_frames)};
-            }
+            if (AnimationDirection::Horizontal == animation_direction) { sprite_component.frame_rect = {0.0f, 0.0f, static_cast<float>(texture_width) / static_cast<float>(sprite_component.amount_frames), static_cast<float>(texture_height)}; } else { sprite_component.frame_rect = {0.0, static_cast<float>(texture_height) - (static_cast<float>(texture_height) / static_cast<float>(amount_frames)), static_cast<float>(texture_width), static_cast<float>(texture_height) / static_cast<float>(amount_frames)}; }
         }
 
         static void setup_enemy_sprite(Sprite &sprite_component, const Core::TextureCache &texture_cache, const behaviours::enemy::EnemyDefinition &enemy_definition)
@@ -81,6 +77,29 @@ namespace basilevs
             setup_collision(get<Collision>(player), 3.0f, Vector2{17.0f, 18.0f});
 
             return player;
+        }
+
+        static void create_player_entt(Core &core)
+        {
+            BlueprintEntt blueprintEntt(core);
+            Sprite sprite;
+            setup_sprite(sprite, core.texture2d_cache, assets::TextureId::Player, 7, AnimationDirection::Horizontal);
+            Movement movement;
+            setup_movement(movement, 70.0f, 100.0f, 50.0f);
+            Collision collision;
+            setup_collision(collision, 3.0f, Vector2{17.0f, 18.0f});
+
+            auto player = blueprintEntt.builder()
+                                       .with<Sprite>(sprite)
+                                       .with<Movement>(movement)
+                                       .with<Collision>(collision)
+                                       .with<Emission>()
+                                       .with<Health>()
+                                       .with<TWorld::PlayerStateComponent>()
+                                       .with<UpdateFunction>(behaviours::player::default_behaviour_new)
+                                       .build();
+
+            core.registry.ctx().emplace<Player>(player);
         }
 
         static TWorld::EnemyType create_enemy(const double seconds_until_spawns, const Vector2 &position, const behaviours::enemy::EnemyDefinition &enemy_definition)
@@ -125,32 +144,27 @@ namespace basilevs
             world.enemy_bullets.update(time_since_last_update.count(), world);
             world.player_bullets.update(time_since_last_update.count(), world);
         }
+
+        static void update(const auto time_since_last_update, Core &core) { core.registry.view<UpdateFunction>().each([&core, time_since_last_update](auto entity, UpdateFunction &func) { func.operator()(time_since_last_update.count(), entity, core); }); }
     }// namespace game_state
 
     namespace rendering
     {
-        static void render_player(RenderTexture &render_target, const TWorld &world, const Core::TextureCache &texture_cache)
+        static void render_player(RenderTexture &render_target, const Core &core)
         {
-            const TWorld::PlayerType *player = world.player.get();
 
-            const auto &sprite_component = std::get<Sprite>(player->components);
-            const auto &movement_component = std::get<Movement>(player->components);
-            const Texture &texture = texture_cache[assets::texture_id_to_string[sprite_component.texture]];
+            const entt::entity player = core.registry.ctx().get<Player>().entity;
+            const auto &sprite_component = core.registry.get<Sprite>(player);
+            const auto &movement_component = core.registry.get<Movement>(player);
+
+            const Texture &texture = core.texture2d_cache[assets::texture_id_to_string[sprite_component.texture]];
 
             DrawTextureRec(texture, sprite_component.frame_rect, movement_component.position, WHITE);
         }
 
-        static bool is_render_allowed_for_state(const TWorld::EnemyStateComponent state)
-        {
-            return !state.state_machine.is(boost::sml::X) && !state.state_machine.is(state_handling::declarations::kInitState);
-        }
+        static bool is_render_allowed_for_state(const TWorld::EnemyStateComponent state) { return !state.state_machine.is(boost::sml::X) && !state.state_machine.is(state_handling::declarations::kInitState); }
 
-        static void render_enemy(const Core::TextureCache &textures, const Sprite &sprite, const Movement &movement, const TWorld::EnemyStateComponent &state)
-        {
-            if (is_render_allowed_for_state(state)) {
-                DrawTextureRec(textures[assets::texture_id_to_string[sprite.texture]], sprite.frame_rect, movement.position, WHITE);
-            }
-        }
+        static void render_enemy(const Core::TextureCache &textures, const Sprite &sprite, const Movement &movement, const TWorld::EnemyStateComponent &state) { if (is_render_allowed_for_state(state)) { DrawTextureRec(textures[assets::texture_id_to_string[sprite.texture]], sprite.frame_rect, movement.position, WHITE); } }
 
         static void render_enemies(RenderTexture &render_target, const TWorld &world, const Core::TextureCache &texture_cache)
         {
@@ -214,14 +228,14 @@ namespace basilevs
          * The textures dimension is declared in config.h, in this case something small like 160x144px.
          * After all contents are rendered, the texture itself will be rendered upscaled to the users screen dimensions in another function below.
          */
-        static void render_to_texture(RenderTexture &render_target, const TWorld &world, const Core::TextureCache &texture_cache)
+        static void render_to_texture(RenderTexture &render_target, const Core &core)
         {
             BeginTextureMode(render_target);
             ClearBackground(config::colors::kBackground);
-            render_background(render_target, world, texture_cache);
-            render_player(render_target, world, texture_cache);
-            render_enemies(render_target, world, texture_cache);
-            render_bullets(render_target, world, texture_cache);
+            //render_background(render_target, world, texture_cache);
+            render_player(render_target, core);
+            //render_enemies(render_target, world, texture_cache);
+            //render_bullets(render_target, world, texture_cache);
             EndTextureMode();
         }
 
@@ -269,10 +283,7 @@ namespace basilevs
             return enemy_activation[enemy_idx].is_active;
         }
 
-        static void destroy_bullet(TWorld::BulletStateComponent &bullet_state)
-        {
-            bullet_state.state_machine.process_event(state_handling::events::DestroyEvent());
-        }
+        static void destroy_bullet(TWorld::BulletStateComponent &bullet_state) { bullet_state.state_machine.process_event(state_handling::events::DestroyEvent()); }
 
         static void handle_collision(const size_t enemy_idx, auto &enemy_components, const size_t bullet_idx, const auto &bullet_components)
         {
@@ -283,13 +294,9 @@ namespace basilevs
             destroy_bullet(bullet_components.states[bullet_idx]);
         }
 
-        static Vector2 get_collision_center(const Movement &movement, const Collision &collision) {
-            return Vector2Add(movement.position, collision.bounds.center);
-        }
+        static Vector2 get_collision_center(const Movement &movement, const Collision &collision) { return Vector2Add(movement.position, collision.bounds.center); }
 
-        static float get_radius(const Collision &collision) {
-            return collision.bounds.radius;
-        }
+        static float get_radius(const Collision &collision) { return collision.bounds.radius; }
         /*
          * Handle enemies colliding with bullets shot by the player
          */
@@ -312,9 +319,7 @@ namespace basilevs
                     if (is_enemy_collidable(enemy_idx, enemy_components)) {
                         const Vector2 &enemy_center = get_collision_center(enemy_movements[enemy_idx], enemy_collisions[enemy_idx]);
                         const float &enemy_radius = get_radius(enemy_collisions[enemy_idx]);
-                        if (CheckCollisionCircles(bullet_center, bullet_radius, enemy_center, enemy_radius)) {
-                            handle_collision(enemy_idx, enemy_components, bullet_idx, bullet_components);
-                        }
+                        if (CheckCollisionCircles(bullet_center, bullet_radius, enemy_center, enemy_radius)) { handle_collision(enemy_idx, enemy_components, bullet_idx, bullet_components); }
                     }
                 }
             }
@@ -330,13 +335,10 @@ namespace basilevs
             const CollisionCheckBulletComponents &enemy_bullets = retrieve_components_for_bullets(world.enemy_bullets.components);
 
             for (std::size_t player_bullet_idx = 0; player_bullet_idx < world.player_bullets.first_available_index; player_bullet_idx++) {
-
                 const Vector2 player_collision_center = get_collision_center(player_bullets.movements[player_bullet_idx], player_bullets.collisions[player_bullet_idx]);
 
                 for (std::size_t enemy_bullet_idx = 0; enemy_bullet_idx < world.enemy_bullets.first_available_index; enemy_bullet_idx++) {
-                    if (!enemy_bullets.collisions[enemy_bullet_idx].is_collidable) {
-                        continue;
-                    }
+                    if (!enemy_bullets.collisions[enemy_bullet_idx].is_collidable) { continue; }
                     const Vector2 enemy_collision_center = get_collision_center(enemy_bullets.movements[enemy_bullet_idx], enemy_bullets.collisions[enemy_bullet_idx]);
 
                     if (CheckCollisionCircles(player_collision_center, player_bullets.collisions[player_bullet_idx].bounds.radius, enemy_collision_center, enemy_bullets.collisions[enemy_bullet_idx].bounds.radius)) {
@@ -347,10 +349,7 @@ namespace basilevs
             }
         }
 
-        static void damage_player(Health &player_health, const float damage)
-        {
-            player_health.hp -= damage;
-        }
+        static void damage_player(Health &player_health, const float damage) { player_health.hp -= damage; }
 
         /*
          * Handle player colliding with enemy bullets
@@ -415,8 +414,8 @@ namespace basilevs
         {
             for (std::size_t index = pool.first_available_index; index > 0; index--) {
                 if (std::get<std::vector<TWorld::BulletStateComponent>>(pool.components)[index]
-                            .state_machine
-                            .is(boost::sml::X)) { pool.remove_at(index); }
+                    .state_machine
+                    .is(boost::sml::X)) { pool. remove_at(index); }
             }
         }
 
@@ -434,13 +433,14 @@ namespace basilevs
 
     namespace io
     {
-        static void handle_player_input(TWorld &world)
+        static void handle_player_input(Core &core)
         {
-            register_input({KEY_A, KEY_LEFT}, input::PlayerInput::Left, world.player_input);
-            register_input({KEY_D, KEY_RIGHT}, input::PlayerInput::Right, world.player_input);
-            register_input({KEY_W, KEY_UP}, input::PlayerInput::Up, world.player_input);
-            register_input({KEY_S, KEY_DOWN}, input::PlayerInput::Down, world.player_input);
-            register_input({KEY_SPACE}, input::PlayerInput::Shoot, world.player_input);
+            auto &input = core.registry.ctx().get<input::UserInput<input::PlayerInput>>();
+            register_input({KEY_A, KEY_LEFT}, input::PlayerInput::Left, input);
+            register_input({KEY_D, KEY_RIGHT}, input::PlayerInput::Right, input);
+            register_input({KEY_W, KEY_UP}, input::PlayerInput::Up, input);
+            register_input({KEY_S, KEY_DOWN}, input::PlayerInput::Down, input);
+            register_input({KEY_SPACE}, input::PlayerInput::Shoot, input);
         }
     }// namespace io
 
@@ -448,9 +448,7 @@ namespace basilevs
     {
         static void play_sounds(std::vector<assets::SoundId> &sounds_queue, const Core::SoundCache &sounds)
         {
-            for (assets::SoundId &sound : sounds_queue) {
-                PlaySound(sounds[assets::sound_id_to_string[sound]]);
-            }
+            for (assets::SoundId &sound : sounds_queue) { PlaySound(sounds[assets::sound_id_to_string[sound]]); }
             sounds_queue.clear();
         }
     }// namespace audio

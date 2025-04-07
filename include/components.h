@@ -23,17 +23,29 @@ concept is_many_components = (is_a_component<T> && ...);
 
 namespace components
 {
-
+    struct Player {
+        entt::entity entity;
+    };
     /*
      * Allows an object to be moved from its current position towards a direction with a given speed.
      */
     struct Movement : ComponentBase {
-    public:
         Vector2 position;
         Vector2 direction;
         float speed{0.0f};
+
+        Movement() = default;
+        Movement(Vector2 pos, Vector2 dir, float spd) : position(pos), direction(dir), speed(spd) {}
     };
 
+    class UpdateFunction {
+    public:
+        explicit UpdateFunction(const std::function<void(double, entt::entity, Core&)> &function) : _function(function) {}
+        void operator()(const double time, const entt::entity entity, Core &core) const { _function(time, entity, core); }
+    private:
+        std::function<void(double, entt::entity, Core&)> _function;
+
+    };
     /*
      * Describes a path which the object can move along
      */

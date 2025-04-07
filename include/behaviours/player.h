@@ -55,6 +55,7 @@ namespace behaviours
                         components::Health &,
                         TWorld::PlayerStateComponent &)>;
 
+
         /*
          * Shoots four bullets in a `\||/` pattern
          */
@@ -111,6 +112,32 @@ namespace behaviours
 
                 sprite.frame_rect.x = static_cast<float>(sprite.current_visible_frame) * static_cast<float>(sprite.texture_width_px) / static_cast<float>(sprite.amount_frames);
             }
+        };
+
+        static auto default_behaviour_new = [](const double time, const entt::entity entity, Core &core)
+        {
+            static auto move_func = [&time](const input::UserInput<input::PlayerInput> &player_input, components::Movement &movement)
+            {
+                if (player_input[input::PlayerInput::Left]) {
+                    movement.position.x -= movement.speed * time;
+                }
+                if (player_input[input::PlayerInput::Right]) {
+                    movement.position.x += movement.speed * time;
+                }
+                if (player_input[input::PlayerInput::Up]) {
+                    movement.position.y -= movement.speed * time;
+                }
+                if (player_input[input::PlayerInput::Down]) {
+                    movement.position.y += movement.speed * time;
+                }
+            };
+
+            components::Sprite &sprite = core.registry.get<components::Sprite>(entity);
+            components::Movement &movement = core.registry.get<components::Movement>(entity);
+            components::Emission &emission = core.registry.get<components::Emission>(entity);
+
+            animation_update(sprite);
+            move_func(core.registry.ctx().get<input::UserInput<input::PlayerInput>>(), movement);
         };
 
         static constexpr auto default_behaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Emission &emission, components::Collision &collision, components::Health &health, TWorld::PlayerStateComponent &state)
