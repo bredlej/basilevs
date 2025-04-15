@@ -22,11 +22,10 @@ namespace json {
     constexpr auto kMovement = "movement";
 }
 
-struct LevelLoader {
+class LevelLoader {
 public:
     explicit LevelLoader(const std::string &file_name) : data{load(file_name)} {};
-    std::shared_ptr<TWorld::EnemiesInMemory> get_enemy_spawns();
-    std::shared_ptr<TWorld::EnemiesInMemory> get_enemy_spawns(const Core::TextureCache &);
+    void load_enemy_spawns(const Core::TextureCache &, entt::registry &);
 private:
     [[nodiscard]] nlohmann::json load(const std::string &file_name) const;
     nlohmann::json data;

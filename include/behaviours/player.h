@@ -13,98 +13,78 @@
  */
 namespace behaviours
 {
+    using UpdateFunction = std::function<void(double, entt::entity, entt::registry &)>;
+
     namespace bullet
     {
-        static constexpr auto player_bullet_1 = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject> &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &)
+        static constexpr auto player_bullet_1 = [](const double time, const entt::entity &entity, entt::registry &registry)
         {
+            auto &movement = registry.get<components::Movement>(entity);
             movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
             movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
         };
-
-        /*
-         * Update function of a single bullet shot by the player.
-         * Components used here must be the same as declared in the alias BulletPool in world.h.
-         */
-        using UpdateFunction =
-                std::function<void(
-                        const double,
-                        TWorld &,
-                        components::Sprite &,
-                        components::Movement &,
-                        components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject> &,
-                        components::TimeCounter &time_counter,
-                        components::Collision &collision,
-                        components::Damage &)>;
     }// namespace bullet
 
     namespace player
     {
-
-        /*
-         * Describes components used when updating the player.
-         * Components must be same as declared in the alias PlayerType in world.h.
-         */
-        using UpdateFunction =
-                std::function<void(
-                        const double,
-                        TWorld &,
-                        components::Sprite &,
-                        components::Movement &,
-                        components::Emission &,
-                        components::Collision &,
-                        components::Health &,
-                        TWorld::PlayerStateComponent &)>;
-
-
         /*
          * Shoots four bullets in a `\||/` pattern
          */
-        static constexpr auto shoot_quadruple = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::UpdateFunction &bullet_function)
+        static constexpr auto shoot_quadruple = [](const double time, entt::registry &registry, const UpdateFunction &bullet_function)
         {
-            const auto &player = world.player.get();
-            constexpr auto emit_every_seconds = 0.2;
+            const auto &player = registry.ctx().get<components::Player>().entity;
             constexpr auto speed = 100;
-            /*
-           * Helper function for shooting a single bullet
-           */
-            static auto emit = [&](auto &world, const bullet::UpdateFunction &bullet_function, const auto movement_component, const auto position, const auto direction, const auto rotation)
-            {
-                auto bullet_blueprint = Blueprint(bullet::UpdateFunction(bullet_function));
-                auto &sprite_component = get<components::Sprite>(bullet_blueprint);
-                sprite_component.offset = Vector2{16.0f, 16.0f};
-                sprite_component.texture = assets::TextureId::Player_Bullet;
-                sprite_component.frame_rect = Rectangle(0, 0, 8, 8);
 
-                auto &bullet_movement = get<components::Movement>(bullet_blueprint);
+            static auto emit = [&](const UpdateFunctionType &bullet_function_type, const auto movement_component, const auto position, const auto direction, const auto rotation)
+            {
+                components::Sprite bullet_sprite;
+                bullet_sprite.offset = Vector2{16.0f, 16.0f};
+                bullet_sprite.texture = assets::TextureId::Player_Bullet;
+                bullet_sprite.frame_rect = Rectangle(0, 0, 8, 8);
+
+                components::Movement bullet_movement;
                 bullet_movement.speed = speed;
                 bullet_movement.position = movement_component.position;
-                sprite_component.rotation_degrees = Vector2Angle({0.0f, 0.0f}, rotation);
+                bullet_sprite.rotation_degrees = Vector2Angle({0.0f, 0.0f}, rotation);
                 bullet_movement.position = Vector2Add(bullet_movement.position, position);
                 bullet_movement.direction = direction;
 
-                auto &bullet_collision = get<components::Collision>(bullet_blueprint);
+                components::Collision bullet_collision;
                 bullet_collision.bounds.center = Vector2{5.0f, 5.0f};
                 bullet_collision.bounds.radius = 2.0f;
                 bullet_collision.is_collidable = false;
 
-                world.player_bullets.add(bullet_blueprint);
+                components::Damage bullet_damage;
+                bullet_damage.value = 30.0f;
+
+                BlueprintEntt(registry).builder()
+                                       .with<TWorld::BulletStateComponent>()
+                                       .with<components::UpdateFunction>(bullet_function)
+                                       .with<components::Sprite>(bullet_sprite)
+                                       .with<components::Movement>(bullet_movement)
+                                       .with<components::Collision>(bullet_collision)
+                                       .with<components::Damage>(bullet_damage)
+                                       .with<components::PlayerBullet>();
             };
 
-            if (emitter.last_emission_seconds > emit_every_seconds) {
-                emitter.last_emission_seconds = 0.0;
-                emit(world, bullet_function, movement, Vector2{8.0, -4.0}, Vector2{0.0, -1.0}, Vector2{0.0f, 0.0f});
-                emit(world, bullet_function, movement, Vector2{16.0, -4.0}, Vector2{0.0, -1.0}, Vector2{0.0f, 0.0f});
-                emit(world, bullet_function, movement, Vector2{0.0, -4.0}, Vector2{-0.3, -1.0}, Vector2{1.0f, -0.3f});
-                emit(world, bullet_function, movement, Vector2{24.0, -4.0}, Vector2{0.3, -1.0}, Vector2{1.0f, 0.3f});
+            auto &[last_emission_seconds] = registry.get<components::Emission>(player);
+            const auto &movement = registry.get<components::Movement>(player);
+
+            if (constexpr auto emit_every_seconds = 0.2; last_emission_seconds > emit_every_seconds) {
+                last_emission_seconds = 0.0;
+                emit(bullet_function, movement, Vector2{8.0, -4.0}, Vector2{0.0, -1.0}, Vector2{0.0f, 0.0f});
+                emit(bullet_function, movement, Vector2{16.0, -4.0}, Vector2{0.0, -1.0}, Vector2{0.0f, 0.0f});
+                emit(bullet_function, movement, Vector2{0.0, -4.0}, Vector2{-0.3, -1.0}, Vector2{1.0f, -0.3f});
+                emit(bullet_function, movement, Vector2{24.0, -4.0}, Vector2{0.3, -1.0}, Vector2{1.0f, 0.3f});
             }
-            emitter.last_emission_seconds += time;
+            last_emission_seconds += time;
         };
 
         static auto animation_update = [](components::Sprite &sprite)
         {
             sprite.fps_counter++;
 
-            if (sprite.fps_counter >= (60 / sprite.fps_speed)) {
+            if (sprite.fps_counter >= (120 / sprite.fps_speed)) {
                 sprite.fps_counter = 0;
                 sprite.current_visible_frame++;
 
@@ -114,60 +94,27 @@ namespace behaviours
             }
         };
 
-        static auto default_behaviour_new = [](const double time, const entt::entity entity, Core &core)
+        static auto default_behaviour_new = [](const double time, const entt::entity entity, entt::registry &registry)
         {
             static auto move_func = [&time](const input::UserInput<input::PlayerInput> &player_input, components::Movement &movement)
             {
-                if (player_input[input::PlayerInput::Left]) {
-                    movement.position.x -= movement.speed * time;
-                }
-                if (player_input[input::PlayerInput::Right]) {
-                    movement.position.x += movement.speed * time;
-                }
-                if (player_input[input::PlayerInput::Up]) {
-                    movement.position.y -= movement.speed * time;
-                }
-                if (player_input[input::PlayerInput::Down]) {
-                    movement.position.y += movement.speed * time;
-                }
+                if (player_input[input::PlayerInput::Left]) { movement.position.x -= movement.speed * time; }
+                if (player_input[input::PlayerInput::Right]) { movement.position.x += movement.speed * time; }
+                if (player_input[input::PlayerInput::Up]) { movement.position.y -= movement.speed * time; }
+                if (player_input[input::PlayerInput::Down]) { movement.position.y += movement.speed * time; }
             };
 
-            components::Sprite &sprite = core.registry.get<components::Sprite>(entity);
-            components::Movement &movement = core.registry.get<components::Movement>(entity);
-            components::Emission &emission = core.registry.get<components::Emission>(entity);
+            static auto shoot = [&time, &entity, &registry](const input::UserInput<input::PlayerInput> player_input) { if (player_input[input::PlayerInput::Shoot]) { shoot_quadruple(time, registry, bullet::player_bullet_1); } };
+
+            components::Sprite &sprite = registry.get<components::Sprite>(entity);
+            components::Movement &movement = registry.get<components::Movement>(entity);
+            components::Emission &emission = registry.get<components::Emission>(entity);
 
             animation_update(sprite);
-            move_func(core.registry.ctx().get<input::UserInput<input::PlayerInput>>(), movement);
+            const auto input = registry.ctx().get<input::UserInput<input::PlayerInput>>();
+            move_func(input, movement);
+            shoot(input);
         };
-
-        static constexpr auto default_behaviour = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Emission &emission, components::Collision &collision, components::Health &health, TWorld::PlayerStateComponent &state)
-        {
-            static constexpr auto move = [](const double time, TWorld &world, components::Movement &movement)
-            {
-                if (world.player_input[input::PlayerInput::Left]) {
-                    movement.position.x -= movement.speed * time;
-                }
-                if (world.player_input[input::PlayerInput::Right]) {
-                    movement.position.x += movement.speed * time;
-                }
-                if (world.player_input[input::PlayerInput::Up]) {
-                    movement.position.y -= movement.speed * time;
-                }
-                if (world.player_input[input::PlayerInput::Down]) {
-                    movement.position.y += movement.speed * time;
-                }
-            };
-            static constexpr auto shoot = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, components::Emission &emission)
-            {
-                if (world.player_input[input::PlayerInput::Shoot]) {
-                    shoot_quadruple(world, emission, movement, time, bullet::player_bullet_1);
-                }
-            };
-            animation_update(sprite);
-            move(time, world, movement);
-            shoot(time, world, sprite, movement, emission);
-        };
-
     }// namespace player
 }// namespace behaviours
 #endif//BASILEVS_PLAYER_H

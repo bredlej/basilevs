@@ -17,27 +17,15 @@
 namespace behaviours
 {
 
+    using UpdateFunctionType = std::function<void(double, entt::entity, entt::registry &)>;
+
     namespace bullet
     {
-        /*
-         * Declares a function which updates a single enemy bullet.
-         * The components used in this function must be same as in the alias BulletPool in world.h
-         */
-        using UpdateFunction =
-                std::function<void(
-                        const double,
-                        TWorld &,
-                        components::Sprite &,
-                        components::Movement &,
-                        TWorld::BulletStateComponent &,
-                        components::TimeCounter &,
-                        components::Collision &,
-                        components::Damage &)>;
 
         static constexpr auto bullet_animation_update = [](components::Sprite &sprite)
         {
             sprite.fps_counter++;
-            if (sprite.fps_counter >= (60 / sprite.fps_speed)) {
+            if (sprite.fps_counter >= (120 / sprite.fps_speed)) {
                 sprite.fps_counter = 0;
                 sprite.current_visible_frame++;
 
@@ -46,23 +34,29 @@ namespace behaviours
             }
         };
 
-        constexpr auto fly_towards_direction = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &damage)
+        inline auto fly_towards_direction = [](const double time, const entt::entity entity, entt::registry &registry)
         {
+            auto &movement = registry.get<components::Movement>(entity);
+            auto &sprite = registry.get<components::Sprite>(entity);
+
             movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
             movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
             bullet_animation_update(sprite);
         };
 
-        constexpr auto fly_and_rotate = [](const double time, TWorld &world, components::Sprite &sprite, components::Movement &movement, TWorld::BulletStateComponent &state, components::TimeCounter &time_counter, components::Collision &collision, components::Damage &damage)
+        inline auto fly_and_rotate = [](const double time, const entt::entity entity, entt::registry &registry)
         {
+            auto &movement = registry.get<components::Movement>(entity);
+            auto &sprite = registry.get<components::Sprite>(entity);
+            auto &[elapsed_seconds] = registry.get<components::TimeCounter>(entity);
+
             movement.position.x += movement.direction.x * static_cast<float>(time) * movement.speed;
             movement.position.y += movement.direction.y * static_cast<float>(time) * movement.speed;
-            time_counter.elapsed_seconds += time;
-            if (time_counter.elapsed_seconds > 0.5) {
-                // TODO movement.direction = movement.direction.Rotate(15).Normalize();
-                Vector2Normalize(Vector2Rotate(movement.direction, 15));
+            elapsed_seconds += time;
+            if (elapsed_seconds > 0.5) {
+                movement.direction = Vector2Normalize(Vector2Rotate(movement.direction, 15));
                 movement.speed += 5.0f;
-                time_counter.elapsed_seconds = 0;
+                elapsed_seconds = 0;
             }
             bullet_animation_update(sprite);
         };
@@ -70,7 +64,7 @@ namespace behaviours
         struct BulletDefinition {
             assets::TextureId texture;
             uint32_t amount_frames;
-            UpdateFunction update_function;
+            UpdateFunctionType update_function;
         };
     }// namespace bullet
 
@@ -79,12 +73,9 @@ namespace behaviours
         static constexpr auto move_towards_path = [](const double time, components::Movement &movement, components::MovementPath &movementPath)
         {
             if (!movementPath.points.empty()) {
-                auto nextPoint = movementPath.points.at(0);
-
+                const auto nextPoint = movementPath.points.at(0);
                 movement.position = Vector2MoveTowards(movement.position, nextPoint, movement.speed * time);
-                if (Vector2Distance(nextPoint, movement.position) < 1.1) {
-                    movementPath.points.pop_front();
-                }
+                if (Vector2Distance(nextPoint, movement.position) < 1.1) { movementPath.points.pop_front(); }
             }
         };
 
@@ -99,45 +90,20 @@ namespace behaviours
                 }
             } else if (state.state_machine.is(state_handling::declarations::kArrivalState)) {
                 move_towards_path(time, movement, movement_path);
-                if (movement_path.points.empty()) {
-                    state.state_machine.process_event(state_handling::events::StartEvent());
-                }
-            } else if (state.state_machine.is(state_handling::declarations::kArrivalState)) {
-
-            } else if (state.state_machine.is(state_handling::declarations::kTakingDamageState)) {
+                if (movement_path.points.empty()) { state.state_machine.process_event(state_handling::events::StartEvent()); }
+            } else if (state.state_machine.is(state_handling::declarations::kArrivalState)) {} else if (state.state_machine.is(state_handling::declarations::kTakingDamageState)) {
                 sprite.current_state = components::StateEnum::DESTROYED;
                 sprite.current_visible_frame = sprite.state_animations[components::StateEnum::DESTROYED].begin_frame;
                 state.state_machine.process_event(state_handling::events::KillEvent());
                 activation.is_active = false;
-            } else if (state.state_machine.is(state_handling::declarations::kDeadState)) {
-                if (sprite.state_animations[sprite.current_state].has_ended) {
-                    state.state_machine.process_event(state_handling::events::DestroyEvent());
-                }
-            }
+            } else if (state.state_machine.is(state_handling::declarations::kDeadState)) { if (sprite.state_animations[sprite.current_state].has_ended) { state.state_machine.process_event(state_handling::events::DestroyEvent()); } }
         };
-
-        /*
-         * Declares a function which updates a single enemy object
-         */
-        using UpdateFunction =
-                std::function<void(
-                        const double,
-                        TWorld &,
-                        components::Sprite &,
-                        components::Movement &,
-                        components::MovementPath &,
-                        components::Activation &,
-                        components::TimeCounter &,
-                        components::Emission &,
-                        components::Collision &,
-                        components::Health &,
-                        TWorld::EnemyStateComponent &)>;
 
         struct EnemyDefinition {
             assets::TextureId texture;
             uint32_t amount_frames;
             bullet::BulletDefinition bullet;
-            UpdateFunction behaviour;
+            components::UpdateFunction behaviour;
             float health;
             Vector2 collision_center_offset;
             float collision_radius;
@@ -150,17 +116,11 @@ namespace behaviours
         {
             sprite.fps_counter++;
 
-            if (sprite.fps_counter >= (60 / sprite.fps_speed)) {
+            if (sprite.fps_counter >= (120 / sprite.fps_speed)) {
                 sprite.fps_counter = 0;
                 sprite.current_visible_frame++;
                 auto &current_animation = sprite.state_animations[sprite.current_state];
-                if (sprite.current_visible_frame > current_animation.end_frame - 1) {
-                    if (current_animation.is_repeating) {
-                        sprite.current_visible_frame = current_animation.begin_frame;
-                    } else {
-                        current_animation.has_ended = true;
-                    }
-                }
+                if (sprite.current_visible_frame > current_animation.end_frame - 1) { if (current_animation.is_repeating) { sprite.current_visible_frame = current_animation.begin_frame; } else { current_animation.has_ended = true; } }
 
                 sprite.frame_rect.x = static_cast<float>(sprite.current_visible_frame) * static_cast<float>(sprite.texture_width_px) / static_cast<float>(sprite.amount_frames);
             }
@@ -173,66 +133,66 @@ namespace behaviours
         {
             static constexpr auto update_function =
                     [](
-                            const double time,
-                            TWorld &world,
-                            components::Sprite &sprite,
-                            components::Movement &movement,
-                            components::MovementPath &movement_path,
-                            components::Activation &activation,
-                            components::TimeCounter &time_counter,
-                            components::Emission &emitter,
-                            components::Collision &collision,
-                            components::Health &health,
-                            TWorld::EnemyStateComponent &state)
+                    const double time,
+                    const entt::entity entity,
+                    entt::registry &registry)
             {
-                static constexpr auto tentacle_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::UpdateFunction &bullet_function)
+                static auto tentacle_shoot_behaviour = [&registry, &time](components::Emission &emitter, const components::Movement &movement, const UpdateFunctionType &bullet_function)
                 {
-                    const auto &player = world.player.get();
-                    const auto player_movement = get<components::Movement>(player->components);
-                    constexpr auto emit_every_seconds = 1.0;
-                    if (emitter.last_emission_seconds > emit_every_seconds) {
+                    const auto player = registry.ctx().get<components::Player>().entity;
+                    const auto player_movement = registry.get<components::Movement>(player);
 
+                    if (constexpr auto emit_every_seconds = 1.0; emitter.last_emission_seconds > emit_every_seconds) {
                         emitter.last_emission_seconds = 0.0;
-                        auto bullet_blueprint = Blueprint(bullet::UpdateFunction(bullet_function));
-                        auto &bullet_sprite = get<components::Sprite>(bullet_blueprint);
+
+                        components::Sprite bullet_sprite;
                         bullet_sprite.offset = Vector2{0.0f, 8.0f};
                         bullet_sprite.texture = assets::TextureId::Bullet_Tentacle;
                         bullet_sprite.frame_rect = Rectangle(0, 0, 8, 8);
 
-                        auto &bullet_movement = get<components::Movement>(bullet_blueprint);
+                        components::Movement bullet_movement;
                         bullet_movement.speed = 40.0;
                         bullet_movement.position = movement.position;
                         bullet_movement.position = Vector2Add(bullet_movement.position, bullet_sprite.offset);
-
                         bullet_movement.direction = Vector2Normalize(Vector2Add(player_movement.position, Vector2Add(player_movement.position, Vector2Subtract(player_movement.position, Vector2Add(bullet_movement.position, {6.0, 4.0})))));
 
-
-                        Vector2Angle(Vector2Add(player_movement.position, {16.0, 16.0}), Vector2Add(bullet_movement.position, {4.0, 4.0}));
-
-                        auto &bullet_state = get<TWorld::BulletStateComponent>(bullet_blueprint);
-
-                        auto &bullet_collision = get<components::Collision>(bullet_blueprint);
+                        components::Collision bullet_collision;
                         bullet_collision.bounds.center = Vector2{4.5f, 4.5f};
                         bullet_collision.bounds.radius = 4.0f;
                         bullet_collision.is_collidable = false;
 
-                        auto &bullet_damage = get<components::Damage>(bullet_blueprint);
+                        components::Damage bullet_damage;
                         bullet_damage.value = 30.0f;
 
-                        world.enemy_bullets.add(bullet_blueprint);
-                        world.sounds_queue.emplace_back(assets::SoundId::NormalBullet);
+                        BlueprintEntt(registry).builder()
+                                               .with<TWorld::BulletStateComponent>()
+                                               .with<components::UpdateFunction>(bullet_function)
+                                               .with<components::Sprite>(bullet_sprite)
+                                               .with<components::Movement>(bullet_movement)
+                                               .with<components::Collision>(bullet_collision)
+                                               .with<components::Damage>(bullet_damage)
+                                               .with<components::EnemyBullet>();
+
+
+                        Vector2Angle(Vector2Add(player_movement.position, {16.0, 16.0}), Vector2Add(bullet_movement.position, {4.0, 4.0}));
+
+                        //world.sounds_queue.emplace_back(assets::SoundId::NormalBullet);
                     }
                     emitter.last_emission_seconds += time;
                 };
-
+                components::Sprite &sprite = registry.get<components::Sprite>(entity);
                 animate_state(sprite);
-
+                components::TimeCounter &time_counter = registry.get<components::TimeCounter>(entity);
                 time_counter.elapsed_seconds += time;
 
+                TWorld::EnemyStateComponent &state = registry.get<TWorld::EnemyStateComponent>(entity);
+                components::Movement &movement = registry.get<components::Movement>(entity);
+                components::MovementPath &movement_path = registry.get<components::MovementPath>(entity);
+                components::Activation &activation = registry.get<components::Activation>(entity);
+                components::Emission &emitter = registry.get<components::Emission>(entity);
+
                 common_state_handling(state, time_counter, time, movement, movement_path, activation, sprite);
-                if (activation.is_active) {
-                    tentacle_shoot_behaviour(world, emitter, movement, time, bullet::fly_towards_direction);
-                }
+                if (activation.is_active) { tentacle_shoot_behaviour(emitter, movement, bullet::fly_towards_direction); }
             };
 
             static constexpr auto definition = [](std::deque<Vector2> &&movement_path) -> EnemyDefinition
@@ -241,7 +201,7 @@ namespace behaviours
                         assets::TextureId::Tentacle,
                         18,
                         {assets::TextureId::Bullet_Tentacle, 1, bullet::fly_towards_direction},
-                        update_function,
+                        components::UpdateFunction(update_function),
                         40,
                         Vector2{8.0f, 8.0f},
                         8.0f,
@@ -261,28 +221,16 @@ namespace behaviours
         {
             static constexpr auto update_function =
                     [](
-                            const double time,
-                            TWorld &world,
-                            components::Sprite &sprite,
-                            components::Movement &movement,
-                            components::MovementPath &movement_path,
-                            components::Activation &activation,
-                            components::TimeCounter &time_counter,
-                            components::Emission &emitter,
-                            components::Collision &collision,
-                            components::Health &health,
-                            TWorld::EnemyStateComponent &state)
+                    const double time,
+                    const entt::entity entity,
+                    entt::registry &registry)
             {
-                static constexpr auto mosquito_shoot_behaviour = [](TWorld &world, components::Emission &emitter, const components::Movement movement, const double time, const bullet::UpdateFunction &bullet_function)
+                static auto mosquito_shoot_behaviour = [&registry, &time](components::Emission &emitter, const components::Movement &mosquito_movement, const UpdateFunctionType &bullet_function)
                 {
-                    const auto &player = world.player.get();
-                    constexpr auto emit_every_seconds = 1.0;
-                    if (emitter.last_emission_seconds > emit_every_seconds) {
-
+                    if (constexpr auto emit_every_seconds = 1.0; emitter.last_emission_seconds > emit_every_seconds) {
                         emitter.last_emission_seconds = 0.0;
                         for (int i = 1; i <= 12; i++) {
-                            auto bullet_blueprint = Blueprint(bullet::UpdateFunction(bullet_function));
-                            auto &bullet_sprite = get<components::Sprite>(bullet_blueprint);
+                            components::Sprite bullet_sprite;
                             bullet_sprite.offset = Vector2{4.0f, 4.0f};
                             bullet_sprite.texture = assets::TextureId::Bullet_Mosquito;
                             bullet_sprite.current_visible_frame = 0;
@@ -292,37 +240,50 @@ namespace behaviours
                             bullet_sprite.texture_width_px = 48;
                             bullet_sprite.texture_height_px = 8;
 
-                            auto &bullet_movement = get<components::Movement>(bullet_blueprint);
+                            components::Movement bullet_movement;
                             bullet_movement.speed = 15.0;
-                            bullet_movement.position = movement.position;
+                            bullet_movement.position = mosquito_movement.position;
                             // fix above with Vector2Add
                             bullet_movement.position = Vector2Add(bullet_movement.position, bullet_sprite.offset);
                             bullet_movement.position = Vector2Add(bullet_movement.position, Vector2{0.0f, 9.0f});
                             bullet_movement.position = Vector2Rotate(bullet_movement.position, 180 / 3.14 * i);
 
+                            bullet_movement.direction = Vector2{0.0f, 1.0f};
                             bullet_movement.direction = Vector2Normalize(Vector2Rotate(bullet_movement.direction, 180 / 3.14 * i));
-                            auto &bullet_state = get<TWorld::BulletStateComponent>(bullet_blueprint);
 
-                            auto &bullet_collision = get<components::Collision>(bullet_blueprint);
+                            components::Collision bullet_collision;
+
                             bullet_collision.bounds.center = Vector2{5.0f, 5.0f};
                             bullet_collision.bounds.radius = 2.0f;
                             bullet_collision.is_collidable = true;
 
-                            world.enemy_bullets.add(bullet_blueprint);
+                            BlueprintEntt(registry).builder()
+                                                   .with<TWorld::BulletStateComponent>()
+                                                   .with<components::UpdateFunction>(bullet_function)
+                                                   .with<components::Sprite>(bullet_sprite)
+                                                   .with<components::Movement>(bullet_movement)
+                                                   .with<components::Collision>(bullet_collision)
+                                                   .with<components::TimeCounter>()
+                                                   .with<components::EnemyBullet>();
                         }
 
-                        world.sounds_queue.emplace_back(assets::SoundId::NormalBullet);
+                        //world.sounds_queue.emplace_back(assets::SoundId::NormalBullet);
                     }
                     emitter.last_emission_seconds += time;
                 };
 
+                components::Sprite &sprite = registry.get<components::Sprite>(entity);
                 animate_state(sprite);
+                components::TimeCounter &time_counter = registry.get<components::TimeCounter>(entity);
                 time_counter.elapsed_seconds += time;
 
+                TWorld::EnemyStateComponent &state = registry.get<TWorld::EnemyStateComponent>(entity);
+                components::Movement &movement = registry.get<components::Movement>(entity);
+                components::MovementPath &movement_path = registry.get<components::MovementPath>(entity);
+                components::Activation &activation = registry.get<components::Activation>(entity);
+                components::Emission &emitter = registry.get<components::Emission>(entity);
                 common_state_handling(state, time_counter, time, movement, movement_path, activation, sprite);
-                if (activation.is_active) {
-                    mosquito_shoot_behaviour(world, emitter, movement, time, bullet::fly_and_rotate);
-                }
+                if (activation.is_active) { mosquito_shoot_behaviour(emitter, movement, bullet::fly_and_rotate); }
             };
 
             static constexpr auto definition = [](std::deque<Vector2> &&movement_path) -> EnemyDefinition
@@ -330,8 +291,8 @@ namespace behaviours
                 return {
                         assets::TextureId::Mosquito,
                         17,
-                        {assets::TextureId::Bullet_Mosquito, 6, bullet::fly_towards_direction},
-                        update_function,
+                        {assets::TextureId::Bullet_Mosquito, 6, bullet::fly_and_rotate},
+                        components::UpdateFunction(update_function),
                         60,
                         Vector2{8.0f, 8.0f},
                         8.0f,

@@ -26,10 +26,22 @@ namespace components
     struct Player {
         entt::entity entity;
     };
+
+    struct EnemyBullet {
+        uint8_t marker;
+    };
+
+    struct PlayerBullet {
+        uint8_t marker;
+    };
+
+    struct Background {
+        uint8_t marker;
+    };
     /*
      * Allows an object to be moved from its current position towards a direction with a given speed.
      */
-    struct Movement : ComponentBase {
+    struct Movement {
         Vector2 position;
         Vector2 direction;
         float speed{0.0f};
@@ -38,18 +50,27 @@ namespace components
         Movement(Vector2 pos, Vector2 dir, float spd) : position(pos), direction(dir), speed(spd) {}
     };
 
+    struct Frame {
+        Rectangle bounds;
+    };
+
+
     class UpdateFunction {
     public:
-        explicit UpdateFunction(const std::function<void(double, entt::entity, Core&)> &function) : _function(function) {}
-        void operator()(const double time, const entt::entity entity, Core &core) const { _function(time, entity, core); }
+        explicit UpdateFunction(const std::function<void(double, entt::entity, entt::registry&)> &function) : _function(function) {}
+        // explicit move constructor
+        UpdateFunction(UpdateFunction &&other) noexcept : _function(std::move(other._function)) {}
+        // copy constructor
+        UpdateFunction(const UpdateFunction &other) : _function(other._function) {}
+        void operator()(const double time, const entt::entity entity, entt::registry &registry) const { _function(time, entity, registry); }
     private:
-        std::function<void(double, entt::entity, Core&)> _function;
+        std::function<void(double, entt::entity, entt::registry &)> _function;
 
     };
     /*
      * Describes a path which the object can move along
      */
-    struct MovementPath : ComponentBase {
+    struct MovementPath {
         std::deque<Vector2> points;
     };
 
@@ -80,7 +101,7 @@ namespace components
     /*
      * Defines how to render the object on screen.
      */
-    struct Sprite : ComponentBase {
+    struct Sprite {
         /*
          * Id of the texture representing this object. Must correspond to a specific texture declared in assets.h
          */
@@ -127,7 +148,7 @@ namespace components
     /*
      * Ability to collide with other objects
      */
-    struct Collision : ComponentBase {
+    struct Collision {
         /*
          * The area which is checked for collision.
          * TODO currently only circle collisions are used - if we'd like to use rectangular or other areas maybe this could be replace with a sort of std::variant<CollisionArea>
@@ -152,7 +173,7 @@ namespace components
     /*
      * Ability to activate an object
      */
-    struct Activation : ComponentBase {
+    struct Activation {
         bool is_active{false};
         double activate_after_seconds{0.0};
     };
@@ -160,7 +181,7 @@ namespace components
     /*
      * Ability to "emit" other objects
      */
-    struct Emission : ComponentBase {
+    struct Emission {
         /*
          * Time since the last emission was made
          */
@@ -170,7 +191,7 @@ namespace components
     /*
      * Ability to count time
      */
-    struct TimeCounter : ComponentBase {
+    struct TimeCounter {
         double elapsed_seconds{0.0};
     };
 
@@ -197,14 +218,14 @@ namespace components
     /*
      * Ability to do damage
      */
-    struct Damage : ComponentBase {
+    struct Damage {
         float value{1.0f};
     };
 
     /*
      * Ability to store a health value
      */
-    struct Health : ComponentBase {
+    struct Health {
         double hp{100.0};
     };
 }// namespace components

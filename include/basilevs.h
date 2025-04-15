@@ -8,11 +8,7 @@
 #include <behaviours/background.h>
 #include <behaviours/enemy.h>
 #include <behaviours/player.h>
-#include <chrono>
 #include <config.h>
-#include <functional>
-#include <iostream>
-#include <ranges>
 #include <raylib.h>
 #include <utility>
 #include <world.h>
@@ -69,21 +65,12 @@ namespace basilevs
             collision.is_collidable = true;
         }
 
-        static TWorld::PlayerType create_player(const Core::TextureCache &texture_cache)
-        {
-            auto player = Blueprint(behaviours::player::UpdateFunction(behaviours::player::default_behaviour));
-            setup_sprite(get<Sprite>(player), texture_cache, assets::TextureId::Player, 7, AnimationDirection::Horizontal);
-            setup_movement(get<Movement>(player), 70.0f, 100.0f, 50.0f);
-            setup_collision(get<Collision>(player), 3.0f, Vector2{17.0f, 18.0f});
 
-            return player;
-        }
-
-        static void create_player_entt(Core &core)
+        static void create_player_entt(const Core::TextureCache &texture_cache, entt::registry &registry)
         {
-            BlueprintEntt blueprintEntt(core);
+            BlueprintEntt blueprintEntt(registry);
             Sprite sprite;
-            setup_sprite(sprite, core.texture2d_cache, assets::TextureId::Player, 7, AnimationDirection::Horizontal);
+            setup_sprite(sprite, texture_cache, assets::TextureId::Player, 7, AnimationDirection::Horizontal);
             Movement movement;
             setup_movement(movement, 70.0f, 100.0f, 50.0f);
             Collision collision;
@@ -99,127 +86,83 @@ namespace basilevs
                                        .with<UpdateFunction>(behaviours::player::default_behaviour_new)
                                        .build();
 
-            core.registry.ctx().emplace<Player>(player);
+            registry.ctx().emplace<Player>(player);
         }
 
-        static TWorld::EnemyType create_enemy(const double seconds_until_spawns, const Vector2 &position, const behaviours::enemy::EnemyDefinition &enemy_definition)
-        {
-            TWorld::EnemyType enemy = Blueprint(behaviours::enemy::UpdateFunction(enemy_definition.behaviour));
-            get<Movement>(enemy).position = position;
-            get<Movement>(enemy).speed = enemy_definition.speed;
-            get<TimeCounter>(enemy).elapsed_seconds = 0.0;
-            get<Emission>(enemy).last_emission_seconds = 0.0f;
-            get<MovementPath>(enemy).points = enemy_definition.path;
-            get<Health>(enemy).hp = enemy_definition.health;
-            setup_activation(get<Activation>(enemy), seconds_until_spawns);
-            setup_collision(get<Collision>(enemy), enemy_definition.collision_radius, enemy_definition.collision_center_offset);
 
-            return enemy;
+        static entt::entity create_enemy(entt::registry &registry, const double seconds_until_spawns, const Vector2 &position, const behaviours::enemy::EnemyDefinition &enemy_definition)
+        {
+            BlueprintEntt enemy(registry);
+
+            return enemy.builder()
+                        .with<Sprite>()
+                        .with<Movement>(position, Vector2{}, enemy_definition.speed)
+                        .with<MovementPath>(enemy_definition.path)
+                        .with<Activation>(false, seconds_until_spawns)
+                        .with<TimeCounter>(0.0f)
+                        .with<Emission>(0.0f)
+                        .with<Collision>(enemy_definition.collision_center_offset, enemy_definition.collision_radius, true)
+                        .with<Health>(enemy_definition.health)
+                        .with<UpdateFunction>(enemy_definition.behaviour)
+                        .with<StateMachine<state_handling::transitions::EnemyPossibleStates, state_handling::StatefulObject>>()
+                        .build();
         }
 
-        static TWorld::EnemyType create_enemy_with_sprite(const double seconds_until_spawns, const Core::TextureCache &texture_cache, const Vector2 &position, const behaviours::enemy::EnemyDefinition &enemy_definition)
+        static void create_enemy_with_sprite_entt(entt::registry &registry, const double seconds_until_spawns, const Core::TextureCache &texture_cache, const Vector2 &position, const behaviours::enemy::EnemyDefinition &enemy_definition)
         {
-            TWorld::EnemyType enemy = create_enemy(seconds_until_spawns, position, enemy_definition);
-            setup_enemy_sprite(get<Sprite>(enemy), texture_cache, enemy_definition);
-
-            return enemy;
+            const auto enemy = create_enemy(registry, seconds_until_spawns, position, enemy_definition);
+            auto &sprite = registry.get<Sprite>(enemy);
+            setup_enemy_sprite(sprite, texture_cache, enemy_definition);
         }
 
-        static TWorld::BackgroundType create_background(const Core::TextureCache &texture_cache)
+        static void create_background(const Core::TextureCache &texture_cache, entt::registry &registry)
         {
-            TWorld::BackgroundType background = Blueprint(behaviours::background::UpdateFunction(behaviours::background::level1_background_update));
-            setup_sprite(get<Sprite>(background), texture_cache, assets::TextureId::Background_Level_1, 6, AnimationDirection::Vertical);
+            Sprite sprite;
+            setup_sprite(sprite, texture_cache, assets::TextureId::Background_Level_1, 6, AnimationDirection::Vertical);
 
-            return background;
+            BlueprintEntt background(registry);
+            background.builder()
+            .with<Background>()
+            .with<Sprite>(sprite)
+            .with<UpdateFunction>(behaviours::background::level1_background_update);
         }
     }// namespace initialization
 
     namespace game_state
-    {
-        static void update_world(const auto time_since_last_update, TWorld &world)
-        {
-            world.background->update(time_since_last_update.count(), world);
-            world.player->update(time_since_last_update.count(), world);
-            world.enemies->update(time_since_last_update.count(), world);
-            world.enemy_bullets.update(time_since_last_update.count(), world);
-            world.player_bullets.update(time_since_last_update.count(), world);
-        }
-
-        static void update(const auto time_since_last_update, Core &core) { core.registry.view<UpdateFunction>().each([&core, time_since_last_update](auto entity, UpdateFunction &func) { func.operator()(time_since_last_update.count(), entity, core); }); }
+    {\
+        static void update(const auto time_since_last_update, entt::registry &registry) { registry.view<UpdateFunction>().each([&registry, time_since_last_update](auto entity, UpdateFunction &func) { func.operator()(time_since_last_update.count(), entity, registry); }); }
     }// namespace game_state
 
     namespace rendering
     {
-        static void render_player(RenderTexture &render_target, const Core &core)
+        static void render_player(RenderTexture &render_target, const entt::registry &registry, const Core::TextureCache &texture_cache)
         {
 
-            const entt::entity player = core.registry.ctx().get<Player>().entity;
-            const auto &sprite_component = core.registry.get<Sprite>(player);
-            const auto &movement_component = core.registry.get<Movement>(player);
+            const entt::entity player = registry.ctx().get<Player>().entity;
+            const auto &sprite_component = registry.get<Sprite>(player);
+            const auto &movement_component = registry.get<Movement>(player);
 
-            const Texture &texture = core.texture2d_cache[assets::texture_id_to_string[sprite_component.texture]];
+            const Texture &texture = texture_cache[assets::texture_id_to_string[sprite_component.texture]];
 
             DrawTextureRec(texture, sprite_component.frame_rect, movement_component.position, WHITE);
         }
 
-        static bool is_render_allowed_for_state(const TWorld::EnemyStateComponent state) { return !state.state_machine.is(boost::sml::X) && !state.state_machine.is(state_handling::declarations::kInitState); }
+        static bool is_render_allowed_for_state(const TWorld::EnemyStateComponent &state) { return !state.state_machine.is(boost::sml::X) && !state.state_machine.is(state_handling::declarations::kInitState); }
 
         static void render_enemy(const Core::TextureCache &textures, const Sprite &sprite, const Movement &movement, const TWorld::EnemyStateComponent &state) { if (is_render_allowed_for_state(state)) { DrawTextureRec(textures[assets::texture_id_to_string[sprite.texture]], sprite.frame_rect, movement.position, WHITE); } }
 
-        static void render_enemies(RenderTexture &render_target, const TWorld &world, const Core::TextureCache &texture_cache)
+        static void render_enemies(RenderTexture &render_target, const entt::registry &registry, const Core::TextureCache &texture_cache) { registry.view<TWorld::EnemyStateComponent, Sprite, Movement>().each([&texture_cache](const auto enemy_state, const auto& sprite, const auto movement) { render_enemy(texture_cache, sprite, movement, enemy_state); }); }
+
+        static void render_bullets(RenderTexture &render_target, const entt::registry &registry, const Core::TextureCache &texture_cache) { registry.view<TWorld::BulletStateComponent, Sprite, Movement>().each([&texture_cache](const auto entity, const auto &bullet_state, const auto &sprite, const auto &movement) { DrawTextureRec(texture_cache[assets::texture_id_to_string[sprite.texture]], sprite.frame_rect, movement.position, WHITE); }); }
+
+        static void render_background(RenderTexture &render_target, const entt::registry &registry, const Core::TextureCache &texture_cache)
         {
-            const auto &enemy_components = world.enemies->components;
-            for (size_t enemy_idx = 0; enemy_idx < world.enemies->functions.size(); enemy_idx++) {
-                render_enemy(texture_cache,
-                             std::get<std::vector<Sprite>>(enemy_components)[enemy_idx],
-                             std::get<std::vector<Movement>>(enemy_components)[enemy_idx],
-                             std::get<std::vector<TWorld::EnemyStateComponent>>(enemy_components)[enemy_idx]);
-            }
-        }
 
-        static void render_enemy_bullets(const TWorld &world, const Core::TextureCache &texture_cache, const std::vector<Movement> &movements, const std::vector<Sprite> &sprites)
-        {
-            for (std::size_t i = 0; i < world.enemy_bullets.first_available_index; i++) {
-                DrawTextureRec(texture_cache[assets::texture_id_to_string[sprites[i].texture]],
-                               sprites[i].frame_rect,
-                               movements[i].position,
-                               WHITE);
-            }
-        }
-
-        static void render_player_bullets(const TWorld &world, const Core::TextureCache &texture_cache, const std::vector<Movement> &movements, const std::vector<Sprite> &sprites)
-        {
-            for (std::size_t i = 0; i < world.player_bullets.first_available_index; i++) {
-                DrawTextureEx(texture_cache[assets::texture_id_to_string[sprites[i].texture]],
-                              movements[i].position,
-                              sprites[i].rotation_degrees,
-                              1.0f,
-                              WHITE);
-            }
-        }
-
-        static void render_bullets(RenderTexture &render_target, const TWorld &world, const Core::TextureCache &texture_cache)
-        {
-            const auto &enemy_components = world.enemy_bullets.components;
-            render_enemy_bullets(world,
-                                 texture_cache,
-                                 std::get<std::vector<Movement>>(enemy_components),
-                                 std::get<std::vector<Sprite>>(enemy_components));
-
-            const auto &player_components = world.player_bullets.components;
-            render_player_bullets(world,
-                                  texture_cache,
-                                  std::get<std::vector<Movement>>(player_components),
-                                  std::get<std::vector<Sprite>>(player_components));
-        }
-
-        static void render_background(RenderTexture &render_target, const TWorld &world, const Core::TextureCache &texture_cache)
-        {
-            const TWorld::BackgroundType *background = world.background.get();
-            const auto &sprite_component = std::get<Sprite>(background->components);
-            const auto &texture = texture_cache[assets::texture_id_to_string[sprite_component.texture]];
-
-            DrawTextureRec(texture, sprite_component.frame_rect, {0, 0}, GRAY);
+            registry.view<Background, Sprite>().each([&texture_cache](const entt::entity, const Background, const Sprite &sprite)
+            {
+                const auto &texture = texture_cache[assets::texture_id_to_string[sprite.texture]];
+                DrawTextureRec(texture, sprite.frame_rect, {0, 0}, GRAY);
+            });
         }
 
         /*
@@ -232,26 +175,27 @@ namespace basilevs
         {
             BeginTextureMode(render_target);
             ClearBackground(config::colors::kBackground);
-            //render_background(render_target, world, texture_cache);
-            render_player(render_target, core);
-            //render_enemies(render_target, world, texture_cache);
-            //render_bullets(render_target, world, texture_cache);
+            render_background(render_target, core.registry, core.texture2d_cache);
+            render_player(render_target, core.registry, core.texture2d_cache);
+            render_enemies(render_target, core.registry, core.texture2d_cache);
+            render_bullets(render_target, core.registry, core.texture2d_cache);
             EndTextureMode();
         }
 
         /*
          * This function renders the games current frame upscaled to actual screen dimensions, along with some UI elements
          */
-        static void render_to_screen(RenderTexture &render_target, const TWorld &world)
+        static void render_to_screen(const RenderTexture &render_target, const Core &core)
         {
             DrawTexturePro(render_target.texture,
-                           Rectangle{0.0f, 0.0f, (float) render_target.texture.width, (float) -render_target.texture.height},
+                           Rectangle{0.0f, 0.0f, static_cast<float>(render_target.texture.width), static_cast<float>(-render_target.texture.height)},
                            Rectangle{0.0f, 0.0f, static_cast<float>(config::kScreenWidth), static_cast<float>(config::kScreenHeight)},
                            Vector2{0, 0},
                            0.0f,
                            WHITE);
-            DrawText(std::to_string(world.enemy_bullets.first_available_index).c_str(), config::kScreenWidth - 60, 60, 30, ORANGE);
-            DrawText(std::to_string(world.player_bullets.first_available_index).c_str(), config::kScreenWidth - 60, 95, 30, ORANGE);
+            auto amount_bullets = 0;
+            core.registry.view<TWorld::BulletStateComponent>().each([&amount_bullets](const auto entity, const auto &bullet_state) { amount_bullets++; });
+            DrawText(std::to_string(amount_bullets).c_str(), config::kScreenWidth - 60, 60, 30, ORANGE);
             DrawFPS(5, 5);
         }
     }// namespace rendering
@@ -277,21 +221,21 @@ namespace basilevs
                     std::get<std::vector<Damage>>(components)};
         }
 
-        static bool is_enemy_collidable(const size_t enemy_idx, const auto &enemy_components)
+        static bool is_enemy_collidable(const entt::entity enemy_entity, const entt::registry &registry)
         {
-            const auto &enemy_activation = std::get<std::vector<Activation>>(enemy_components);
-            return enemy_activation[enemy_idx].is_active;
+            const auto [is_active, activate_after_seconds] = registry.get<Activation>(enemy_entity);
+            return is_active;
         }
 
         static void destroy_bullet(TWorld::BulletStateComponent &bullet_state) { bullet_state.state_machine.process_event(state_handling::events::DestroyEvent()); }
 
-        static void handle_collision(const size_t enemy_idx, auto &enemy_components, const size_t bullet_idx, const auto &bullet_components)
+        static void handle_collision(TWorld::EnemyStateComponent &enemy_state, TWorld::BulletStateComponent &bullet_state)
         {
-            std::get<std::vector<TWorld::EnemyStateComponent>>(enemy_components)[enemy_idx]
+            enemy_state
                     .state_machine
                     .process_event(state_handling::events::DamageEvent());
 
-            destroy_bullet(bullet_components.states[bullet_idx]);
+            destroy_bullet(bullet_state);
         }
 
         static Vector2 get_collision_center(const Movement &movement, const Collision &collision) { return Vector2Add(movement.position, collision.bounds.center); }
@@ -300,53 +244,43 @@ namespace basilevs
         /*
          * Handle enemies colliding with bullets shot by the player
          */
-        static void player_bullets_with_enemies(TWorld &world)
+        static void player_bullets_with_enemies(entt::registry &registry)
         {
-            auto &enemy_components = world.enemies->components;
-            const std::vector<Collision> &enemy_collisions = std::get<std::vector<Collision>>(enemy_components);
-            const std::vector<Movement> &enemy_movements = std::get<std::vector<Movement>>(enemy_components);
+            registry.view<TWorld::EnemyStateComponent, Movement, Collision>().each([&registry](const entt::entity enemy_entity, TWorld::EnemyStateComponent &enemy_state, const auto &enemy_movement, const Collision &enemy_collision)
+            {
+                registry.view<PlayerBullet, TWorld::BulletStateComponent, Movement, Collision>().each([&](const entt::entity bullet_entity, const PlayerBullet &player_bullet, TWorld::BulletStateComponent &bullet_state, const Movement &bullet_movement, const Collision &bullet_collision)
+                {
+                    const Vector2 &bullet_center = get_collision_center(bullet_movement, bullet_collision);
+                    const float &bullet_radius = get_radius(bullet_collision);
 
-            const CollisionCheckBulletComponents &bullet_components = retrieve_components_for_bullets(world.player_bullets.components);
-
-            for (std::size_t bullet_idx = 0; bullet_idx < world.player_bullets.first_available_index; bullet_idx++) {
-                const Movement &bullet_movement = bullet_components.movements[bullet_idx];
-                const Collision &bullet_collision = bullet_components.collisions[bullet_idx];
-
-                const Vector2 &bullet_center = get_collision_center(bullet_movement, bullet_collision);
-                const float &bullet_radius = get_radius(bullet_collision);
-
-                for (std::size_t enemy_idx = 0; enemy_idx < world.enemies->functions.size(); enemy_idx++) {
-                    if (is_enemy_collidable(enemy_idx, enemy_components)) {
-                        const Vector2 &enemy_center = get_collision_center(enemy_movements[enemy_idx], enemy_collisions[enemy_idx]);
-                        const float &enemy_radius = get_radius(enemy_collisions[enemy_idx]);
-                        if (CheckCollisionCircles(bullet_center, bullet_radius, enemy_center, enemy_radius)) { handle_collision(enemy_idx, enemy_components, bullet_idx, bullet_components); }
+                    if (is_enemy_collidable(enemy_entity, registry)) {
+                        const Vector2 &enemy_center = get_collision_center(enemy_movement, enemy_collision);
+                        const float &enemy_radius = get_radius(enemy_collision);
+                        if (CheckCollisionCircles(bullet_center, bullet_radius, enemy_center, enemy_radius)) { handle_collision(enemy_state, bullet_state); }
                     }
-                }
-            }
+                });
+            });
         }
 
         /*
          * Handle player bullets colliding with other bullets.
          * Intended for the case when enemies are shooting swarms of bullets which can be destroyed when being shot at.
          */
-        static void player_bullets_with_enemy_bullets(TWorld &world)
+        static void player_bullets_with_enemy_bullets(entt::registry &registry)
         {
-            const CollisionCheckBulletComponents &player_bullets = retrieve_components_for_bullets(world.player_bullets.components);
-            const CollisionCheckBulletComponents &enemy_bullets = retrieve_components_for_bullets(world.enemy_bullets.components);
+            registry.view<PlayerBullet, TWorld::BulletStateComponent, Movement, Collision>().each([&](const entt::entity player_bullet_entity, const PlayerBullet &player_bullet, TWorld::BulletStateComponent &bullet_state, const Movement &bullet_movement, const Collision &bullet_collision)
+            {
+                const Vector2 &bullet_center = get_collision_center(bullet_movement, bullet_collision);
+                registry.view<EnemyBullet, TWorld::BulletStateComponent, Movement, Collision>().each([&bullet_center, &bullet_collision, &bullet_state, &registry](const entt::entity enemy_bullet_entity, const EnemyBullet &enemy_bullet, TWorld::BulletStateComponent &enemy_bullet_state, const Movement &enemy_bullet_movement, const Collision &enemy_bullet_collision)
+                {
+                    const Vector2 &enemy_bullet_center = get_collision_center(enemy_bullet_movement, enemy_bullet_collision);
 
-            for (std::size_t player_bullet_idx = 0; player_bullet_idx < world.player_bullets.first_available_index; player_bullet_idx++) {
-                const Vector2 player_collision_center = get_collision_center(player_bullets.movements[player_bullet_idx], player_bullets.collisions[player_bullet_idx]);
-
-                for (std::size_t enemy_bullet_idx = 0; enemy_bullet_idx < world.enemy_bullets.first_available_index; enemy_bullet_idx++) {
-                    if (!enemy_bullets.collisions[enemy_bullet_idx].is_collidable) { continue; }
-                    const Vector2 enemy_collision_center = get_collision_center(enemy_bullets.movements[enemy_bullet_idx], enemy_bullets.collisions[enemy_bullet_idx]);
-
-                    if (CheckCollisionCircles(player_collision_center, player_bullets.collisions[player_bullet_idx].bounds.radius, enemy_collision_center, enemy_bullets.collisions[enemy_bullet_idx].bounds.radius)) {
-                        destroy_bullet(player_bullets.states[player_bullet_idx]);
-                        destroy_bullet(enemy_bullets.states[enemy_bullet_idx]);
+                    if (CheckCollisionCircles(bullet_center, bullet_collision.bounds.radius, enemy_bullet_center, enemy_bullet_collision.bounds.radius)) {
+                        destroy_bullet(bullet_state);
+                        destroy_bullet(enemy_bullet_state);
                     }
-                }
-            }
+                });
+            });
         }
 
         static void damage_player(Health &player_health, const float damage) { player_health.hp -= damage; }
@@ -354,44 +288,44 @@ namespace basilevs
         /*
          * Handle player colliding with enemy bullets
          */
-        static void enemy_bullets_with_player(auto &world)
+        static void enemy_bullets_with_player(entt::registry &registry)
         {
-            const auto &player_movement = std::get<Movement>(world.player.get()->components);
-            const auto &player_collision = std::get<Collision>(world.player.get()->components);
-            auto &player_health = std::get<Health>(world.player.get()->components);
+            const entt::entity player = registry.ctx().get<Player>().entity;
+            const Movement player_movement = registry.get<Movement>(player);
+            const Collision player_collision = registry.get<Collision>(player);
+            auto &player_health = registry.get<Health>(player);
             const Vector2 &player_collision_center = Vector2Add(player_movement.position, player_collision.bounds.center);
 
-            const auto &enemy_bullets = retrieve_components_for_bullets(world.enemy_bullets.components);
+            registry.view<EnemyBullet, TWorld::BulletStateComponent, Movement, Collision, Damage>().each([&player_health, &player_collision_center, &player_collision](entt::entity bullet_entity, const EnemyBullet &enemy_bullet, TWorld::BulletStateComponent &bullet_state, const Movement &bullet_movement, const Collision &bullet_collision, const Damage bullet_damage)
+            {
+                const Vector2 &collision_center = get_collision_center(bullet_movement, bullet_collision);
 
-            for (std::size_t bullet_idx = 0; bullet_idx < world.enemy_bullets.first_available_index; bullet_idx++) {
-                const Vector2 &collision_center = get_collision_center(enemy_bullets.movements[bullet_idx], enemy_bullets.collisions[bullet_idx]);
-
-                if (CheckCollisionCircles(collision_center, enemy_bullets.collisions[bullet_idx].bounds.radius, player_collision_center, player_collision.bounds.radius)) {
-                    destroy_bullet(enemy_bullets.states[bullet_idx]);
-                    damage_player(player_health, enemy_bullets.damages[bullet_idx].value);
+                if (const float &collision_radius = get_radius(bullet_collision); CheckCollisionCircles(collision_center, collision_radius, player_collision_center, player_collision.bounds.radius)) {
+                    destroy_bullet(bullet_state);
+                    damage_player(player_health, bullet_damage.value);
                 }
-            }
+            });
         }
 
         /*
          * Here we check if the player, enemies and bullets collide with each other and do some logic if they do.
          */
-        static void collision_checks(TWorld &world)
+        static void collision_checks(entt::registry &registry)
         {
-            player_bullets_with_enemies(world);
-            player_bullets_with_enemy_bullets(world);
-            enemy_bullets_with_player(world);
+            player_bullets_with_enemies(registry);
+            player_bullets_with_enemy_bullets(registry);
+            enemy_bullets_with_player(registry);
         }
     }// namespace collision_checking
 
     namespace memory
     {
-        static bool is_bullet_outside_frame(const size_t index, const auto &bullet_components, const TWorld &world)
+        static bool is_bullet_outside_frame(const Movement &bullet_movement, const Sprite &sprite, const Frame &frame)
         {
-            const auto pos = std::get<std::vector<Movement>>(bullet_components)[index - 1].position;
-            const auto bounds = std::get<std::vector<Sprite>>(bullet_components)[index - 1].bounds;
+            const auto [x, y] = bullet_movement.position;
+            const auto [bx, by] = sprite.bounds;
 
-            return !CheckCollisionRecs(Rectangle(pos.x, pos.y, bounds.x, bounds.y), world.frame_bounds);
+            return !CheckCollisionRecs(Rectangle(x, y, bx, by), frame.bounds);
 
         }
 
@@ -399,35 +333,20 @@ namespace basilevs
          * Deactivates bullets which are outside the visible frame by a given margin.
          * Those bullets go into a "destroyed" state.
          */
-        static void destroy_bullets_outside_frame(const TWorld &world, auto &bullet_pool)
-        {
-            for (std::size_t bullet_idx = bullet_pool.first_available_index; bullet_idx > 0; bullet_idx--) {
-                if (is_bullet_outside_frame(bullet_idx, bullet_pool.components, world)) {
-                    std::get<std::vector<TWorld::BulletStateComponent>>(bullet_pool.components)[bullet_idx - 1]
-                            .state_machine
-                            .process_event(state_handling::events::DestroyEvent());
-                }
-            }
-        }
+        static void destroy_bullets_outside_frame(entt::registry &registry) { registry.view<TWorld::BulletStateComponent, Movement, Sprite>().each([&registry](const auto entity, TWorld::BulletStateComponent &bullet_state, const auto &movement, const auto &sprite) { if (is_bullet_outside_frame(movement, sprite, registry.ctx().get<Frame>())) { bullet_state.state_machine.process_event(state_handling::events::DestroyEvent()); } }); }
 
-        static void remove_destroyed_bullets(auto &pool)
-        {
-            for (std::size_t index = pool.first_available_index; index > 0; index--) {
-                if (std::get<std::vector<TWorld::BulletStateComponent>>(pool.components)[index]
-                    .state_machine
-                    .is(boost::sml::X)) { pool. remove_at(index); }
-            }
-        }
+        static void remove_destroyed_bullets(entt::registry &registry) { registry.view<TWorld::BulletStateComponent>().each([&registry](const entt::entity entity, const TWorld::BulletStateComponent &state) { if (state.state_machine.is(boost::sml::X)) { registry.destroy(entity); } }); }
 
         /*
          * Does some reindexing of inactive bullets to make room for new ones
          */
-        static void cleanup_bullet_pools(TWorld &world)
+        static void cleanup_bullet_pools(entt::registry &registry)
         {
-            destroy_bullets_outside_frame(world, world.enemy_bullets);
-            destroy_bullets_outside_frame(world, world.player_bullets);
-            remove_destroyed_bullets(world.enemy_bullets);
-            remove_destroyed_bullets(world.player_bullets);
+            destroy_bullets_outside_frame(registry);
+            destroy_bullets_outside_frame(registry);
+            remove_destroyed_bullets(registry);
+            remove_destroyed_bullets(registry);
+
         }
     }// namespace memory
 

@@ -61,12 +61,6 @@ struct TWorld {
     components::Sprite, \
     components::Movement
 
-    using PlayerType = Blueprint<PLAYER_COMPONENTS>;
-    using EnemyType = Blueprint<ENEMY_COMPONENTS>;
-    using EnemiesInMemory = BlueprintsInMemory<ENEMY_COMPONENTS>;
-    using BulletPool = BlueprintsInPool<BULLET_COMPONENTS>;
-    using BackgroundType = Blueprint<BACKGROUND_COMPONENTS>;
-
     using PlayerStateComponent = components::StateMachine<state_handling::transitions::PlayerPossibleStates, state_handling::StatefulObject>;
     using EnemyStateComponent = components::StateMachine<state_handling::transitions::EnemyPossibleStates, state_handling::StatefulObject>;
     using BulletStateComponent = components::StateMachine<state_handling::transitions::BulletPossibleStates, state_handling::StatefulObject>;
@@ -74,13 +68,7 @@ struct TWorld {
     explicit TWorld() = default;
 
 public:
-    std::shared_ptr<PlayerType> player = nullptr;
-    std::shared_ptr<EnemiesInMemory> enemies = nullptr;
-    std::shared_ptr<BackgroundType> background = nullptr;
-    BulletPool player_bullets{config::kPlayerBulletPoolSize};
-    BulletPool enemy_bullets{config::kEnemyBulletPoolSize};
     input::UserInput<input::PlayerInput> player_input;
     std::vector<assets::SoundId> sounds_queue{config::kSoundQueueSize};
-    const Rectangle frame_bounds{config::kFrameBoundLeft, config::kFrameBoundUp, 260, 260};
 };
 #endif//BASILEVS_WORLD_H

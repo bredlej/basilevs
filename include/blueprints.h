@@ -96,14 +96,14 @@ public:
         template<typename T, typename... Args>
         Builder &with(Args&&... component_args)
         {
-            _self->_core.registry.emplace<T>(_self->_entity, std::forward<Args>(component_args)...);
+            _self->_registry.emplace<T>(_self->_entity, std::forward<Args>(component_args)...);
             return *this;
         }
 
         template<typename T>
         Builder &with(const T &component)
         {
-            _self->_core.registry.emplace<T>(_self->_entity, component);
+            _self->_registry.emplace<T>(_self->_entity, component);
             return *this;
         }
         entt::entity build() const { return _self->_entity; }
@@ -111,13 +111,13 @@ public:
         BlueprintEntt *_self = nullptr;
     };
 
-    explicit BlueprintEntt(Core &core) : _core{core}, _entity(core.registry.create()) {}
+    explicit BlueprintEntt(entt::registry &registry) : _registry{registry}, _entity(registry.create()) {}
 
     Builder builder() {
         return Builder(this);
     }
 private:
-    Core &_core;
+    entt::registry &_registry;
     entt::entity _entity;
 };
 
