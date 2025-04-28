@@ -73,7 +73,7 @@ auto &get(is_a_memory auto &memory) { return std::get<std::vector<T>>(memory.com
  * @tparam Ts a list of components which adhere to the is_many_components concept (see components.h).
  */
 template<is_many_components... Ts>
-class Blueprint : public BlueprintBase {
+class Blueprint final : public BlueprintBase {
     using BlueprintUpdateFunction = std::function<void(const double, TWorld &, Ts &...)>;
     using Components = std::tuple<Ts...>;
 
@@ -342,6 +342,8 @@ private:
     template<is_a_component T>
     constexpr void swap_components_at_index(size_t index1, size_t index2) { std::get<std::vector<T>>(components)[index1] = std::get<std::vector<T>>(components)[index2]; }
 };
+
+
 
 template<is_many_components... Ts>
 void BlueprintsInPool<Ts...>::update(double time, TWorld &world) { for (typename ComponentFunctionVector::size_type i = 0; i < first_available_index; i++) { functions[i](time, world, std::get<std::vector<Ts>>(components)[i]...); } }

@@ -5,13 +5,16 @@
 #ifndef BASILEVS_COMPONENTS_H
 #define BASILEVS_COMPONENTS_H
 #include "assets.h"
+#include "pool.hpp"
+
 #include <boost/sml/sml.hpp>
 #include <concepts>
 #include <deque>
 #include <functional>
 #include <iostream>
-struct ComponentBase {
-};
+
+struct ComponentBase {};
+
 struct TWorld;
 
 enum class TextureId;
@@ -20,6 +23,19 @@ template<typename T>
 concept is_a_component = std::is_base_of_v<ComponentBase, T>;
 template<typename... T>
 concept is_many_components = (is_a_component<T> && ...);
+
+namespace debug
+{
+    struct RealTimeToggle {
+        bool enabled{true};
+    };
+    struct AdvanceFrame {
+        std::chrono::duration<double> duration;
+    };
+    struct ShowDebugGrid {
+        bool enabled{false};
+    };
+}
 
 namespace components
 {
@@ -38,6 +54,68 @@ namespace components
     struct Background {
         uint8_t marker;
     };
+
+    struct PlayerBulletPool {
+        Pool<entt::entity> pool;
+    };
+
+    struct EnemyBulletPool {
+        Pool<entt::entity> pool;
+    };
+
+    struct PlayerBullets {
+        std::vector<entt::entity> free_entities;
+        std::vector<entt::entity> active_entities;
+    };
+
+    struct EnemyBullets {
+        std::vector<entt::entity> free_entities;
+        std::vector<entt::entity> active_entities;
+    };
+
+    struct UpdateFlag {
+        bool enabled{true};
+    };
+
+    class SpatialGrid {
+    public:
+        explicit SpatialGrid(const int screen_width, const int screen_height, const float cell_size) : _cell_size(cell_size)
+        {
+            _cols = static_cast<size_t>((screen_width + cell_size - 1) / cell_size);
+            _rows = static_cast<size_t>((screen_height + cell_size - 1) / cell_size);
+            _cells.resize(_cols * _rows);
+        }
+
+        void clear()
+        {
+            for (auto &cell : _cells) {
+                cell.clear();
+            }
+        }
+
+        void insert(const entt::entity entity, const float x, const float y)
+        {
+            _cells[_cell_index(x,y)].push_back(entity);
+        }
+
+        const std::vector<entt::entity> &query(const float x, const float y) const
+        {
+            return _cells[_cell_index(x,y)];
+        }
+
+    private:
+        size_t _cols, _rows;
+        float _cell_size;
+        std::vector<std::vector<entt::entity>> _cells;
+
+        size_t _cell_index (const float x, const float y) const
+        {
+            const int cx = std::clamp<int>(x / _cell_size, 0, _cols - 1);
+            const int cy = std::clamp<int>(y / _cell_size, 0, _rows - 1);
+            return cy * _cols + cx;
+        }
+    };
+
     /*
      * Allows an object to be moved from its current position towards a direction with a given speed.
      */
@@ -47,7 +125,7 @@ namespace components
         float speed{0.0f};
 
         Movement() = default;
-        Movement(Vector2 pos, Vector2 dir, float spd) : position(pos), direction(dir), speed(spd) {}
+        Movement(const Vector2 pos, const Vector2 dir, const float spd) : position(pos), direction(dir), speed(spd) {}
     };
 
     struct Frame {
@@ -57,16 +135,37 @@ namespace components
 
     class UpdateFunction {
     public:
-        explicit UpdateFunction(const std::function<void(double, entt::entity, entt::registry&)> &function) : _function(function) {}
-        // explicit move constructor
+        explicit UpdateFunction() = default;
+
+        explicit UpdateFunction(const std::function<void(double, entt::entity, entt::registry &)> &function)
+            : _function(function) {}
+
+        // Konstruktor przenoszący
         UpdateFunction(UpdateFunction &&other) noexcept : _function(std::move(other._function)) {}
-        // copy constructor
+
+        // Konstruktor kopiujący
         UpdateFunction(const UpdateFunction &other) : _function(other._function) {}
+
+        // Operator przypisania kopiującego
+        UpdateFunction &operator=(const UpdateFunction &other)
+        {
+            if (this != &other) { _function = other._function; }
+            return *this;
+        }
+
+        // Operator przypisania przenoszącego
+        UpdateFunction &operator=(UpdateFunction &&other) noexcept
+        {
+            if (this != &other) { _function = std::move(other._function); }
+            return *this;
+        }
+
         void operator()(const double time, const entt::entity entity, entt::registry &registry) const { _function(time, entity, registry); }
+
     private:
         std::function<void(double, entt::entity, entt::registry &)> _function;
-
     };
+
     /*
      * Describes a path which the object can move along
      */
@@ -95,9 +194,11 @@ namespace components
          */
         bool is_repeating;
     };
+
     enum StateEnum {
         IDLE, DESTROYED
     };
+
     /*
      * Defines how to render the object on screen.
      */

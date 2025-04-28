@@ -57,14 +57,21 @@ namespace behaviours
                 components::Damage bullet_damage;
                 bullet_damage.value = 30.0f;
 
-                BlueprintEntt(registry).builder()
-                                       .with<TWorld::BulletStateComponent>()
-                                       .with<components::UpdateFunction>(bullet_function)
-                                       .with<components::Sprite>(bullet_sprite)
-                                       .with<components::Movement>(bullet_movement)
-                                       .with<components::Collision>(bullet_collision)
-                                       .with<components::Damage>(bullet_damage)
-                                       .with<components::PlayerBullet>();
+                auto &[free_entities, active_entities] = registry.ctx().get<components::PlayerBullets>();
+
+
+                const auto bullet = free_entities.back();
+                free_entities.pop_back();
+                registry.emplace_or_replace<TWorld::BulletStateComponent>(bullet);
+                registry.emplace_or_replace<components::UpdateFlag>(bullet);
+                registry.emplace_or_replace<components::UpdateFunction>(bullet, bullet_function);
+                registry.emplace_or_replace<components::Sprite>(bullet, bullet_sprite);
+                registry.emplace_or_replace<components::Movement>(bullet, bullet_movement);
+                registry.emplace_or_replace<components::Collision>(bullet, bullet_collision);
+                registry.emplace_or_replace<components::Damage>(bullet, bullet_damage);
+                registry.emplace_or_replace<components::PlayerBullet>(bullet);
+                registry.emplace_or_replace<components::Activation>(bullet, true, 0.0);
+                active_entities.push_back(bullet);
             };
 
             auto &[last_emission_seconds] = registry.get<components::Emission>(player);

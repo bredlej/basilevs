@@ -8,6 +8,7 @@ namespace config
 {
     constexpr auto kFrameWidth = 160;
     constexpr auto kFrameHeight = 144;
+    constexpr auto kCellSize = 16;
     constexpr auto kFrameBoundLeft = -64;
     constexpr auto kFrameBoundUp = -64;
     constexpr auto kFrameBoundRight = 200;

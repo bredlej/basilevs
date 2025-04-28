@@ -5,9 +5,8 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#include "include/basilevs-lib.h"
-#include <algorithm>
-#include <boost/sml/sml.hpp>
+#include "include/game-definition.h"
+
 
 int main() {
 

@@ -91,10 +91,11 @@ private:
     std::vector<Sound> sounds_;
     RenderTexture render_target_ = LoadRenderTexture(config::kFrameWidth, config::kFrameHeight);
     input::UserInput<input::GameInput> game_input;
-    void initialize_world_();
-    void loop_(std::chrono::duration<double> duration);
-    void render_();
-    void handle_game_input();
+    void _initialize_world();
+    void _loop(std::chrono::duration<double> duration);
+    void _render();
+    void _render_debug();
+    void _handle_game_input();
 };
 
 
