@@ -93,9 +93,18 @@ namespace components
             }
         }
 
-        void insert(const entt::entity entity, const float x, const float y)
+        void insert(const entt::entity entity, const float x, const float y, const float half_w, const float half_h)
         {
-            _cells[_cell_index(x,y)].push_back(entity);
+            const int x0 = std::clamp(static_cast<int>((x - half_w) / _cell_size), 0, static_cast<int>(_cols)-1);
+            const int x1 = std::clamp(static_cast<int>((x + half_w) / _cell_size), 0, static_cast<int>(_cols)-1);
+            const int y0 = std::clamp(static_cast<int>((y - half_h) / _cell_size), 0, static_cast<int>(_rows)-1);
+            const int y1 = std::clamp(static_cast<int>((y + half_h) / _cell_size), 0, static_cast<int>(_rows)-1);
+
+            for(int cyi = y0; cyi <= y1; ++cyi) {
+                for(int cxi = x0; cxi <= x1; ++cxi) {
+                    _cells[cyi * _cols + cxi].push_back(entity);
+                }
+            }
         }
 
         const std::vector<entt::entity> &query(const float x, const float y) const

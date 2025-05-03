@@ -20,8 +20,8 @@ namespace config
     constexpr auto kSoundQueueSize = 16;
     namespace colors
     {
-        auto const kForeground = Color{240, 246, 240};
-        auto const kBackground = Color{34, 35, 35};
+        constexpr auto kForeground = Color{240, 246, 240};
+        constexpr auto kBackground = Color{34, 35, 35};
     };// namespace colors
 }// namespace config
 #endif//BASILEVS_CONFIG_H

@@ -140,10 +140,10 @@ inline void render_grid(const entt::registry &registry)
                 if (registry.any_of<TWorld::EnemyStateComponent>(entity)) { enemies++; }
                 if (registry.any_of<components::Player>(entity)) { player++; }
             }
-            DrawText(TextFormat("%d", player_bullets), (x * frame_to_screen_width_ratio) + 5, y * frame_to_screen_height_ratio + 5, 10, YELLOW);
-            DrawText(TextFormat("%d", enemy_bullets), (x * frame_to_screen_width_ratio) + 5, y * frame_to_screen_height_ratio + 15, 10, RED);
-            DrawText(TextFormat("%d", enemies), (x * frame_to_screen_width_ratio) + 5, y * frame_to_screen_height_ratio + 25, 10, BLUE);
-            DrawText(TextFormat("%d", player), (x * frame_to_screen_width_ratio) + 5, y * frame_to_screen_height_ratio + 35, 10, WHITE);
+            DrawText(TextFormat("PB %d", player_bullets), (x * frame_to_screen_width_ratio) + 5, y * frame_to_screen_height_ratio + 5, 10, YELLOW);
+            DrawText(TextFormat("EB %d", enemy_bullets), (x * frame_to_screen_width_ratio) + 5, y * frame_to_screen_height_ratio + 15, 10, RED);
+            DrawText(TextFormat("E %d", enemies), (x * frame_to_screen_width_ratio) + 5, y * frame_to_screen_height_ratio + 25, 10, BLUE);
+            DrawText(TextFormat("P %d", player), (x * frame_to_screen_width_ratio) + 5, y * frame_to_screen_height_ratio + 35, 10, WHITE);
 
         }
     }
@@ -167,12 +167,12 @@ void GameDefinition::_render_debug()
     }
     ImGui::Checkbox("Show Grid", &debug_grid);
     auto &[free_enemy_bullets, active_enemy_bullets] = _core.registry.ctx().get<components::EnemyBullets>();
-    ImGui::Text("Enemy bullets active: %d", active_enemy_bullets.size());
-    ImGui::Text("Enemy bullets free: %d", free_enemy_bullets.size());
+    ImGui::Text("Enemy bullets active: %zu", active_enemy_bullets.size());
+    ImGui::Text("Enemy bullets free: %zu", free_enemy_bullets.size());
 
     auto &[free_player_bullets, active_player_bullets] = _core.registry.ctx().get<components::PlayerBullets>();
-    ImGui::Text("Player bullets active: %d", active_player_bullets.size());
-    ImGui::Text("Player bullets free: %d", free_player_bullets.size());
+    ImGui::Text("Player bullets active: %zu", active_player_bullets.size());
+    ImGui::Text("Player bullets free: %zu", free_player_bullets.size());
 
     for (const entt::entity player_bullet : active_player_bullets) {
         const auto &movement = _core.registry.get<components::Movement>(player_bullet);

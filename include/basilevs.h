@@ -78,6 +78,7 @@ namespace basilevs
             setup_collision(collision, 3.0f, Vector2{17.0f, 18.0f});
 
             auto player = blueprintEntt.builder()
+                                       .with<Player>()
                                        .with<Sprite>(sprite)
                                        .with<Movement>(movement)
                                        .with<Collision>(collision)
@@ -155,9 +156,16 @@ namespace basilevs
 
         static bool is_render_allowed_for_state(const TWorld::EnemyStateComponent &state) { return !state.state_machine.is(boost::sml::X) && !state.state_machine.is(state_handling::declarations::kInitState); }
 
-        static void render_enemy(const Core::TextureCache &textures, const Sprite &sprite, const Movement &movement, const TWorld::EnemyStateComponent &state) { if (is_render_allowed_for_state(state)) { DrawTextureRec(textures[assets::texture_id_to_string[sprite.texture]], sprite.frame_rect, movement.position, WHITE); } }
+        static void render_enemy(const Core::TextureCache &textures, const Sprite &sprite, const Movement &movement, const TWorld::EnemyStateComponent &state) { if (is_render_allowed_for_state(state)) {
+            DrawTextureRec(textures[assets::texture_id_to_string[sprite.texture]], sprite.frame_rect, movement.position, WHITE);
+        } }
 
-        static void render_enemies(RenderTexture &render_target, const entt::registry &registry, const Core::TextureCache &texture_cache) { registry.view<TWorld::EnemyStateComponent, Sprite, Movement>().each([&texture_cache](const auto enemy_state, const auto &sprite, const auto movement) { render_enemy(texture_cache, sprite, movement, enemy_state); }); }
+        static void render_enemies(RenderTexture &render_target, const entt::registry &registry, const Core::TextureCache &texture_cache) { registry.view<TWorld::EnemyStateComponent, Sprite, Movement>().each([&texture_cache](const auto entity, const auto enemy_state, const auto &sprite, const auto movement)
+        {
+            DrawRectangle(movement.position.x, movement.position.y, sprite.frame_rect.width, sprite.frame_rect.height, MAGENTA);
+            render_enemy(texture_cache, sprite, movement, enemy_state);
+            DrawText(TextFormat("%d",entity), movement.position.x, movement.position.y, 10, GREEN);
+        }); }
 
         template<typename POOL_TYPE>
         static void render_bullets(RenderTexture &render_target, const entt::registry &registry, const Core::TextureCache &texture_cache)
@@ -211,7 +219,6 @@ namespace basilevs
                            WHITE);
             auto amount_bullets = 0;
             core.registry.view<TWorld::BulletStateComponent, Activation>().each([&amount_bullets](const auto entity, const auto &bullet_state, const auto &activation) { amount_bullets++; });
-            DrawText(std::to_string(amount_bullets).c_str(), config::kScreenWidth - 60, 60, 30, ORANGE);
             DrawFPS(5, 5);
         }
     }// namespace rendering
@@ -282,9 +289,7 @@ namespace basilevs
                 const Vector2 &bullet_center = get_collision_center(bullet_movement, bullet_collision);
                 registry.view<EnemyBullet, TWorld::BulletStateComponent, Movement, Collision, Activation>().each([&bullet_center, &bullet_collision, &bullet_state, &registry](const entt::entity enemy_bullet_entity, const EnemyBullet &enemy_bullet, TWorld::BulletStateComponent &enemy_bullet_state, const Movement &enemy_bullet_movement, const Collision &enemy_bullet_collision, const Activation &activation)
                 {
-                    const Vector2 &enemy_bullet_center = get_collision_center(enemy_bullet_movement, enemy_bullet_collision);
-
-                    if (CheckCollisionCircles(bullet_center, bullet_collision.bounds.radius, enemy_bullet_center, enemy_bullet_collision.bounds.radius)) {
+                    if (const Vector2 &enemy_bullet_center = get_collision_center(enemy_bullet_movement, enemy_bullet_collision); CheckCollisionCircles(bullet_center, bullet_collision.bounds.radius, enemy_bullet_center, enemy_bullet_collision.bounds.radius)) {
                         destroy_bullet(bullet_state);
                         destroy_bullet(enemy_bullet_state);
                     }
@@ -324,7 +329,12 @@ namespace basilevs
         {
             auto &grid = registry.ctx().get<SpatialGrid>();
             grid.clear();
-            registry.view<Movement, Collision, Activation>().each([&grid](const auto entity, const Movement &movement, const Collision &collision, const Activation &activation) { if (activation.is_active) grid.insert(entity, movement.position.x, movement.position.y); });
+            registry.view<Movement, Sprite, Activation>().each([&grid](const auto entity, const Movement &movement, const Sprite &sprite, const Activation &activation)
+            {
+                if (activation.is_active) {
+                    grid.insert(entity, movement.position.x + sprite.frame_rect.width * 0.5f, movement.position.y + sprite.frame_rect.height * 0.5f, sprite.frame_rect.width * 0.5f, sprite.frame_rect.height * 0.5f);
+                }
+            });
             player_bullets_with_enemies(registry);
             //player_bullets_with_enemy_bullets(registry);
             //enemy_bullets_with_player(registry);
@@ -339,7 +349,6 @@ namespace basilevs
             const auto [bx, by] = sprite.bounds;
 
             return !CheckCollisionRecs(Rectangle(x, y, bx, by), frame.bounds);
-
         }
 
         /*
@@ -352,23 +361,16 @@ namespace basilevs
                                              std::vector<entt::entity> &active_entities,
                                              std::vector<entt::entity> &free_entities)
         {
-            // iterate by index qwd ioiper92944 33)@@Z/**/
             for (size_t i = 0; i < active_entities.size(); ++i) {
                 entt::entity e = active_entities[i];
 
-                // Jeżeli pocisk wszedł w stan "zniszczony"
                 if (auto &st = registry.get<TWorld::BulletStateComponent>(e); st.state_machine.is(boost::sml::X)) {
-                    // Usuwamy komponenty aktywacji/aktualizacji
                     registry.remove<Activation, UpdateFlag>(e);
 
-                    // Swap‑pop w active_entities
                     std::swap(active_entities[i], active_entities.back());
                     active_entities.pop_back();
-
-                    // Oddajemy encję do poola
                     free_entities.push_back(e);
 
-                    // --i, żeby ponownie zbadać element pod indeksem i
                     --i;
                 }
             }
@@ -381,10 +383,10 @@ namespace basilevs
         static void cleanup_bullet_pools(entt::registry &registry)
         {
             destroy_bullets_outside_frame(registry);
-            auto &[bullets_player_free, bullets_player_active] = registry.ctx().get<components::PlayerBullets>();
+            auto &[bullets_player_free, bullets_player_active] = registry.ctx().get<PlayerBullets>();
             remove_destroyed_bullets(registry, bullets_player_active, bullets_player_free);
 
-            auto &[bullets_enemy_free, bullets_enemy_active] = registry.ctx().get<components::EnemyBullets>();
+            auto &[bullets_enemy_free, bullets_enemy_active] = registry.ctx().get<EnemyBullets>();
             remove_destroyed_bullets(registry, bullets_enemy_active, bullets_enemy_free);
         }
     }// namespace memory
